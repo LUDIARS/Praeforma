@@ -1,0 +1,21 @@
+{
+  "name": "jp.ludiars.praeforma",
+  "version": "0.1.0",
+  "displayName": "Praeforma",
+  "description": "Praeforma Unity Editor extension — spec ↔ implementation linkage, scene-level feedback (Melpomene-compatible), domain doc references.",
+  "unity": "2022.3",
+  "documentationUrl": "https://github.com/LUDIARS/Praeforma",
+  "changelogUrl": "https://github.com/LUDIARS/Praeforma/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/LUDIARS/Praeforma/blob/main/LICENSE",
+  "keywords": [
+    "praeforma",
+    "ludiars",
+    "spec",
+    "feedback",
+    "melpomene"
+  ],
+  "author": {
+    "name": "LUDIARS",
+    "url": "https://github.com/LUDIARS"
+  }
+}

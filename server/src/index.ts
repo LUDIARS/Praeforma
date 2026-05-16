@@ -16,6 +16,8 @@ import { initDb, getDbState } from './db/connection.ts';
 import { startPaseto } from './auth/paseto.ts';
 import { requireAuth, getIdentity } from './middleware/require-auth.ts';
 import { AppError } from './lib/errors.ts';
+import { makeReferenceRouter } from './routes/references.ts';
+import { makeFeedbackRouter } from './routes/feedback.ts';
 
 const config = loadConfig();
 
@@ -68,6 +70,10 @@ app.get('/api/auth/me', requireAuth, (c) => {
     projectKey: id.projectKey,
   });
 });
+
+// Step 1 で公開する最小 REST: references + feedback (Unity Editor 拡張と Web 双方が使う)
+app.route('/api/projects/:pid/references', makeReferenceRouter());
+app.route('/api/projects/:pid/feedback', makeFeedbackRouter());
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`[praeforma] listening on http://localhost:${info.port}`);

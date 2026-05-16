@@ -9,3 +9,5 @@ export * from './spec.ts';
 export * from './asset.ts';
 export * from './acceptance.ts';
 export * from './collab.ts';
+export * from './reference.ts';
+export * from './feedback.ts';
