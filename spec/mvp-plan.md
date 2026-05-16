@@ -24,7 +24,7 @@ references / feedback を独立 step として追加。
 | 1 | server scaffold | ✅ done | 1-2 日 | Hono + Drizzle + Postgres + Cernere PASETO + healthz |
 | 1.5 | references + feedback (= 追加) | ✅ done | 1 日 | Notion 等 doc リンク + Melpomene 互換 FB |
 | 1.6 | Unity UPM v0.1 (= Step 8 前倒し) | ✅ done | 1 日 | Editor Window + placeholder + FB gizmo + reference open-in-browser |
-| 2 | REST CRUD (core 5) | 🟡 | 3-5 日 | projects / domains / objects / layouts / specs |
+| 2 | REST CRUD (core 5) | ✅ done | 3-5 日 | projects / domains / objects / layouts / specs + audit_log + 楽観ロック |
 | 3 | frontend scaffold | 🟡 | 1-2 日 | React + Vite + auth + project list |
 | 4 | 配置 editor (2D 単体) | 🟡 | 3-5 日 | placeholder 配置 + spec 編集 + 保存復帰 |
 | 5 | WebSocket collab | 🟡 | 3-5 日 | edit_ops broadcast + LWW + presence |
