@@ -18,6 +18,11 @@ import { requireAuth, getIdentity } from './middleware/require-auth.ts';
 import { AppError } from './lib/errors.ts';
 import { makeReferenceRouter } from './routes/references.ts';
 import { makeFeedbackRouter } from './routes/feedback.ts';
+import { makeProjectRouter } from './routes/projects.ts';
+import { makeDomainRouter } from './routes/domains.ts';
+import { makeObjectRouter } from './routes/objects.ts';
+import { makeLayoutRouter } from './routes/layouts.ts';
+import { makeSpecRouter } from './routes/specs.ts';
 
 const config = loadConfig();
 
@@ -71,7 +76,12 @@ app.get('/api/auth/me', requireAuth, (c) => {
   });
 });
 
-// Step 1 で公開する最小 REST: references + feedback (Unity Editor 拡張と Web 双方が使う)
+// Step 2: core 5 CRUD + Step 1.5 で追加した references / feedback
+app.route('/api/projects', makeProjectRouter());
+app.route('/api/projects/:pid/domains', makeDomainRouter());
+app.route('/api/projects/:pid/objects', makeObjectRouter());
+app.route('/api/projects/:pid/layouts', makeLayoutRouter());
+app.route('/api/projects/:pid/specs', makeSpecRouter());
 app.route('/api/projects/:pid/references', makeReferenceRouter());
 app.route('/api/projects/:pid/feedback', makeFeedbackRouter());
 
