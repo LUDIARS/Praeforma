@@ -1,0 +1,20 @@
+{
+  "name": "praeforma",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LUDIARS Praeforma — spec ↔ implementation linkage tool (placeholder layout + structured spec + asset swap)",
+  "workspaces": [
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w server",
+    "start": "npm run start -w server",
+    "typecheck": "npm run typecheck -w server",
+    "env:setup": "npm run env:setup -w server",
+    "env:test": "npm run env:test -w server",
+    "env:gen": "npm run env:gen -w server",
+    "env:list": "npm run env:list -w server",
+    "env:get": "npm run env:get -w server",
+    "env:set": "npm run env:set -w server"
+  }
+}
