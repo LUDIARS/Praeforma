@@ -1,0 +1,183 @@
+/* Praeforma — Foundation UI 移植 (Memoria/Bibliotheca と同 token)。 */
+
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --border: #e3e5ea;
+  --text: #1d2230;
+  --muted: #6b7280;
+  --accent: #2a6df4;
+  --accent-bg: #e8f0ff;
+  --danger: #c0392b;
+  --success: #1f8a4c;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* topbar */
+.topbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+}
+.brand { font-weight: 700; font-size: 18px; color: var(--accent); }
+.topbar-spacer { flex: 1; }
+.topbar-info { font-size: 12px; color: var(--muted); }
+
+/* layout */
+.content { max-width: 960px; margin: 0 auto; padding: 16px; }
+.split { display: grid; grid-template-columns: 320px 1fr; gap: 16px; }
+@media (max-width: 760px) { .split { grid-template-columns: 1fr; } }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.panel h2 { margin: 0 0 12px; font-size: 16px; }
+.panel h3 { margin: 16px 0 8px; font-size: 14px; color: var(--muted); }
+
+/* foundation-form */
+.foundation-form { display: grid; gap: 10px; }
+.foundation-form .simple-field { display: grid; gap: 6px; }
+.foundation-form .simple-field > span {
+  font-size: 12px; color: var(--muted); letter-spacing: 0.02em;
+}
+.foundation-form input[type="text"],
+.foundation-form input[type="search"],
+.foundation-form input[type="number"],
+.foundation-form input[type="date"],
+.foundation-form input[type="url"],
+.foundation-form input:not([type]),
+.foundation-form textarea,
+.foundation-form select {
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--text);
+}
+.foundation-form input:focus,
+.foundation-form textarea:focus,
+.foundation-form select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.foundation-form .simple-actions {
+  display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; flex-wrap: wrap;
+}
+
+/* buttons */
+button { font: inherit; cursor: pointer; }
+.primary {
+  background: var(--accent); color: #fff;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-weight: 600;
+}
+.primary:disabled { background: #a5b5d8; border-color: #a5b5d8; cursor: not-allowed; }
+.ghost {
+  background: #fff; color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 14px;
+}
+.ghost:hover { background: var(--bg); }
+.danger {
+  background: var(--danger); color: #fff;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 600;
+}
+
+/* lists */
+.item-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.item-row {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.item-row.active { border-color: var(--accent); background: var(--accent-bg); }
+.item-row .label { font-weight: 600; }
+.item-row .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+/* placement editor */
+.placement-stage {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+.placement-stage canvas { display: block; width: 100%; height: 100%; }
+.placement-toolbar {
+  display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;
+}
+.placement-toolbar .ghost { padding: 5px 10px; font-size: 12px; }
+
+/* toast */
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  background: rgba(29, 34, 48, 0.92); color: #fff;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13px; z-index: 200;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+.toast.err { background: var(--danger); }
+.toast.ok { background: var(--success); }
+
+/* role badge */
+.role-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  font-weight: 600;
+  margin-left: 4px;
+}
+.role-badge.viewer { background: #f3f4f6; color: var(--muted); border-color: var(--border); }
+
+/* tabbar */
+.tabbar {
+  display: flex; gap: 4px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.tab {
+  background: transparent;
+  border: none;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }

@@ -9,7 +9,8 @@
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { serve } from '@hono/node-server';
+import { serve, type ServerType } from '@hono/node-server';
+import { attachCollab } from './ws/collab.ts';
 
 import { loadConfig } from './config.ts';
 import { initDb, getDbState } from './db/connection.ts';
@@ -17,12 +18,15 @@ import { startPaseto } from './auth/paseto.ts';
 import { requireAuth, getIdentity } from './middleware/require-auth.ts';
 import { AppError } from './lib/errors.ts';
 import { makeReferenceRouter } from './routes/references.ts';
+import { makeReferenceContentRouter } from './routes/reference-content.ts';
 import { makeFeedbackRouter } from './routes/feedback.ts';
 import { makeProjectRouter } from './routes/projects.ts';
 import { makeDomainRouter } from './routes/domains.ts';
 import { makeObjectRouter } from './routes/objects.ts';
 import { makeLayoutRouter } from './routes/layouts.ts';
 import { makeSpecRouter } from './routes/specs.ts';
+import { makeAcceptanceRouter } from './routes/acceptance.ts';
+import { makeAssetRouter } from './routes/assets.ts';
 
 const config = loadConfig();
 
@@ -77,16 +81,21 @@ app.get('/api/auth/me', requireAuth, (c) => {
 });
 
 // Step 2: core 5 CRUD + Step 1.5 で追加した references / feedback
+// Step 7: acceptance / Step 10: assets / Step 13: reference content
 app.route('/api/projects', makeProjectRouter());
 app.route('/api/projects/:pid/domains', makeDomainRouter());
 app.route('/api/projects/:pid/objects', makeObjectRouter());
 app.route('/api/projects/:pid/layouts', makeLayoutRouter());
 app.route('/api/projects/:pid/specs', makeSpecRouter());
 app.route('/api/projects/:pid/references', makeReferenceRouter());
+app.route('/api/projects/:pid/references', makeReferenceContentRouter());
 app.route('/api/projects/:pid/feedback', makeFeedbackRouter());
+app.route('/api/projects/:pid/acceptance', makeAcceptanceRouter());
+app.route('/api/projects/:pid/assets', makeAssetRouter(config.publicUrl));
 
-serve({ fetch: app.fetch, port: config.port }, (info) => {
+const httpServer: ServerType = serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`[praeforma] listening on http://localhost:${info.port}`);
   console.log(`[praeforma] db: ${dbState.ok ? 'connected' : 'down'}`);
   console.log(`[praeforma] cernere: ${config.cernereBaseUrl}`);
 });
+attachCollab(httpServer as unknown as import('node:http').Server);
