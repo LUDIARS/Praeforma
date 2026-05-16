@@ -4,12 +4,15 @@
   "private": true,
   "description": "LUDIARS Praeforma — spec ↔ implementation linkage tool (placeholder layout + structured spec + asset swap)",
   "workspaces": [
-    "server"
+    "server",
+    "web"
   ],
   "scripts": {
     "dev": "npm run dev -w server",
+    "dev:web": "npm run dev -w web",
     "start": "npm run start -w server",
-    "typecheck": "npm run typecheck -w server",
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w web",
+    "build:web": "npm run build -w web",
     "env:setup": "npm run env:setup -w server",
     "env:test": "npm run env:test -w server",
     "env:gen": "npm run env:gen -w server",

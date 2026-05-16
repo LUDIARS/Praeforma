@@ -25,17 +25,17 @@ references / feedback を独立 step として追加。
 | 1.5 | references + feedback (= 追加) | ✅ done | 1 日 | Notion 等 doc リンク + Melpomene 互換 FB |
 | 1.6 | Unity UPM v0.1 (= Step 8 前倒し) | ✅ done | 1 日 | Editor Window + placeholder + FB gizmo + reference open-in-browser |
 | 2 | REST CRUD (core 5) | ✅ done | 3-5 日 | projects / domains / objects / layouts / specs + audit_log + 楽観ロック |
-| 3 | frontend scaffold | 🟡 | 1-2 日 | React + Vite + auth + project list |
-| 4 | 配置 editor (2D 単体) | 🟡 | 3-5 日 | placeholder 配置 + spec 編集 + 保存復帰 |
-| 5 | WebSocket collab | 🟡 | 3-5 日 | edit_ops broadcast + LWW + presence |
-| 6 | 3D preview (WebGL) | 🟡 | 3-5 日 | three.js + camera + placeholder 3D |
-| 7 | acceptance v1 | 🟡 | 3-5 日 | manual + assertion level + runtime probe |
+| 3 | frontend scaffold | ✅ done | 1-2 日 | React + Vite + auth + project list |
+| 4 | 配置 editor (2D 単体) | ✅ done | 3-5 日 | Canvas 配置 + drag/resize + Ctrl+Z + 保存 |
+| 5 | WebSocket collab | ✅ done | 3-5 日 | /ws/edit + presence + op broadcast + ping |
+| 6 | 3D preview (WebGL) | ✅ done | 3-5 日 | three.js + mouse-orbit camera + shape 切替 |
+| 7 | acceptance v1 | ✅ done | 3-5 日 | runs/results + probe-driven assertion |
 | 8 | Unity UPM v0.2 (layout 同期) | 🟡 | 2-3 日 | Praeforma layout を Scene に流し込み + Prefab 差替 |
 | 9 | Unity runtime probe | 🟡 | 2-3 日 | acceptance を Unity 側でも回す |
-| 10 | asset storage | 🟡 | 2-3 日 | MinIO/S3 + pre-signed URL + object_assets |
-| 11 | role 権限実装 | 🟡 | 2-3 日 | server middleware + UI 反映 |
-| 12 | acceptance event level | 🟡 | 3-5 日 | event ringbuffer + pattern matcher |
-| 13 | reference webview/markdown | 🟡 | 2-3 日 | Notion/Confluence/Google API 取得 + 表示 |
+| 10 | asset storage | ✅ scaffold done | 2-3 日 | presign stub + assets CRUD + object_assets link (実 S3 adapter は v0.2) |
+| 11 | role 権限実装 | ✅ done | 2-3 日 | server requireRole + lock_transform + UI role badge |
+| 12 | acceptance event level | ✅ done | 3-5 日 | event ringbuffer + sequence/count/within pattern |
+| 13 | reference webview/markdown | ✅ done | 2-3 日 | Notion/Confluence/GoogleDocs proxy |
 
 ---
 
