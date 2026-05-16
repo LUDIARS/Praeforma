@@ -1,0 +1,14 @@
+{
+  "name": "Praeforma.Runtime",
+  "rootNamespace": "Ludiars.Praeforma",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -15,6 +15,8 @@ Praeforma backend (`server/src/db/schema/`) の Drizzle テーブル定義に対
 | アセット | [asset.md](asset.md) | `assets` / `object_assets` |
 | acceptance 実行記録 | [acceptance.md](acceptance.md) | `acceptance_runs` / `acceptance_results` |
 | コラボ + 監査 | [collab.md](collab.md) | `edit_sessions` / `edit_ops` / `audit_log` |
+| 外部 doc 参照 | [reference.md](reference.md) | `references` (= Notion/Confluence/Google 等のリンク) |
+| シーン FB / コメント | [feedback.md](feedback.md) | `object_feedback` / `feedback_comments` (Melpomene 互換) |
 
 ## 表記
 
