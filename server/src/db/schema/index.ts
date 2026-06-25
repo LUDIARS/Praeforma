@@ -11,3 +11,4 @@ export * from './acceptance.ts';
 export * from './collab.ts';
 export * from './reference.ts';
 export * from './feedback.ts';
+export * from './code-graph.ts';

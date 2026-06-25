@@ -27,6 +27,7 @@ import { makeLayoutRouter } from './routes/layouts.ts';
 import { makeSpecRouter } from './routes/specs.ts';
 import { makeAcceptanceRouter } from './routes/acceptance.ts';
 import { makeAssetRouter } from './routes/assets.ts';
+import { makeStudioRouter } from './routes/studio.ts';
 
 const config = loadConfig();
 
@@ -92,6 +93,14 @@ app.route('/api/projects/:pid/references', makeReferenceContentRouter());
 app.route('/api/projects/:pid/feedback', makeFeedbackRouter());
 app.route('/api/projects/:pid/acceptance', makeAcceptanceRouter());
 app.route('/api/projects/:pid/assets', makeAssetRouter(config.publicUrl));
+// 要件定義モード (Studio): LLM サジェスト + MUSA(Thaleia) 経由 Anatomia グラフ
+app.route(
+  '/api/projects/:pid/studio',
+  makeStudioRouter(
+    { musaRelayUrl: config.musaRelayUrl, musaRelayToken: config.musaRelayToken },
+    config.claudeBin,
+  ),
+);
 
 const httpServer: ServerType = serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`[praeforma] listening on http://localhost:${info.port}`);

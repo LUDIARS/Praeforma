@@ -42,12 +42,12 @@ spec が対象とする実体 (object / domain / project)。 1 spec は複数 ta
 |---|---|---|---|---|
 | `id` | `bigserial` | ✓ | — | PK |
 | `spec_id` | `text` | ✓ | — | FK `specs.id` |
-| `kind` | `text` | ✓ | — | `object` / `domain` / `project` |
-| `ref_id` | `text` | ✓ | — | 対象の `objects.id` / `domains.id` / `projects.id` |
+| `kind` | `text` | ✓ | — | `object` / `domain` / `project` / `layout`(=scene) |
+| `ref_id` | `text` | ✓ | — | 対象の `objects.id` / `domains.id` / `projects.id` / `layouts.id` |
 
 ### Constraint
 - UNIQUE (`spec_id`, `kind`, `ref_id`)
-- CHECK `kind IN ('object','domain','project')`
+- CHECK `kind IN ('object','domain','project','layout')` (`layout` は要件定義モードで追加、 migration 003)
 - 外部キー: kind ごとに対応テーブルへ。 polymorphic FK は app 側で検証
 
 ### Index

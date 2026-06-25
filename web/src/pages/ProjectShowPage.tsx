@@ -47,7 +47,13 @@ export function ProjectShowPage(): React.ReactElement {
   return (
     <>
       <div className="panel">
-        <h2>{p.name}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <h2 style={{ margin: 0 }}>{p.name}</h2>
+          <div style={{ flex: 1 }} />
+          <Link to={`/projects/${pid}/studio`} className="primary" style={{ textDecoration: 'none' }}>
+            要件定義モード →
+          </Link>
+        </div>
         <p style={{ color: 'var(--muted)' }}>{p.description}</p>
         <div style={{ fontSize: 12, color: 'var(--muted)' }}>
           {p.id} / platforms: {p.platforms.join(', ')}

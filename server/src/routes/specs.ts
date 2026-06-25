@@ -21,7 +21,8 @@ const ALL_ROLES: readonly ProjectRole[] = [
 const EDIT_ROLES: readonly ProjectRole[] = ['owner', 'planner'];
 
 const targetSchema = z.object({
-  kind: z.enum(['object', 'domain', 'project']),
+  // 'layout' = シーン (要件定義モードで scene を spec の target にできるよう拡張、 migration 003)
+  kind: z.enum(['object', 'domain', 'project', 'layout']),
   ref_id: z.string().min(1),
 });
 

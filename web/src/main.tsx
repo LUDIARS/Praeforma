@@ -7,6 +7,7 @@ import { LoginPage } from './pages/LoginPage.tsx';
 import { ProjectListPage } from './pages/ProjectListPage.tsx';
 import { ProjectShowPage } from './pages/ProjectShowPage.tsx';
 import { LayoutEditorPage } from './pages/LayoutEditorPage.tsx';
+import { StudioPage } from './pages/StudioPage.tsx';
 import { getToken } from './lib/api.ts';
 
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ root.render(
           <Route path="/" element={<RequireAuth><App /></RequireAuth>}>
             <Route index element={<ProjectListPage />} />
             <Route path="projects/:pid" element={<ProjectShowPage />} />
+            <Route path="projects/:pid/studio" element={<StudioPage />} />
             <Route path="projects/:pid/layouts/:lid" element={<LayoutEditorPage />} />
           </Route>
         </Routes>

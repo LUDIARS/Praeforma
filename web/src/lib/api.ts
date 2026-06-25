@@ -170,6 +170,66 @@ export interface Feedback {
   created_at: string;
 }
 
+// ── studio (要件定義モード) types ──────────────────────────────────────────
+
+export type UxTargetKind = 'domain' | 'scene';
+
+export interface SuggestedAcceptance {
+  text: string;
+  level: 'manual' | 'assertion' | 'event';
+  kind: 'positive' | 'negative';
+  expression?: string | null;
+}
+
+export interface SuggestedRequirement {
+  code?: string;
+  title: string;
+  description: string;
+  priority: 'must' | 'should' | 'could' | 'wont';
+  category: 'behavior' | 'appearance' | 'data' | 'interaction';
+  preconditions: string[];
+  postconditions: string[];
+  acceptance: SuggestedAcceptance[];
+}
+
+export interface IngestProposal {
+  domains: Array<{ name: string; description: string }>;
+  scenes: Array<{ name: string; description: string }>;
+  requirements: Array<SuggestedRequirement & { targetKind: UxTargetKind; targetName: string }>;
+}
+
+export interface GraphNode {
+  id: string;
+  project_id: string;
+  target_kind: 'domain' | 'layout';
+  target_id: string;
+  node_key: string;
+  label: string;
+  node_type: 'symbol' | 'file' | 'domain' | 'spec' | 'external';
+  anatomia_ref: Record<string, unknown>;
+  source: 'anatomia' | 'manual';
+  status: 'linked' | 'candidate' | 'dismissed';
+  meta: Record<string, unknown>;
+}
+
+export interface GraphEdge {
+  id: string;
+  from_node: string;
+  to_node: string;
+  relation: 'calls' | 'depends' | 'implements' | 'related';
+  source: 'anatomia' | 'manual';
+}
+
+export interface GraphRun {
+  id: string;
+  status: 'ok' | 'error' | 'musa_unconfigured';
+  query: string;
+  node_count: number;
+  edge_count: number;
+  summary: string | null;
+  created_at: string;
+}
+
 // ── endpoints ─────────────────────────────────────────────────────────────
 
 export const api = {
@@ -184,6 +244,11 @@ export const api = {
 
   // domains
   listDomains: (pid: string) => req<{ items: Domain[] }>(`/api/projects/${pid}/domains`),
+  createDomain: (pid: string, body: { name: string; description?: string; color?: string }) =>
+    req<{ domain: Domain }>(`/api/projects/${pid}/domains`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 
   // objects
   listObjects: (pid: string) => req<{ items: PfObject[] }>(`/api/projects/${pid}/objects`),
@@ -208,8 +273,64 @@ export const api = {
   listSpecs: (pid: string) => req<{ items: Spec[] }>(`/api/projects/${pid}/specs`),
   getSpec: (pid: string, sid: string) =>
     req<{ spec: Spec; targets: unknown[]; acceptance: unknown[] }>(`/api/projects/${pid}/specs/${sid}`),
-  createSpec: (pid: string, body: { code: string; title: string; description?: string }) =>
-    req<{ spec: Spec }>(`/api/projects/${pid}/specs`, { method: 'POST', body: JSON.stringify(body) }),
+  createSpec: (
+    pid: string,
+    body: {
+      code: string;
+      title: string;
+      description?: string;
+      priority?: Spec['priority'];
+      category?: string;
+      preconditions?: string[];
+      postconditions?: string[];
+      status?: Spec['status'];
+      targets?: Array<{ kind: 'object' | 'domain' | 'project' | 'layout'; ref_id: string }>;
+      acceptance?: Array<{ text: string; level?: string; kind?: string; expression?: string | null }>;
+    },
+  ) => req<{ spec: Spec }>(`/api/projects/${pid}/specs`, { method: 'POST', body: JSON.stringify(body) }),
+
+  // studio (要件定義モード)
+  studioIngest: (pid: string, body: { material: string; kind?: string }) =>
+    req<{ proposal: IngestProposal }>(`/api/projects/${pid}/studio/ingest`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  studioSuggest: (pid: string, body: { target_kind: UxTargetKind; target_id: string; note?: string }) =>
+    req<{ requirements: SuggestedRequirement[] }>(`/api/projects/${pid}/studio/suggest`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  studioAnatomiaLink: (
+    pid: string,
+    body: { target_kind: UxTargetKind; target_id: string; query?: string; repo?: string },
+  ) =>
+    req<{ run_id: string; summary: string | null; nodes: GraphNode[]; edges: GraphEdge[] }>(
+      `/api/projects/${pid}/studio/anatomia-link`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+  getGraph: (pid: string, targetKind: UxTargetKind, targetId: string) =>
+    req<{ nodes: GraphNode[]; edges: GraphEdge[]; latest_run: GraphRun | null }>(
+      `/api/projects/${pid}/studio/graph?target_kind=${encodeURIComponent(targetKind)}&target_id=${encodeURIComponent(targetId)}`,
+    ),
+  patchGraphNode: (
+    pid: string,
+    nid: string,
+    body: { status?: GraphNode['status']; label?: string },
+  ) =>
+    req<{ node: GraphNode }>(`/api/projects/${pid}/studio/graph/nodes/${nid}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  createGraphNode: (
+    pid: string,
+    body: { target_kind: UxTargetKind; target_id: string; label: string; node_type?: string },
+  ) =>
+    req<{ node: GraphNode }>(`/api/projects/${pid}/studio/graph/nodes`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  deleteGraphNode: (pid: string, nid: string) =>
+    req<{ ok: boolean }>(`/api/projects/${pid}/studio/graph/nodes/${nid}`, { method: 'DELETE' }),
 
   // references
   listReferences: (pid: string, targetKind: string, targetId: string) =>
