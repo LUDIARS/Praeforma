@@ -12,8 +12,14 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
+import { LOCAL_MODE } from '../mode.ts';
+import {
+  specs as specsSqlite,
+  specTargets as specTargetsSqlite,
+  specAcceptance as specAcceptanceSqlite,
+} from '../sqlite-schema.ts';
 
-export const specs = pgTable(
+const specsPg = pgTable(
   'specs',
   {
     id: text('id').primaryKey(),
@@ -41,7 +47,7 @@ export const specs = pgTable(
   }),
 );
 
-export const specTargets = pgTable(
+const specTargetsPg = pgTable(
   'spec_targets',
   {
     id: bigserial('id', { mode: 'number' }).primaryKey(),
@@ -62,7 +68,7 @@ export const specTargets = pgTable(
   }),
 );
 
-export const specAcceptance = pgTable(
+const specAcceptancePg = pgTable(
   'spec_acceptance',
   {
     id: text('id').primaryKey(),
@@ -82,3 +88,11 @@ export const specAcceptance = pgTable(
     idxSpec: index('idx_spec_acceptance_spec').on(t.specId),
   }),
 );
+
+export const specs = LOCAL_MODE ? (specsSqlite as unknown as typeof specsPg) : specsPg;
+export const specTargets = LOCAL_MODE
+  ? (specTargetsSqlite as unknown as typeof specTargetsPg)
+  : specTargetsPg;
+export const specAcceptance = LOCAL_MODE
+  ? (specAcceptanceSqlite as unknown as typeof specAcceptancePg)
+  : specAcceptancePg;

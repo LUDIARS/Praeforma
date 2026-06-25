@@ -13,8 +13,10 @@ import {
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
 import { objects } from './object.ts';
+import { LOCAL_MODE } from '../mode.ts';
+import { layouts as layoutsSqlite } from '../sqlite-schema.ts';
 
-export const layouts = pgTable(
+const layoutsPg = pgTable(
   'layouts',
   {
     id: text('id').primaryKey(),
@@ -33,6 +35,10 @@ export const layouts = pgTable(
     idxProject: index('idx_layouts_project').on(t.projectId),
   }),
 );
+
+export const layouts = LOCAL_MODE
+  ? (layoutsSqlite as unknown as typeof layoutsPg)
+  : layoutsPg;
 
 export const layoutObjects = pgTable(
   'layout_objects',
