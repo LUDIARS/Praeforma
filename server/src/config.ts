@@ -12,6 +12,10 @@ export interface AppConfig {
   musaRelayUrl: string | null;
   /** MUSA リレーの bearer token (任意)。 */
   musaRelayToken: string | null;
+  /** ローカル「仕様書レビュー」モード: SQLite + Cernere 不要 + 固定ローカルユーザ。 */
+  localMode: boolean;
+  /** ローカル SQLite ファイルパス。 */
+  localDbPath: string;
 }
 
 export function loadConfig(): AppConfig {
@@ -28,5 +32,8 @@ export function loadConfig(): AppConfig {
     claudeBin: process.env.PRAEFORMA_CLAUDE_BIN ?? 'claude',
     musaRelayUrl: process.env.PRAEFORMA_MUSA_URL ?? null,
     musaRelayToken: process.env.PRAEFORMA_MUSA_TOKEN ?? null,
+    localMode:
+      process.env.PRAEFORMA_LOCAL_MODE === '1' || process.env.PRAEFORMA_LOCAL_MODE === 'true',
+    localDbPath: process.env.PRAEFORMA_LOCAL_DB ?? '.praeforma-local/praeforma.sqlite',
   };
 }

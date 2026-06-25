@@ -10,6 +10,8 @@ import {
   timestamp,
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
+import { LOCAL_MODE } from '../mode.ts';
+import { auditLog as auditLogSqlite } from '../sqlite-schema.ts';
 
 export const editSessions = pgTable(
   'edit_sessions',
@@ -55,7 +57,7 @@ export const editOps = pgTable(
   }),
 );
 
-export const auditLog = pgTable(
+const auditLogPg = pgTable(
   'audit_log',
   {
     id: bigserial('id', { mode: 'number' }).primaryKey(),
@@ -78,3 +80,7 @@ export const auditLog = pgTable(
     idxAction: index('idx_audit_log_action').on(t.projectId, t.action),
   }),
 );
+
+export const auditLog = LOCAL_MODE
+  ? (auditLogSqlite as unknown as typeof auditLogPg)
+  : auditLogPg;

@@ -13,6 +13,12 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
+import { LOCAL_MODE } from '../mode.ts';
+import {
+  codeGraphNodes as codeGraphNodesSqlite,
+  codeGraphEdges as codeGraphEdgesSqlite,
+  codeGraphRuns as codeGraphRunsSqlite,
+} from '../sqlite-schema.ts';
 
 /** 要件束の対象種別。 既存 spec_targets の kind のうちグラフを張る 2 種。 */
 export type GraphTargetKind = 'domain' | 'layout';
@@ -31,7 +37,7 @@ export interface AnatomiaRef {
   [k: string]: unknown;
 }
 
-export const codeGraphNodes = pgTable(
+const codeGraphNodesPg = pgTable(
   'code_graph_nodes',
   {
     id: text('id').primaryKey(),
@@ -61,7 +67,7 @@ export const codeGraphNodes = pgTable(
   }),
 );
 
-export const codeGraphEdges = pgTable(
+const codeGraphEdgesPg = pgTable(
   'code_graph_edges',
   {
     id: text('id').primaryKey(),
@@ -89,7 +95,7 @@ export const codeGraphEdges = pgTable(
 
 export type GraphRunStatus = 'ok' | 'error' | 'musa_unconfigured';
 
-export const codeGraphRuns = pgTable(
+const codeGraphRunsPg = pgTable(
   'code_graph_runs',
   {
     id: text('id').primaryKey(),
@@ -116,3 +122,13 @@ export const codeGraphRuns = pgTable(
     ),
   }),
 );
+
+export const codeGraphNodes = LOCAL_MODE
+  ? (codeGraphNodesSqlite as unknown as typeof codeGraphNodesPg)
+  : codeGraphNodesPg;
+export const codeGraphEdges = LOCAL_MODE
+  ? (codeGraphEdgesSqlite as unknown as typeof codeGraphEdgesPg)
+  : codeGraphEdgesPg;
+export const codeGraphRuns = LOCAL_MODE
+  ? (codeGraphRunsSqlite as unknown as typeof codeGraphRunsPg)
+  : codeGraphRunsPg;
