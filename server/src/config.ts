@@ -6,6 +6,12 @@ export interface AppConfig {
   cernereBaseUrl: string;
   publicUrl: string;
   projectKey: string;
+  /** 要件サジェスト用 LLM = claude CLI のバイナリ (LUDIARS 規約: API 不使用、 claude -p)。 */
+  claudeBin: string;
+  /** MUSA(Thaleia) リレーの base URL。 未設定なら Anatomia リンクは明示エラー (無言 fallback 禁止)。 */
+  musaRelayUrl: string | null;
+  /** MUSA リレーの bearer token (任意)。 */
+  musaRelayToken: string | null;
 }
 
 export function loadConfig(): AppConfig {
@@ -19,5 +25,8 @@ export function loadConfig(): AppConfig {
       process.env.PRAEFORMA_PUBLIC_URL ??
       `http://localhost:${process.env.PRAEFORMA_PORT ?? 8889}`,
     projectKey: process.env.PRAEFORMA_PROJECT_KEY ?? 'praeforma',
+    claudeBin: process.env.PRAEFORMA_CLAUDE_BIN ?? 'claude',
+    musaRelayUrl: process.env.PRAEFORMA_MUSA_URL ?? null,
+    musaRelayToken: process.env.PRAEFORMA_MUSA_TOKEN ?? null,
   };
 }
