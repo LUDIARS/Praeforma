@@ -11,8 +11,10 @@ import {
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
 import { domains } from './domain.ts';
+import { LOCAL_MODE } from '../mode.ts';
+import { objects as objectsSqlite, objectAttrs as objectAttrsSqlite } from '../sqlite-schema.ts';
 
-export const objects = pgTable(
+const objectsPg = pgTable(
   'objects',
   {
     id: text('id').primaryKey(),
@@ -38,7 +40,7 @@ export const objects = pgTable(
   }),
 );
 
-export const objectAttrs = pgTable(
+const objectAttrsPg = pgTable(
   'object_attrs',
   {
     id: bigserial('id', { mode: 'number' }).primaryKey(),
@@ -56,3 +58,10 @@ export const objectAttrs = pgTable(
     idxKey: index('idx_object_attrs_key').on(t.key),
   }),
 );
+
+export const objects = LOCAL_MODE
+  ? (objectsSqlite as unknown as typeof objectsPg)
+  : objectsPg;
+export const objectAttrs = LOCAL_MODE
+  ? (objectAttrsSqlite as unknown as typeof objectAttrsPg)
+  : objectAttrsPg;

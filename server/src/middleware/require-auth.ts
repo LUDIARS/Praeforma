@@ -10,7 +10,19 @@ function extractToken(c: Context): string | null {
   return null;
 }
 
+// ローカル「仕様書レビュー」モードでは Cernere 検証をバイパスし、 固定の匿名ローカル
+// ユーザを注入する (個人データを持たない)。 index.ts が起動時に enableLocalAuth を呼ぶ。
+let localIdentity: AuthIdentity | null = null;
+export function enableLocalAuth(identity: AuthIdentity): void {
+  localIdentity = identity;
+}
+
 export const requireAuth: MiddlewareHandler = async (c, next) => {
+  if (localIdentity) {
+    c.set('auth', localIdentity);
+    await next();
+    return;
+  }
   const token = extractToken(c);
   if (!token) throw AppError.unauthorized();
   const identity = await verifyPaseto(token);

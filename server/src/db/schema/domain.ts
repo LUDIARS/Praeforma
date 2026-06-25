@@ -11,6 +11,8 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
+import { LOCAL_MODE } from '../mode.ts';
+import { domains as domainsSqlite } from '../sqlite-schema.ts';
 
 export interface RequiredAttr {
   name: string;
@@ -19,7 +21,7 @@ export interface RequiredAttr {
   enum?: string[];
 }
 
-export const domains = pgTable(
+const domainsPg = pgTable(
   'domains',
   {
     id: text('id').primaryKey(),
@@ -42,3 +44,7 @@ export const domains = pgTable(
     idxParent: index('idx_domains_parent').on(t.parentId),
   }),
 );
+
+export const domains = LOCAL_MODE
+  ? (domainsSqlite as unknown as typeof domainsPg)
+  : domainsPg;

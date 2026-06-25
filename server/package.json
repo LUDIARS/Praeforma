@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=.env.secrets --env-file-if-exists=.env bootstrap.ts",
     "start": "tsx --env-file-if-exists=.env.secrets --env-file-if-exists=.env bootstrap.ts",
+    "local": "tsx src/local.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "migrate": "tsx scripts/migrate.ts",
     "env:setup": "npx tsx ../../Cernere/packages/env-cli/src/cli.ts setup",
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
+    "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.36.0",
     "hono": "^4.6.10",
     "paseto": "^3.1.4",
@@ -28,6 +30,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20.14.0",
     "@types/pg": "^8.11.10",
     "@types/ws": "^8.5.13",
