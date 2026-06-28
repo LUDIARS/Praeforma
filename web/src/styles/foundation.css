@@ -122,6 +122,16 @@ button { font: inherit; cursor: pointer; }
 .item-row .label { font-weight: 600; }
 .item-row .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
 
+/* ディープリンク `?focus=` で着地した項目の一時ハイライト (lib/deeplink.ts) */
+.item-row.focus-highlight {
+  border-color: var(--accent);
+  animation: focus-pulse 2.4s ease-out;
+}
+@keyframes focus-pulse {
+  0% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-bg); }
+  100% { box-shadow: 0 0 0 0 transparent; background: #fff; }
+}
+
 /* placement editor */
 .placement-stage {
   position: relative;
