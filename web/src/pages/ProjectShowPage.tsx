@@ -1,13 +1,18 @@
 import React from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api.ts';
+import { parseDeeplinkTab, useFocusEntity } from '../lib/deeplink.ts';
 
 type Tab = 'overview' | 'domains' | 'objects' | 'layouts' | 'specs';
 
 export function ProjectShowPage(): React.ReactElement {
   const { pid } = useParams();
-  const [tab, setTab] = React.useState<Tab>('overview');
+  const [searchParams] = useSearchParams();
+  // Thaleia ディープリンク `?tab=&focus=` を消費する (発行側契約は lib/deeplink.ts 参照)。
+  const deeplinkTab = parseDeeplinkTab(searchParams.get('tab'));
+  const focus = searchParams.get('focus');
+  const [tab, setTab] = React.useState<Tab>(() => deeplinkTab ?? 'overview');
   const projectQ = useQuery({
     queryKey: ['project', pid],
     queryFn: () => api.getProject(pid!),
@@ -39,6 +44,18 @@ export function ProjectShowPage(): React.ReactElement {
     enabled: !!pid && tab === 'specs',
   });
 
+  // ディープリンクの `?tab` が後から変わった場合に追従する (初期値は useState で設定済み)。
+  React.useEffect(() => {
+    if (deeplinkTab) setTab(deeplinkTab);
+  }, [deeplinkTab]);
+
+  // 該当タブのデータ取得が完了したら `?focus` のエンティティへスクロール/ハイライトする。
+  const focusReady =
+    (tab === 'domains' && domainsQ.isSuccess) ||
+    (tab === 'specs' && specsQ.isSuccess) ||
+    (tab === 'layouts' && layoutsQ.isSuccess);
+  const { notFound: focusNotFound } = useFocusEntity(focus, focusReady);
+
   if (!pid) return <p>missing project id</p>;
   if (projectQ.isLoading) return <p>loading…</p>;
   if (projectQ.isError || !projectQ.data) return <p style={{ color: 'var(--danger)' }}>取得失敗</p>;
@@ -59,6 +76,12 @@ export function ProjectShowPage(): React.ReactElement {
           {p.id} / platforms: {p.platforms.join(', ')}
         </div>
       </div>
+
+      {focusNotFound && (
+        <div className="panel" style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+          リンク先の項目「{focusNotFound}」が見つかりませんでした (ページは表示しています)。
+        </div>
+      )}
 
       <div className="tabbar">
         {(['overview', 'domains', 'objects', 'layouts', 'specs'] as Tab[]).map((t) => (
@@ -108,7 +131,7 @@ export function ProjectShowPage(): React.ReactElement {
           {domainsQ.isLoading && <p>loading…</p>}
           <ul className="item-list">
             {domainsQ.data?.items.map((d) => (
-              <li key={d.id} className="item-row">
+              <li key={d.id} className="item-row" data-focus={d.name}>
                 <div className="label">
                   <span style={{
                     display: 'inline-block', width: 12, height: 12,
@@ -147,7 +170,7 @@ export function ProjectShowPage(): React.ReactElement {
           {layoutsQ.isLoading && <p>loading…</p>}
           <ul className="item-list">
             {layoutsQ.data?.items.map((l) => (
-              <li key={l.id} className="item-row">
+              <li key={l.id} className="item-row" data-focus={l.name}>
                 <Link to={`/projects/${pid}/layouts/${l.id}`}>{l.name}</Link>
                 <div className="meta">{l.kind} {l.is_default && '(default)'}</div>
               </li>
@@ -162,7 +185,7 @@ export function ProjectShowPage(): React.ReactElement {
           {specsQ.isLoading && <p>loading…</p>}
           <ul className="item-list">
             {specsQ.data?.items.map((s) => (
-              <li key={s.id} className="item-row">
+              <li key={s.id} className="item-row" data-focus={s.code}>
                 <div className="label">
                   {s.code} — {s.title}
                   <span className="role-badge">{s.status}</span>
