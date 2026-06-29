@@ -4,8 +4,10 @@
 // display_name snapshot のみ保持する。
 
 import { jsonb, pgTable, text, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
+import { LOCAL_MODE } from '../mode.ts';
+import { projects as projectsSqlite, projectMembers as projectMembersSqlite } from '../sqlite-schema.ts';
 
-export const projects = pgTable(
+const projectsPg = pgTable(
   'projects',
   {
     id: text('id').primaryKey(),
@@ -25,7 +27,7 @@ export const projects = pgTable(
   }),
 );
 
-export const projectMembers = pgTable(
+const projectMembersPg = pgTable(
   'project_members',
   {
     id: text('id').primaryKey(),
@@ -47,6 +49,13 @@ export const projectMembers = pgTable(
     idxUser: index('idx_project_members_user').on(t.userId),
   }),
 );
+
+export const projects = LOCAL_MODE
+  ? (projectsSqlite as unknown as typeof projectsPg)
+  : projectsPg;
+export const projectMembers = LOCAL_MODE
+  ? (projectMembersSqlite as unknown as typeof projectMembersPg)
+  : projectMembersPg;
 
 export type ProjectRole =
   | 'owner'
