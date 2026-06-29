@@ -1,0 +1,4 @@
+{
+  "columns": ["display_name"],
+  "files": ["server/migrations/002_refs_feedback.sql"]
+}
