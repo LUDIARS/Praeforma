@@ -252,7 +252,16 @@ export const api = {
 
   // objects
   listObjects: (pid: string) => req<{ items: PfObject[] }>(`/api/projects/${pid}/objects`),
-  createObject: (pid: string, body: { domain_id: string; label: string }) =>
+  createObject: (
+    pid: string,
+    body: {
+      domain_id: string;
+      label: string;
+      placeholder_shape?: string;
+      placeholder_color?: string;
+      parent_object_id?: string | null;
+    },
+  ) =>
     req<{ object: PfObject }>(`/api/projects/${pid}/objects`, { method: 'POST', body: JSON.stringify(body) }),
 
   // layouts
@@ -261,7 +270,7 @@ export const api = {
     req<{ layout: Layout; layout_objects: LayoutObject[]; cameras: unknown[] }>(
       `/api/projects/${pid}/layouts/${lid}`,
     ),
-  createLayout: (pid: string, body: { name: string }) =>
+  createLayout: (pid: string, body: { name: string; description?: string; kind?: Layout['kind'] }) =>
     req<{ layout: Layout }>(`/api/projects/${pid}/layouts`, { method: 'POST', body: JSON.stringify(body) }),
   putLayoutObjects: (pid: string, lid: string, items: Array<Partial<LayoutObject> & { object_id: string }>) =>
     req<{ layout_objects: LayoutObject[] }>(`/api/projects/${pid}/layouts/${lid}/objects`, {
