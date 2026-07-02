@@ -12,7 +12,18 @@
 
 ## ステータス
 
-設計フェーズ。 まず仕様書を書いている段階で、 実装は未着手。
+v0.1 実装済 (main マージ済)。 spec (`spec/`) を正本に、 以下が動く:
+
+- **server/** — Hono + Drizzle + Postgres。 REST CRUD (projects / domains /
+  objects / layouts / specs + references / feedback / acceptance / assets)、
+  Cernere PASETO 認証 + role gate、 WebSocket collab (`/ws/edit`)
+- **web/** — React + Vite。 project 一覧 / 2D 配置 editor / 3D preview (three.js) /
+  Studio (要件定義モード)。 ローカルレビューモード (SQLite + Cernere 不要) あり
+- **Packages/jp.ludiars.praeforma/** — Unity UPM v0.1 (Editor Window +
+  placeholder gizmo + feedback + references)
+
+残: Unity UPM v0.2 (layout 同期) / Unity runtime probe / 実 S3 adapter
+(進捗の正本: [spec/plan/mvp-plan.md](spec/plan/mvp-plan.md))
 
 ## 想定プラットフォーム
 

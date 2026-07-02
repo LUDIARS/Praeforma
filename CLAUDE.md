@@ -7,7 +7,7 @@
 
 ## 触ってよい / よくない
 
-- 触ってよい: `server/`, `web/` (= 未作成), `spec/`, root `package.json`, README
+- 触ってよい: `server/`, `web/`, `Packages/`, `spec/`, root `package.json`, README
 - 触らない: 他リポ (Cernere / Memoria 等) — Praeforma は独立
 - DB schema 変更: spec/schema/*.md を **正本** として更新 → Drizzle schema +
   migrations を順番に追加 (= 過去 migration は不可逆、 新 NNN ファイルで進める)
@@ -23,17 +23,17 @@
 
 ## やらないこと (現フェーズ)
 
-- frontend (`web/`) は Step 3 で着手
-- Unity UPM は Step 8 で着手
-- WebSocket collaboration は Step 5 で着手
-- asset storage (MinIO/S3) は Step 10 で着手
+- Unity UPM v0.2 (layout 同期、 Step 8) / Unity runtime probe (Step 9) は未着手
+- 実 S3/MinIO adapter は v0.2 (Step 10 は presign stub + assets CRUD まで実装済)
 
 ## mvp-plan に従う
 
-`spec/mvp-plan.md` の 12 step を順次。 現在は Step 1 (server scaffold) 完了。
-Step 2 (REST CRUD) では `server/src/routes/` 配下に 5 領域 (projects /
-domains / objects / layouts / specs) の handler を追加し、 `requireAuth` +
-`requireRole` を組み合わせる。
+`spec/plan/mvp-plan.md` の 14 step を順次。 Step 1〜7 / 10 (scaffold) / 11 /
+12 / 13 は完了済 — v0.1 = server REST CRUD + web (配置 editor / 3D preview /
+Studio) + WS collab (`/ws/edit`) + acceptance + Unity UPM v0.1。
+残りは Step 8 (Unity UPM v0.2 layout 同期) と Step 9 (Unity runtime probe)。
+進捗の正本は mvp-plan.md のロードマップ表。 REST handler は
+`server/src/routes/` 配下、 `requireAuth` + `requireRole` を組み合わせる。
 
 ## migration
 
