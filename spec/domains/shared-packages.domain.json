@@ -1,0 +1,11 @@
+{
+  "name": "shared-packages",
+  "description": "共有パッケージ。 Unity 側 (UPM) の実装。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)Packages/(?:.*/)?[^/]+$"
+    }
+  ]
+}

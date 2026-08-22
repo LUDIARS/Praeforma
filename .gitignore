@@ -9,3 +9,6 @@ dist/
 .DS_Store
 Thumbs.db
 .praeforma-local/
+
+# Anatomia のローカル状態 (ドメイン定義の正本は spec/domains/)
+.anatomia/

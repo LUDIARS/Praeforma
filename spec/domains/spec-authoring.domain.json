@@ -1,0 +1,11 @@
+{
+  "name": "spec-authoring",
+  "description": "仕様の作成。 プランナーが placeholder を配置し仕様を書くための表現とその保存。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)server/(?:.*/)?[^/]+$"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "web-editor",
+  "description": "ブラウザ側の編集画面。 配置と仕様記述の操作。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)web/(?:.*/)?[^/]+$"
+    }
+  ]
+}
