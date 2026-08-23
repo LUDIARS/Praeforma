@@ -378,6 +378,13 @@ MVP では **Web** (= editor + 3D/2D preview 兼用) と **Unity** (= editor 拡
 | collaboration | **Cernere 連携前提**で組む (詳細 §12) |
 | 略称 | `Pf` を LUDIARS PROJECT-CODES に追記 (別 PR) |
 
+### PostgreSQL bootstrap
+
+初回構築では `PRAEFORMA_DB_ADMIN_URL` に role / database を作成できる管理接続を明示し、
+`npm run db:init -w server` を実行する。作成対象は `PRAEFORMA_DATABASE_URL` から導出する。
+既存 role の password は変更せず、管理接続 URL や password は診断ログへ出力しない。
+既存 database には接続権と migration に必要な `public` schema の `USAGE/CREATE` だけを付与する。
+
 ### 残課題
 - [ ] spec id 規約: `SPEC-NNN-<DOMAIN>-<VERB>` でいいか、 桁数は?
 - [ ] 既存ツール (Notion + Figma + Unity) との差分明示

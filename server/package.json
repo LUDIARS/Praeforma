@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --import tsx --test src/lib/__tests__/*.test.ts src/lib/export/__tests__/*.test.ts",
     "migrate": "tsx scripts/migrate.ts",
+    "db:init": "tsx scripts/db-init.ts",
     "env:setup": "npx tsx ../../Cernere/packages/env-cli/src/cli.ts setup",
     "env:test": "npx tsx ../../Cernere/packages/env-cli/src/cli.ts test",
     "env:gen": "npx tsx ../../Cernere/packages/env-cli/src/cli.ts env",
