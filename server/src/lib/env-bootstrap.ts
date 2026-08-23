@@ -5,6 +5,15 @@
  * 受け取り、 Infisical からアプリ secret を fetch + inject する。
  */
 
+/**
+ * 未設定なら起動時に warn を出すキー = サーバ全体が degrade するもののみ。
+ *
+ * Screen Flow の `PRAEFORMA_CC_TOKEN` はここに入れない。 Infisical の secret は
+ * key 名に関わらず fetch + inject されるので (`fetchSecrets` は絞り込まない)、
+ * 供給には WANTED_KEYS への登録は不要。 かつ spec/feature/screen-flow.md §6.3 で
+ * 未設定時は「Cc 状態」タブが未接続表示 + 送出 disabled になる機能単位の degrade と
+ * 決まっており、 全起動で warn を出すと本当に必要な key の警告が埋もれる。
+ */
 const WANTED_KEYS: readonly string[] = [
   'PRAEFORMA_DATABASE_URL',
   'CERNERE_BASE_URL',

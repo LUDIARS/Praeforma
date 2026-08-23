@@ -17,6 +17,14 @@ const config: EnvCliConfig = {
     CERNERE_BASE_URL: "",
     PRAEFORMA_PUBLIC_URL: "http://localhost:8889",
     PRAEFORMA_PROJECT_KEY: "praeforma",
+    // Screen Flow (spec/feature/screen-flow.md §6.3)。 未設定時は該当機能を
+    // 未接続表示 + 操作 disabled にする (mock 禁止)。 起動は妨げない。
+    // bearer の PRAEFORMA_CC_TOKEN は secret なので infraKeys ではなく
+    // Infisical 側で供給する (.env に平文で書かせない)。
+    PRAEFORMA_CLAUDE_MODEL: "",
+    PRAEFORMA_ANATOMIA_URL: "",
+    PRAEFORMA_CC_URL: "",
+    PRAEFORMA_CC_TEMPLATE: "",
   },
 
   secretsPath: ".env.secrets",
