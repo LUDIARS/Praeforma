@@ -29,10 +29,18 @@ export async function initLocalDb(dbPath: string): Promise<DbState> {
     mkdirSync(dirname(dbPath), { recursive: true });
     const Database = (await import('better-sqlite3')).default;
     const { drizzle: drizzleSqlite } = await import('drizzle-orm/better-sqlite3');
-    const { sqliteTables, SQLITE_DDL } = await import('./sqlite-schema.ts');
+    const { sqliteTables, SQLITE_DDL, SQLITE_ALTERS } = await import('./sqlite-schema.ts');
     const sqlite = new Database(dbPath);
     sqlite.pragma('journal_mode = WAL');
     for (const ddl of SQLITE_DDL) sqlite.exec(ddl);
+    // 既存 DB への列追加。 SQLite の ALTER には IF NOT EXISTS が無いので duplicate column だけ握る。
+    for (const alter of SQLITE_ALTERS) {
+      try {
+        sqlite.exec(alter);
+      } catch (e) {
+        if (!/duplicate column/i.test(String(e))) throw e;
+      }
+    }
     db = drizzleSqlite(sqlite, { schema: sqliteTables }) as unknown as NodePgDatabase<typeof schema>;
     connectError = null;
     console.log(`[db] local sqlite ready: ${dbPath}`);

@@ -14,7 +14,7 @@ import {
 import { projects } from './project.ts';
 import { objects } from './object.ts';
 import { LOCAL_MODE } from '../mode.ts';
-import { layouts as layoutsSqlite } from '../sqlite-schema.ts';
+import { layouts as layoutsSqlite, layoutObjects as layoutObjectsSqlite } from '../sqlite-schema.ts';
 
 const layoutsPg = pgTable(
   'layouts',
@@ -40,7 +40,7 @@ export const layouts = LOCAL_MODE
   ? (layoutsSqlite as unknown as typeof layoutsPg)
   : layoutsPg;
 
-export const layoutObjects = pgTable(
+const layoutObjectsPg = pgTable(
   'layout_objects',
   {
     id: text('id').primaryKey(),
@@ -69,6 +69,10 @@ export const layoutObjects = pgTable(
     idxParent: index('idx_layout_objects_parent').on(t.parentLayoutObjectId),
   }),
 );
+
+export const layoutObjects = LOCAL_MODE
+  ? (layoutObjectsSqlite as unknown as typeof layoutObjectsPg)
+  : layoutObjectsPg;
 
 export const cameras = pgTable(
   'cameras',

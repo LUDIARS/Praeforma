@@ -41,6 +41,8 @@ const createSchema = z.object({
   parent_id: z.string().nullish(),
   max_count: z.number().int().positive().nullish(),
   required_attrs: z.array(requiredAttrSchema).optional(),
+  /** Anatomia (正本) のドメイン名。 null で連携解除。 */
+  anatomia_domain: z.string().min(1).max(120).nullish(),
 });
 
 const updateSchema = createSchema.partial();
@@ -81,8 +83,14 @@ export function makeDomainRouter(): Hono {
 
   r.get('/:did', requireAuth, requireRole(ALL_ROLES), async (c) => {
     if (!getDbState().ok) throw AppError.internal('db_unavailable');
+    const pid = c.req.param('pid')!;
     const did = c.req.param('did')!;
-    const [row] = await getDb().select().from(domains).where(eq(domains.id, did)).limit(1);
+    // role は :pid に対して検査されるので、 対象が :pid のものかは自分で絞る (他 project 参照防止)。
+    const [row] = await getDb()
+      .select()
+      .from(domains)
+      .where(and(eq(domains.id, did), eq(domains.projectId, pid)))
+      .limit(1);
     if (!row) throw AppError.notFound();
     const resolved = await resolveInheritedAttrs(did);
     return c.json({ domain: row, resolved_required_attrs: resolved });
@@ -116,6 +124,7 @@ export function makeDomainRouter(): Hono {
         parentId: parsed.data.parent_id ?? null,
         maxCount: parsed.data.max_count ?? null,
         requiredAttrs: parsed.data.required_attrs ?? [],
+        anatomiaDomain: parsed.data.anatomia_domain ?? null,
       });
     await recordAudit({
       projectId: pid,
@@ -145,8 +154,13 @@ export function makeDomainRouter(): Hono {
     if (parsed.data.parent_id !== undefined) patch.parentId = parsed.data.parent_id;
     if (parsed.data.max_count !== undefined) patch.maxCount = parsed.data.max_count;
     if (parsed.data.required_attrs !== undefined) patch.requiredAttrs = parsed.data.required_attrs;
+    if (parsed.data.anatomia_domain !== undefined) patch.anatomiaDomain = parsed.data.anatomia_domain;
 
-    await getDb().update(domains).set(patch).where(eq(domains.id, did));
+    // 対象が :pid のものかを絞ってから更新する (他 project の domain を書き換えられない)。
+    const scope = and(eq(domains.id, did), eq(domains.projectId, pid));
+    const [before] = await getDb().select({ id: domains.id }).from(domains).where(scope).limit(1);
+    if (!before) throw AppError.notFound();
+    await getDb().update(domains).set(patch).where(scope);
     await recordAudit({
       projectId: pid,
       actor: getIdentity(c),
@@ -155,7 +169,7 @@ export function makeDomainRouter(): Hono {
       targetId: did,
       meta: parsed.data,
     });
-    const [row] = await getDb().select().from(domains).where(eq(domains.id, did)).limit(1);
+    const [row] = await getDb().select().from(domains).where(scope).limit(1);
     if (!row) throw AppError.notFound();
     return c.json({ domain: row });
   });
@@ -164,7 +178,7 @@ export function makeDomainRouter(): Hono {
     if (!getDbState().ok) throw AppError.internal('db_unavailable');
     const pid = c.req.param('pid')!;
     const did = c.req.param('did')!;
-    await getDb().delete(domains).where(eq(domains.id, did));
+    await getDb().delete(domains).where(and(eq(domains.id, did), eq(domains.projectId, pid)));
     await recordAudit({
       projectId: pid,
       actor: getIdentity(c),

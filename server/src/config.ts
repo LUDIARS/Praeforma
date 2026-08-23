@@ -12,6 +12,14 @@ export interface AppConfig {
   musaRelayUrl: string | null;
   /** MUSA リレーの bearer token (任意)。 */
   musaRelayToken: string | null;
+  /** claude CLI に固定で渡す --model (任意、 未設定なら付けない)。 */
+  claudeModel: string | null;
+  /** Anatomia web の base URL (ドメイン正本の読み取り)。 未設定なら突合は明示エラー。 */
+  anatomiaUrl: string | null;
+  /** Concordia base URL / bearer / 既定 delegation template。 未設定なら Cc 送出は明示エラー。 */
+  ccUrl: string | null;
+  ccToken: string | null;
+  ccTemplate: string | null;
   /** ローカル「仕様書レビュー」モード: SQLite + Cernere 不要 + 固定ローカルユーザ。 */
   localMode: boolean;
   /** ローカル SQLite ファイルパス。 */
@@ -32,6 +40,11 @@ export function loadConfig(): AppConfig {
     claudeBin: process.env.PRAEFORMA_CLAUDE_BIN ?? 'claude',
     musaRelayUrl: process.env.PRAEFORMA_MUSA_URL ?? null,
     musaRelayToken: process.env.PRAEFORMA_MUSA_TOKEN ?? null,
+    claudeModel: process.env.PRAEFORMA_CLAUDE_MODEL ?? null,
+    anatomiaUrl: process.env.PRAEFORMA_ANATOMIA_URL ?? null,
+    ccUrl: process.env.PRAEFORMA_CC_URL ?? null,
+    ccToken: process.env.PRAEFORMA_CC_TOKEN ?? null,
+    ccTemplate: process.env.PRAEFORMA_CC_TEMPLATE ?? null,
     localMode:
       process.env.PRAEFORMA_LOCAL_MODE === '1' || process.env.PRAEFORMA_LOCAL_MODE === 'true',
     localDbPath: process.env.PRAEFORMA_LOCAL_DB ?? '.praeforma-local/praeforma.sqlite',

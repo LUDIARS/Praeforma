@@ -20,6 +20,7 @@ export const projects = sqliteTable('projects', {
   ownerUserId: text('owner_user_id').notNull(),
   platforms: text('platforms', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => ['web']),
   defaultLayoutId: text('default_layout_id'),
+  anatomiaRepo: text('anatomia_repo'),
   createdAt: ts('created_at').notNull().$defaultFn(now),
   updatedAt: ts('updated_at').notNull().$defaultFn(now),
   deletedAt: ts('deleted_at'),
@@ -45,6 +46,7 @@ export const domains = sqliteTable('domains', {
   parentId: text('parent_id'),
   maxCount: integer('max_count'),
   requiredAttrs: text('required_attrs', { mode: 'json' }).$type<unknown[]>().notNull().$defaultFn(() => []),
+  anatomiaDomain: text('anatomia_domain'),
   createdAt: ts('created_at').notNull().$defaultFn(now),
   updatedAt: ts('updated_at').notNull().$defaultFn(now),
 });
@@ -108,6 +110,69 @@ export const layouts = sqliteTable('layouts', {
   createdAt: ts('created_at').notNull().$defaultFn(now),
   updatedAt: ts('updated_at').notNull().$defaultFn(now),
   deletedAt: ts('deleted_at'),
+});
+
+export const layoutObjects = sqliteTable('layout_objects', {
+  id: text('id').primaryKey(),
+  layoutId: text('layout_id').notNull(),
+  objectId: text('object_id').notNull(),
+  position: text('position', { mode: 'json' }).$type<number[]>().notNull().$defaultFn(() => [0, 0, 0]),
+  rotation: text('rotation', { mode: 'json' }).$type<number[]>().notNull().$defaultFn(() => [0, 0, 0]),
+  scale: text('scale', { mode: 'json' }).$type<number[]>().notNull().$defaultFn(() => [1, 1, 1]),
+  parentLayoutObjectId: text('parent_layout_object_id'),
+  lockTransform: integer('lock_transform', { mode: 'boolean' }).notNull().default(false),
+  ordinal: integer('ordinal').notNull().default(0),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+  updatedAt: ts('updated_at').notNull().$defaultFn(now),
+});
+
+export const transitions = sqliteTable('transitions', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull(),
+  fromLayoutId: text('from_layout_id').notNull(),
+  sourceObjectId: text('source_object_id'),
+  toLayoutId: text('to_layout_id').notNull(),
+  trigger: text('trigger').notNull().default('tap'),
+  condition: text('condition').notNull().default(''),
+  label: text('label'),
+  ordinal: integer('ordinal').notNull().default(0),
+  version: integer('version').notNull().default(1),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+  updatedAt: ts('updated_at').notNull().$defaultFn(now),
+});
+
+export const specConversations = sqliteTable('spec_conversations', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull(),
+  targetKind: text('target_kind').notNull(),
+  targetId: text('target_id').notNull(),
+  title: text('title'),
+  createdBy: text('created_by').notNull(),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+  updatedAt: ts('updated_at').notNull().$defaultFn(now),
+});
+
+export const specMessages = sqliteTable('spec_messages', {
+  id: text('id').primaryKey(),
+  conversationId: text('conversation_id').notNull(),
+  role: text('role').notNull(),
+  content: text('content').notNull(),
+  proposals: text('proposals', { mode: 'json' }).$type<unknown[]>().notNull().$defaultFn(() => []),
+  applied: integer('applied', { mode: 'boolean' }).notNull().default(false),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+});
+
+export const ccLinks = sqliteTable('cc_links', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull(),
+  targetKind: text('target_kind').notNull(),
+  targetId: text('target_id').notNull(),
+  ccKind: text('cc_kind').notNull(),
+  ccId: text('cc_id').notNull(),
+  status: text('status').notNull().default('queued'),
+  lastSyncedAt: ts('last_synced_at'),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+  updatedAt: ts('updated_at').notNull().$defaultFn(now),
 });
 
 export const specs = sqliteTable('specs', {
@@ -209,16 +274,23 @@ export const auditLog = sqliteTable('audit_log', {
 /** drizzle(sqlite, { schema }) に渡す束。 */
 export const sqliteTables = {
   projects, projectMembers, domains, objects, objectAttrs, assets, objectAssets,
-  layouts, specs, specTargets, specAcceptance,
+  layouts, layoutObjects, specs, specTargets, specAcceptance,
   codeGraphNodes, codeGraphEdges, codeGraphRuns, auditLog,
+  transitions, specConversations, specMessages, ccLinks,
 };
 
 /** 起動時に流す DDL (CREATE TABLE IF NOT EXISTS + 必要な UNIQUE INDEX)。 FK は張らない (ローカル単一利用)。 */
+/** 既存 DB へ後から足す列 (重複時はエラーになるので connection 側で個別に try する)。 */
+export const SQLITE_ALTERS: string[] = [
+  `ALTER TABLE domains ADD COLUMN anatomia_domain TEXT`,
+  `ALTER TABLE projects ADD COLUMN anatomia_repo TEXT`,
+];
+
 export const SQLITE_DDL: string[] = [
-  `CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, org_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, platforms TEXT NOT NULL DEFAULT '["web"]', default_layout_id TEXT, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,
+  `CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, org_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, platforms TEXT NOT NULL DEFAULT '["web"]', default_layout_id TEXT, anatomia_repo TEXT, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,
   `CREATE TABLE IF NOT EXISTS project_members (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, user_id TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'viewer', display_name TEXT, joined_at INTEGER, last_seen_at INTEGER)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_project_members_project_user ON project_members(project_id, user_id)`,
-  `CREATE TABLE IF NOT EXISTS domains (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, description TEXT, color TEXT NOT NULL DEFAULT '#888888', icon TEXT, parent_id TEXT, max_count INTEGER, required_attrs TEXT NOT NULL DEFAULT '[]', created_at INTEGER, updated_at INTEGER)`,
+  `CREATE TABLE IF NOT EXISTS domains (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, description TEXT, color TEXT NOT NULL DEFAULT '#888888', icon TEXT, parent_id TEXT, max_count INTEGER, required_attrs TEXT NOT NULL DEFAULT '[]', anatomia_domain TEXT, created_at INTEGER, updated_at INTEGER)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_domains_project_name ON domains(project_id, name)`,
   `CREATE TABLE IF NOT EXISTS objects (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, domain_id TEXT NOT NULL, label TEXT NOT NULL, placeholder_shape TEXT NOT NULL DEFAULT 'cube', placeholder_color TEXT NOT NULL DEFAULT '#888888', placeholder_image_asset_id TEXT, parent_object_id TEXT, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,
   `CREATE TABLE IF NOT EXISTS object_attrs (id INTEGER PRIMARY KEY AUTOINCREMENT, object_id TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, inherited_from TEXT, updated_at INTEGER)`,
@@ -227,6 +299,16 @@ export const SQLITE_DDL: string[] = [
   `CREATE TABLE IF NOT EXISTS object_assets (id INTEGER PRIMARY KEY AUTOINCREMENT, object_id TEXT NOT NULL, platform TEXT NOT NULL, asset_id TEXT NOT NULL, transform_override TEXT, created_at INTEGER, updated_at INTEGER)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_object_assets_object_platform ON object_assets(object_id, platform)`,
   `CREATE TABLE IF NOT EXISTS layouts (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, description TEXT, kind TEXT NOT NULL DEFAULT 'world-3d', is_default INTEGER NOT NULL DEFAULT 0, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,
+  `CREATE TABLE IF NOT EXISTS layout_objects (id TEXT PRIMARY KEY, layout_id TEXT NOT NULL, object_id TEXT NOT NULL, position TEXT NOT NULL DEFAULT '[0,0,0]', rotation TEXT NOT NULL DEFAULT '[0,0,0]', scale TEXT NOT NULL DEFAULT '[1,1,1]', parent_layout_object_id TEXT, lock_transform INTEGER NOT NULL DEFAULT 0, ordinal INTEGER NOT NULL DEFAULT 0, created_at INTEGER, updated_at INTEGER)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS uq_layout_objects_layout_object ON layout_objects(layout_id, object_id)`,
+  `CREATE TABLE IF NOT EXISTS transitions (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, from_layout_id TEXT NOT NULL, source_object_id TEXT, to_layout_id TEXT NOT NULL, trigger TEXT NOT NULL DEFAULT 'tap', condition TEXT NOT NULL DEFAULT '', label TEXT, ordinal INTEGER NOT NULL DEFAULT 0, version INTEGER NOT NULL DEFAULT 1, created_at INTEGER, updated_at INTEGER)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS uq_transitions_source_condition ON transitions(source_object_id, condition) WHERE source_object_id IS NOT NULL`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS uq_transitions_layout_trigger_condition ON transitions(from_layout_id, trigger, condition) WHERE source_object_id IS NULL`,
+  `CREATE TABLE IF NOT EXISTS spec_conversations (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, target_kind TEXT NOT NULL, target_id TEXT NOT NULL, title TEXT, created_by TEXT NOT NULL, created_at INTEGER, updated_at INTEGER)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS uq_spec_conversations_target ON spec_conversations(project_id, target_kind, target_id)`,
+  `CREATE TABLE IF NOT EXISTS spec_messages (id TEXT PRIMARY KEY, conversation_id TEXT NOT NULL, role TEXT NOT NULL, content TEXT NOT NULL, proposals TEXT NOT NULL DEFAULT '[]', applied INTEGER NOT NULL DEFAULT 0, created_at INTEGER)`,
+  `CREATE TABLE IF NOT EXISTS cc_links (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, target_kind TEXT NOT NULL, target_id TEXT NOT NULL, cc_kind TEXT NOT NULL, cc_id TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued', last_synced_at INTEGER, created_at INTEGER, updated_at INTEGER)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS uq_cc_links_cc ON cc_links(project_id, cc_kind, cc_id)`,
   `CREATE TABLE IF NOT EXISTS specs (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, code TEXT NOT NULL, title TEXT NOT NULL, description TEXT, priority TEXT NOT NULL DEFAULT 'should', category TEXT NOT NULL DEFAULT 'behavior', preconditions TEXT NOT NULL DEFAULT '[]', postconditions TEXT NOT NULL DEFAULT '[]', status TEXT NOT NULL DEFAULT 'draft', version INTEGER NOT NULL DEFAULT 1, created_by TEXT NOT NULL, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_specs_project_code ON specs(project_id, code)`,
   `CREATE TABLE IF NOT EXISTS spec_targets (id INTEGER PRIMARY KEY AUTOINCREMENT, spec_id TEXT NOT NULL, kind TEXT NOT NULL, ref_id TEXT NOT NULL)`,

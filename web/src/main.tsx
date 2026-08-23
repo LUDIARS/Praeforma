@@ -8,6 +8,7 @@ import { ProjectListPage } from './pages/ProjectListPage.tsx';
 import { ProjectShowPage } from './pages/ProjectShowPage.tsx';
 import { LayoutEditorPage } from './pages/LayoutEditorPage.tsx';
 import { StudioPage } from './pages/StudioPage.tsx';
+import { ScreenFlowPage } from './pages/ScreenFlowPage.tsx';
 import { getToken, setToken } from './lib/api.ts';
 
 const queryClient = new QueryClient({
@@ -46,6 +47,7 @@ void ensureLocalToken().then(() => {
               <Route index element={<ProjectListPage />} />
               <Route path="projects/:pid" element={<ProjectShowPage />} />
               <Route path="projects/:pid/studio" element={<StudioPage />} />
+              <Route path="projects/:pid/flow" element={<ScreenFlowPage />} />
               <Route path="projects/:pid/layouts/:lid" element={<LayoutEditorPage />} />
             </Route>
           </Routes>

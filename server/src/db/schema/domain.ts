@@ -35,6 +35,8 @@ const domainsPg = pgTable(
     parentId: text('parent_id'),
     maxCount: integer('max_count'),
     requiredAttrs: jsonb('required_attrs').$type<RequiredAttr[]>().notNull().default([]),
+    /** Anatomia (正本) のドメイン名への射影。 null = 未突合。 */
+    anatomiaDomain: text('anatomia_domain'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

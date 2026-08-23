@@ -1,0 +1,29 @@
+{
+  "name": "screen-flow",
+  "description": "UI 仮置きから遷移図と仕様書を生成する。 UI 要素起点の画面遷移、 LLM トークエリア、 Anatomia ドメイン突合、 Concordia 送出。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)server/src/lib/export/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)server/src/lib/(anatomia-domains|cc-client|conversation-prompt|apply-proposals)\\.ts$"
+    },
+    {
+      "pathPattern": "(^|/)server/src/lib/__tests__/screen-flow-pure\\.test\\.ts$"
+    },
+    {
+      "pathPattern": "(^|/)server/src/routes/(transitions|conversations|export|anatomia|cc|widgets)\\.ts$"
+    },
+    {
+      "pathPattern": "(^|/)server/src/db/schema/screen-flow\\.ts$"
+    },
+    {
+      "pathPattern": "(^|/)web/src/components/flow/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)web/src/(pages/ScreenFlowPage\\.tsx|lib/screen-flow-api\\.ts|styles/screen-flow\\.css)$"
+    }
+  ]
+}

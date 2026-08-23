@@ -1,0 +1,79 @@
+/* Screen Flow ページ (3 ペイン + 下段タブ)。 foundation.css の変数を使う。 */
+
+.screen-flow { display: flex; flex-direction: column; gap: 10px; height: calc(100vh - 72px); }
+.screen-flow-top { display: flex; align-items: center; gap: 12px; }
+.screen-flow-top h2 { margin: 0; font-size: 16px; }
+.screen-flow-panes { display: grid; grid-template-columns: 240px 1fr 360px; gap: 10px; flex: 1; min-height: 0; }
+.pane { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+.pane-empty { padding: 24px; }
+.screen-flow-bottom { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; height: 320px; display: flex; flex-direction: column; min-height: 0; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); padding: 6px 10px 0; }
+.tab { background: transparent; border: none; border-bottom: 2px solid transparent; padding: 6px 10px; cursor: pointer; color: var(--muted); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-body { flex: 1; overflow: auto; padding: 10px; }
+.muted { color: var(--muted); font-size: 12px; }
+.error { color: #c0392b; font-size: 12px; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: var(--accent-bg); color: var(--accent); }
+.pill.warn { background: #fff3e0; color: #b35c00; }
+.pill.ok, .pill.done { background: #e6f7ec; color: #1c7c3c; }
+.pill.failed { background: #fdecea; color: #b3261e; }
+.pill.running { background: #e8f0ff; color: #2a6df4; }
+.pill.queued { background: #f1f2f4; color: var(--muted); }
+
+/* 左: ツリー */
+.flow-tree { display: flex; flex-direction: column; gap: 2px; }
+.flow-tree-item { text-align: left; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 13px; }
+.flow-tree-item:hover { background: var(--accent-bg); }
+.flow-tree-item.selected { border-color: var(--accent); background: var(--accent-bg); }
+.flow-tree-item.root { font-weight: 700; }
+.flow-tree-item.widget { margin-left: 14px; }
+.flow-tree-item.transition { margin-left: 14px; color: var(--muted); }
+.flow-tree-screen { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.flow-tree-add { display: flex; gap: 4px; margin-top: 8px; }
+.flow-tree-add input { flex: 1; min-width: 0; }
+
+/* 中央: UI 要素ボード + 遷移 */
+.widget-board { display: flex; flex-direction: column; gap: 8px; }
+.widget-board-head { display: flex; align-items: center; justify-content: space-between; }
+.flow-chip { background: transparent; border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.flow-chip.selected { border-color: var(--accent); background: var(--accent-bg); }
+.widget-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; min-height: 80px; padding: 8px; border: 1px dashed var(--border); border-radius: 8px; }
+.widget-cell { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: #fafbfc; cursor: pointer; text-align: left; }
+.widget-cell.selected { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+.widget-cell.button { background: var(--accent-bg); }
+.widget-cell.input { background: #fff; border-style: solid; }
+.widget-cell.list { background: #f4f6f8; }
+.widget-kind { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+.widget-label { font-size: 13px; }
+.widget-add, .transition-form { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.widget-add input, .transition-form input { flex: 1; min-width: 120px; }
+.transition-editor { border-top: 1px solid var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.transition-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.transition-list li { display: flex; gap: 6px; align-items: center; }
+
+/* 右: トークエリア */
+.talk-area { display: flex; flex-direction: column; height: 100%; min-height: 0; gap: 8px; }
+.talk-head { display: flex; justify-content: space-between; align-items: center; }
+.talk-list { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.talk-msg { border-radius: 10px; padding: 8px 10px; font-size: 13px; white-space: pre-wrap; }
+.talk-msg.user { background: var(--accent-bg); align-self: flex-end; max-width: 92%; }
+.talk-msg.assistant { background: #f4f6f8; align-self: flex-start; max-width: 96%; }
+.talk-proposals { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.proposal-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+.proposal-card.applied { opacity: 0.6; }
+.proposal-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.proposal-body { font-size: 12px; margin-top: 4px; }
+.proposal-body ul { margin: 4px 0 0 16px; padding: 0; }
+.talk-input { display: flex; gap: 6px; align-items: flex-end; }
+.talk-input textarea { flex: 1; resize: vertical; }
+
+/* 下段 */
+.flow-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.flow-svg svg { max-width: 100%; height: auto; }
+.flow-source, .spec-source { font-size: 12px; white-space: pre-wrap; background: #f4f6f8; padding: 10px; border-radius: 8px; }
+.cc-send { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.cc-send input { flex: 1; min-width: 160px; }
+.cc-links, .anatomia-grid table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cc-links th, .cc-links td, .anatomia-grid td { padding: 4px 8px; border-bottom: 1px solid var(--border); text-align: left; }
+.anatomia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.anatomia-grid h4 { margin: 0 0 6px; font-size: 13px; color: var(--muted); }

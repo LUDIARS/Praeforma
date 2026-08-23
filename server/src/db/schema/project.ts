@@ -17,6 +17,8 @@ const projectsPg = pgTable(
     ownerUserId: text('owner_user_id').notNull(),
     platforms: jsonb('platforms').$type<string[]>().notNull().default(['web']),
     defaultLayoutId: text('default_layout_id'),
+    /** Anatomia project id (ドメイン正本の参照先)。 */
+    anatomiaRepo: text('anatomia_repo'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),

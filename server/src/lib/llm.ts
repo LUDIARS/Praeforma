@@ -9,6 +9,15 @@ import { AppError } from './errors.ts';
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 
+/**
+ * `--model` を固定するためのプロセス全体設定 (memory: claude CLI を spawn する機能は
+ * --model を固定する。 既定任せは上限切れの巻き添えで即 exit する)。 null なら付けない。
+ */
+let pinnedModel: string | null = null;
+export function setClaudeModel(model: string | null): void {
+  pinnedModel = model;
+}
+
 /** claude CLI を non-interactive (`-p`) で叩き、 stdout を返す。 プロンプトは stdin 経由。 */
 export function runClaude(
   claudeBin: string,
@@ -18,7 +27,8 @@ export function runClaude(
   return new Promise((resolve, reject) => {
     let child;
     try {
-      child = spawn(claudeBin, ['-p'], { stdio: ['pipe', 'pipe', 'pipe'] });
+      const args = pinnedModel ? ['-p', '--model', pinnedModel] : ['-p'];
+      child = spawn(claudeBin, args, { stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (e) {
       reject(new AppError('llm_spawn_failed', 503, { reason: String(e) }));
       return;
@@ -50,6 +60,9 @@ export function runClaude(
       resolve(out);
     });
 
+    // 子が先に終了すると stdin に EPIPE が来る。 拾わないと unhandled 'error' で
+    // サーバプロセスごと落ちる (終了コードは close ハンドラが拾う)。
+    child.stdin.on('error', () => {});
     child.stdin.write(prompt);
     child.stdin.end();
   });
@@ -98,7 +111,7 @@ export interface SuggestedRequirement {
 
 export interface SuggestInput {
   projectName: string;
-  targetKind: 'domain' | 'scene';
+  targetKind: 'domain' | 'scene' | 'transition';
   targetName: string;
   targetDescription?: string;
   existingTitles?: string[];
@@ -112,7 +125,7 @@ const LEVEL = "manual (人が確認) / assertion (述語) / event (時間軸パ�
 function suggestPrompt(input: SuggestInput): string {
   return [
     'あなたはゲーム/アプリ開発の要件定義アシスタントです。',
-    `プロジェクト「${input.projectName}」の ${input.targetKind === 'domain' ? 'ドメイン' : 'シーン'}「${input.targetName}」に対する要件定義 (requirements) を提案してください。`,
+    `プロジェクト「${input.projectName}」の ${input.targetKind === 'domain' ? 'ドメイン' : input.targetKind === 'transition' ? '画面遷移' : 'シーン'}「${input.targetName}」に対する要件定義 (requirements) を提案してください。`,
     input.targetDescription ? `対象の概要: ${input.targetDescription}` : '',
     input.existingTitles?.length ? `既存の要件 (重複を避ける): ${input.existingTitles.join(' / ')}` : '',
     input.note ? `プランナーからの補足/今やりたいこと: ${input.note}` : '',
@@ -147,7 +160,7 @@ export interface IngestInput {
 }
 
 export interface IngestProposalRequirement extends SuggestedRequirement {
-  targetKind: 'domain' | 'scene';
+  targetKind: 'domain' | 'scene' | 'transition';
   targetName: string;
 }
 
@@ -225,4 +238,18 @@ function normalizeRequirement(r: Partial<SuggestedRequirement>): SuggestedRequir
 
 function normalizeRequirements(rs: Partial<SuggestedRequirement>[]): SuggestedRequirement[] {
   return rs.map(normalizeRequirement);
+}
+
+// ── トークエリア (会話) ────────────────────────────────────────────────────
+
+/** 合成済みプロンプトで 1 往復。 JSON を取り出して返す (形の正規化は呼び側)。 */
+export async function chatOnce(claudeBin: string, prompt: string): Promise<{ raw: unknown; text: string }> {
+  const out = await runClaude(claudeBin, prompt);
+  let raw: unknown = null;
+  try {
+    raw = extractJson<unknown>(out);
+  } catch {
+    raw = null; // JSON が無い応答は本文だけ使う (proposals 空)
+  }
+  return { raw, text: out.trim() };
 }

@@ -16,7 +16,9 @@ import { z } from 'zod';
 import { getDb, getDbState } from '../db/connection.ts';
 import { projects, type ProjectRole } from '../db/schema/project.ts';
 import { domains } from '../db/schema/domain.ts';
-import { layouts } from '../db/schema/layout.ts';
+import { layouts, layoutObjects } from '../db/schema/layout.ts';
+import { objects } from '../db/schema/object.ts';
+import { transitions } from '../db/schema/screen-flow.ts';
 import { specs, specTargets, specAcceptance } from '../db/schema/spec.ts';
 import {
   codeGraphNodes,
@@ -37,9 +39,10 @@ const ALL_ROLES: readonly ProjectRole[] = [
 const EDIT_ROLES: readonly ProjectRole[] = ['owner', 'planner'];
 
 /** UX 上の target 種別 (scene) を DB/graph 上の種別 (layout) に対応付ける。 */
-type UxKind = 'domain' | 'scene';
+type UxKind = 'domain' | 'scene' | 'transition';
 function toGraphKind(k: UxKind): GraphTargetKind {
-  return k === 'scene' ? 'layout' : 'domain';
+  if (k === 'scene') return 'layout';
+  return k; // 'domain' | 'transition' はそのまま (Screen Flow、 migration 004)
 }
 
 async function getProjectName(pid: string): Promise<string> {
@@ -65,6 +68,26 @@ async function resolveTarget(
       .limit(1);
     if (!row) throw AppError.notFound('domain_not_found');
     return row;
+  }
+  if (kind === 'transition') {
+    // 遷移: 「起点 UI 要素 label + trigger + 遷移先画面名」 を MUSA の検索文に合成する
+    const [t] = await getDb()
+      .select()
+      .from(transitions)
+      .where(and(eq(transitions.projectId, pid), eq(transitions.id, id)))
+      .limit(1);
+    if (!t) throw AppError.notFound('transition_not_found');
+    const [to] = await getDb().select({ name: layouts.name }).from(layouts).where(eq(layouts.id, t.toLayoutId)).limit(1);
+    let origin = '(画面)';
+    if (t.sourceObjectId) {
+      const [p] = await getDb().select({ objectId: layoutObjects.objectId }).from(layoutObjects).where(eq(layoutObjects.id, t.sourceObjectId)).limit(1);
+      if (p) {
+        const [o] = await getDb().select({ label: objects.label }).from(objects).where(eq(objects.id, p.objectId)).limit(1);
+        origin = o?.label ?? origin;
+      }
+    }
+    const name = t.label ?? `[${origin}] ${t.trigger} → ${to?.name ?? t.toLayoutId}`;
+    return { name, description: t.condition || null };
   }
   const [row] = await getDb()
     .select({ name: layouts.name, description: layouts.description })
@@ -103,7 +126,7 @@ async function loadRequirementsForTarget(pid: string, graphKind: GraphTargetKind
 }
 
 const targetSchema = z.object({
-  target_kind: z.enum(['domain', 'scene']),
+  target_kind: z.enum(['domain', 'scene', 'transition']),
   target_id: z.string().min(1),
 });
 

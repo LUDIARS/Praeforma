@@ -22,7 +22,8 @@ const EDIT_ROLES: readonly ProjectRole[] = ['owner', 'planner'];
 
 const targetSchema = z.object({
   // 'layout' = シーン (要件定義モードで scene を spec の target にできるよう拡張、 migration 003)
-  kind: z.enum(['object', 'domain', 'project', 'layout']),
+  // 'transition' = 画面遷移 (Screen Flow、 migration 004)
+  kind: z.enum(['object', 'domain', 'project', 'layout', 'transition']),
   ref_id: z.string().min(1),
 });
 

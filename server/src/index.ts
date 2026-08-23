@@ -31,8 +31,16 @@ import { makeSpecRouter } from './routes/specs.ts';
 import { makeAcceptanceRouter } from './routes/acceptance.ts';
 import { makeAssetRouter } from './routes/assets.ts';
 import { makeStudioRouter } from './routes/studio.ts';
+import { makeTransitionRouter } from './routes/transitions.ts';
+import { makeExportRouter } from './routes/export.ts';
+import { makeConversationRouter } from './routes/conversations.ts';
+import { makeAnatomiaRouter } from './routes/anatomia.ts';
+import { makeCcRouter, syncAllCcLinks } from './routes/cc.ts';
+import { makeWidgetRouter } from './routes/widgets.ts';
+import { setClaudeModel } from './lib/llm.ts';
 
 const config = loadConfig();
+setClaudeModel(config.claudeModel);
 
 // DB 接続 (失敗しても起動継続)。 ローカルモードは SQLite、 通常は Postgres。
 const dbState = config.localMode
@@ -122,6 +130,23 @@ app.route(
     config.claudeBin,
   ),
 );
+
+// Screen Flow: 遷移 / 書き出し / LLM トークエリア / Anatomia 突合 / Cc 接続 (spec/feature/screen-flow.md)
+const anatomiaOpts = { anatomiaUrl: config.anatomiaUrl };
+const ccOpts = { ccUrl: config.ccUrl, ccToken: config.ccToken, ccTemplate: config.ccTemplate };
+app.route('/api/projects/:pid/transitions', makeTransitionRouter());
+app.route('/api/projects/:pid/export', makeExportRouter());
+app.route('/api/projects/:pid/layouts/:lid/widgets', makeWidgetRouter());
+app.route('/api/projects/:pid/conversations', makeConversationRouter(config.claudeBin, anatomiaOpts));
+app.route('/api/projects/:pid/anatomia', makeAnatomiaRouter(anatomiaOpts));
+app.route('/api/projects/:pid/cc', makeCcRouter(ccOpts));
+// Cc run 状態の取り込み (30s)。 未設定なら何もしない。
+if (config.ccUrl) {
+  const CC_SYNC_MS = 30_000;
+  setInterval(() => {
+    syncAllCcLinks(ccOpts).catch((e) => console.warn(`[cc] sync tick failed: ${String(e)}`));
+  }, CC_SYNC_MS).unref();
+}
 
 // ローカルモード: ビルド済 web/dist を同一オリジンで配信 (SPA フォールバック付き)。
 if (config.localMode) {

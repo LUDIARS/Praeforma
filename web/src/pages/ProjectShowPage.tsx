@@ -70,6 +70,9 @@ export function ProjectShowPage(): React.ReactElement {
           <Link to={`/projects/${pid}/studio`} className="primary" style={{ textDecoration: 'none' }}>
             要件定義モード →
           </Link>
+          <Link to={`/projects/${pid}/flow`} className="primary" style={{ textDecoration: 'none' }}>
+            Screen Flow →
+          </Link>
         </div>
         <p style={{ color: 'var(--muted)' }}>{p.description}</p>
         <div style={{ fontSize: 12, color: 'var(--muted)' }}>

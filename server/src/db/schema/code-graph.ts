@@ -21,7 +21,7 @@ import {
 } from '../sqlite-schema.ts';
 
 /** 要件束の対象種別。 既存 spec_targets の kind のうちグラフを張る 2 種。 */
-export type GraphTargetKind = 'domain' | 'layout';
+export type GraphTargetKind = 'domain' | 'layout' | 'transition';
 export type GraphNodeType = 'symbol' | 'file' | 'domain' | 'spec' | 'external';
 export type GraphSource = 'anatomia' | 'manual';
 export type GraphNodeStatus = 'linked' | 'candidate' | 'dismissed';

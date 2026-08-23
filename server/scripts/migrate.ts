@@ -11,6 +11,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import pg from 'pg';
+import { splitSqlStatements } from '../src/lib/sql-statements.ts';
 
 const SKIPPABLE_CODES = new Set(['42P07', '42701', '42710', '42P01', '42704', '23505']);
 
@@ -29,10 +30,7 @@ async function getApplied(client: pg.PoolClient): Promise<Set<string>> {
 }
 
 async function runStatements(client: pg.PoolClient, sql: string): Promise<void> {
-  const stmts = sql
-    .split(/;\s*$/m)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !s.startsWith('--'));
+  const stmts = splitSqlStatements(sql);
   for (const stmt of stmts) {
     try {
       await client.query(stmt);

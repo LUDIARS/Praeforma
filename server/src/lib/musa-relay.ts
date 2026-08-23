@@ -23,7 +23,7 @@ export interface MusaRelayOptions {
 export interface MusaAnatomiaRequest {
   project: string;
   target: {
-    kind: 'domain' | 'layout';
+    kind: 'domain' | 'layout' | 'transition';
     id: string;
     name: string;
     description?: string | null;

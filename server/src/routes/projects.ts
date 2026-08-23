@@ -43,6 +43,7 @@ const updateSchema = z.object({
   description: z.string().max(2000).nullish(),
   platforms: z.array(z.string()).optional(),
   default_layout_id: z.string().nullish(),
+  anatomia_repo: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]*(\/[A-Za-z0-9][A-Za-z0-9._-]*)?$/).nullish(),
 });
 
 const addMemberSchema = z.object({
@@ -152,6 +153,7 @@ export function makeProjectRouter(): Hono {
     if (parsed.data.platforms !== undefined) patch.platforms = parsed.data.platforms;
     if (parsed.data.default_layout_id !== undefined)
       patch.defaultLayoutId = parsed.data.default_layout_id;
+    if (parsed.data.anatomia_repo !== undefined) patch.anatomiaRepo = parsed.data.anatomia_repo;
 
     await getDb().update(projects).set(patch).where(eq(projects.id, pid));
     await recordAudit({

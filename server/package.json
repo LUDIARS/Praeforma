@@ -9,6 +9,7 @@
     "start": "tsx --env-file-if-exists=.env.secrets --env-file-if-exists=.env bootstrap.ts",
     "local": "tsx src/local.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node --import tsx --test src/lib/__tests__/*.test.ts src/lib/export/__tests__/*.test.ts",
     "migrate": "tsx scripts/migrate.ts",
     "env:setup": "npx tsx ../../Cernere/packages/env-cli/src/cli.ts setup",
     "env:test": "npx tsx ../../Cernere/packages/env-cli/src/cli.ts test",

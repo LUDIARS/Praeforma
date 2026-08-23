@@ -5,7 +5,7 @@
 **LLM トークエリアでの会話** で育て、 ドメインの正確性は **Anatomia のドメイン定義** で
 担保し、 確定した仕様は **Concordia (Cc)** へ実装タスクとして接続する。
 
-状態: 設計 (2026-08-22 起稿、 neco 確定事項を反映)。 実装は本 spec のレビュー後。
+状態: 実装済 (2026-08-22、 §10 を 1 PR で実装)。 §11 の未決は既定で進めた: Anatomia 未設定時は 503 + 未登録バッジ、 Cc 送出は `PRAEFORMA_CC_TOKEN` の機械 token、 `--model` は `PRAEFORMA_CLAUDE_MODEL`。
 
 ## 1. 確定事項 (neco、 2026-08-22)
 
@@ -13,7 +13,7 @@
 |---|---|---|
 | D1 | 遷移は **UI 要素起点** で持つ | `transitions.source_object_id` が識別の主軸 (PK は別途 `id`、 起点なしを許すため nullable)。 画面→画面の直接遷移は「起点なし」の特例 |
 | D2 | 仕様書は **Markdown + Mermaid** | HTML は作らない。 Mermaid は `flowchart` (遷移図) だけを使い、 `stateDiagram` は使わない |
-| D3 | ドメインは **Anatomia のドメイン定義を参照して正確性を担保** | Praeforma 内の `domains` は Anatomia `spec/domains/*.domain.json` と突き合わせる (§4) |
+| D3 | ドメインは **Anatomia が必ず正本** (neco 2026-08-22 追記)。 Praeforma は自前のドメイン定義を持たず Anatomia の射影として扱う | Praeforma `domains` は Anatomia `domain-view` の `anatomia_domain` へ結ぶ。 **Thaleia(MUSA) は突合しかしない** (ドメイン配布はしない) (§4) |
 | D4 | 仕様書のドメインを **Anatomia を介して連携** | 仕様書の各節に `anatomia_domain` を刻み、 MUSA 経由で code graph と結ぶ (§4.3) |
 | D5 | **LLM トークエリア** で仕様書を会話で作る | 既存 Studio の「中央テキストボックス」を会話スレッドに昇格 (§5) |
 | D6 | **Cc とも接続** | 確定仕様 → Cc delegation / taskflow へ (§6) |
@@ -124,14 +124,22 @@ UNIQUE (`project_id`, `cc_kind`, `cc_id`) — polling の upsert キー。
 
 ### 4.1 正本と突合
 
-- 正本は対象リポの `spec/domains/*.domain.json` (全 71 リポで統一済みの形式。 `name` / `description` / `membership.pathPattern`)。
-- Praeforma の `domains` 行に `anatomia_domain: string | null` を持つ (migration 004、 §10-1)。 プロジェクト設定で **対象リポ** を 1 つ指定し、 MUSA 経由で `GET /relay/anatomia/domains?repo=` を叩いてドメイン一覧を取得する (暫定契約の追加、 §4.4)。
-  - 対象リポの保存先も 004 で足す: `ALTER TABLE projects ADD COLUMN IF NOT EXISTS anatomia_repo text` (nullable)。 未設定なら §4 の突合は行わず全ドメインに未登録バッジを出す。
-  - `repo` は MUSA へそのまま渡る外部入力なので、 サーバ側で `^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)?$` に制限して受ける (path/クエリ注入を作らない)。
+- **正本は Anatomia** (ドメイン情報は Anatomia に集約される。 neco 2026-08-22)。 Praeforma は Anatomia の
+  `GET {PRAEFORMA_ANATOMIA_URL}/api/projects/:id/domain-view` を**読み取り専用**で直接参照し、
+  `views[]` (`domain` / `description` / `implementorCount`) をドメイン一覧とする。 Anatomia project id は
+  `projects.anatomia_repo` に保存する (migration 004、 `^[A-Za-z0-9][A-Za-z0-9._-]*(/[A-Za-z0-9][A-Za-z0-9._-]*)?$` に制限)。
+- **Thaleia(MUSA) は突合しかしない**: 仕様 ↔ コードの対応付け (`/relay/anatomia`, §4.3) のみ。
+  ドメイン一覧の配布は Thaleia を経由しない (従来の「Anatomia 直叩き禁止」は**解析の二重実装禁止**の意味で、
+  正本の読み取り参照はこれに当たらない)。
+- Praeforma の `domains` 行は `anatomia_domain: string | null` を持ち、 Anatomia 側ドメインへの**射影**になる。
+  名前・説明は Anatomia 側を表示優先し、 Praeforma 側 `name` は UI 用の別名に過ぎない。
 - 突合ルール:
   - Praeforma ドメイン作成/改名時、 Anatomia 側に同名 (case-insensitive) があれば自動で `anatomia_domain` を結ぶ。
   - 無い場合は UI で **「Anatomia 未登録」バッジ** を出し、 候補 (description の類似) を提示。 結ばないままでも保存は可 (advisory)。 ただし §6 の Cc 送出時は **必須** (enforced)。
   - Anatomia 側に無いドメインを Praeforma から新設する経路は持たない (ドメイン宣言は実装側 PR で行う。 memory: 新規ディレクトリはドメイン宣言が要る)。
+  - `PRAEFORMA_ANATOMIA_URL` 未設定 / `anatomia_repo` 未設定なら突合は行わず全ドメインに未登録バッジを出す (mock 禁止、 503 `anatomia_unconfigured`)。
+- API: `GET /api/projects/:pid/anatomia/domains` (Anatomia 一覧 + 各 Praeforma ドメインの突合結果)、
+  `POST /api/projects/:pid/anatomia/match` (自動突合を再実行して `anatomia_domain` を埋める)。
 
 ### 4.2 仕様書での扱い
 
@@ -155,14 +163,13 @@ UNIQUE (`project_id`, `cc_kind`, `cc_id`) — polling の upsert キー。
    (003 で無名 CHECK として作られているため、 `\d` で実名を確認してから外す)。
 3. `lib/musa-relay.ts` の `MusaAnatomiaRequest.target.kind` (`'domain' | 'layout'`) に `'transition'` を足す。
 
-### 4.4 MUSA リレー暫定契約の追加
+### 4.4 MUSA リレー暫定契約の変更
 
 | method | path | 役割 |
 |---|---|---|
-| GET | `/relay/anatomia/domains?repo=` | `spec/domains/*.domain.json` の一覧 (`name`, `description`, `membership`) |
-| POST | `/relay/anatomia` (既存) | `target.kind` に `'transition'` を許容 |
+| POST | `/relay/anatomia` (既存) | 突合のみ。 `target.kind` に `'transition'` を許容 |
 
-MUSA(Thaleia) 未実装の現状では **Praeforma 側に `spec/domains` 直読みの fallback は置かない** (直叩き禁止方針を維持)。 未設定時は 503 `musa_relay_unconfigured`。
+ドメイン一覧取得の口は **MUSA に足さない** (Anatomia が正本、 Thaleia は突合のみ)。 未設定時は 503 `musa_relay_unconfigured`。
 
 ## 5. LLM トークエリア (D5)
 
@@ -231,6 +238,8 @@ LLM が直接 DB を書く経路は作らない。
 | POST | `/api/projects/:pid/conversations/:cid/messages` | ユーザ発話 → LLM 応答 (同期、 timeout 120s) | owner/planner |
 | POST | `/api/projects/:pid/conversations/:cid/messages/:mid/apply` | proposals の選択反映 (`indices[]`) | owner/planner |
 | CRUD | `/api/projects/:pid/transitions` | 遷移 | owner/planner (GET は全ロール) |
+| POST | `/api/projects/:pid/layouts/:lid/widgets` | UI 要素を仮置き (object + attrs + 配置を 1 回で。 提案反映と同じ経路) | owner/planner |
+| GET | `/api/projects/:pid/export/model.json` | UI 用の読み取りモデル (画面 / UI 要素 / 遷移 / ドメイン / cc_links) | 全ロール |
 | GET | `/api/projects/:pid/export/flow.mmd` | 遷移図 Mermaid | 全ロール |
 | GET | `/api/projects/:pid/export/spec.md` | 仕様書 Markdown (遷移図を内包) | 全ロール |
 
@@ -256,6 +265,7 @@ delegation の `instruction` は §7 の仕様書 Markdown の **対象節だけ
 
 | 変数 | 役割 |
 |---|---|
+| `PRAEFORMA_ANATOMIA_URL` | Anatomia web の base URL (ドメイン正本の読み取り) |
 | `PRAEFORMA_CC_URL` | Concordia base URL (Excubitor catalog が正本、 ハードコード禁止) |
 | `PRAEFORMA_CC_TOKEN` | bearer |
 | `PRAEFORMA_CC_TEMPLATE` | 既定 delegation template 名 |
