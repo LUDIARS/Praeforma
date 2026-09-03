@@ -1,15 +1,14 @@
 # code-graph — 要件 ↔ 実装処理グラフ (Studio)
 
 要件定義モード (Studio) で、 ドメイン / シーン(=layout) に紐付く要件束を
-**MUSA(Thaleia) 経由で Anatomia にリレー**して得た「関連処理グラフ」を保存する。
+**Anatomia API から直接取得**して正規化した「関連処理グラフ」を保存する。
 
-> Pf × Anatomia = **Thaleia** (企画↔実装トレーサビリティ)。 Praeforma は Anatomia CLI を
-> 直叩きせず、 必ず MUSA を経由する (Calliope 注意書き「エンジン二重実装せずバインド/統括」)。
-> ドキュメント文脈の主体は Praeforma 側なので、 リレー契約は Praeforma 主導で暫定定義する。
+> Studio は `PRAEFORMA_ANATOMIA_URL`（任意で `PRAEFORMA_ANATOMIA_TOKEN`）を用いて、Anatomia の
+> `GET /api/graph` を直接参照する。上流の未設定・失敗は明示エラーにする。
 
 要件本体は既存 `specs` / `spec_acceptance` を再利用する (= 新テーブルを作らない)。
 ここで足すのは Anatomia 由来のグラフ (`code_graph_nodes` / `code_graph_edges`) と
-リレー実行ログ (`code_graph_runs`) のみ。 migration: `003_studio_code_graph.sql`。
+グラフ取得実行ログ (`code_graph_runs`) のみ。 migration: `003_studio_code_graph.sql` / `005_anatomia_direct_graph.sql`。
 
 ## `code_graph_nodes`
 
@@ -53,17 +52,17 @@
 
 ## `code_graph_runs`
 
-MUSA(Thaleia)→Anatomia リレー 1 回 = 1 run。 企画↔実装トレーサビリティのため、
+Anatomia グラフの直接取得 1 回 = 1 run。 企画↔実装トレーサビリティのため、
 いつ・どの要件束で・何を引いたかを残す。
 
 | 列 | 型 | NotNull | Default | 役割 |
 |---|---|---|---|---|
 | `id` | `text` (ULID) | ✓ | ULID | PK |
 | `project_id` / `target_kind` / `target_id` | `text` | ✓ | — | 対象 |
-| `query` | `text` | ✓ | `''` | リレーに渡した検索クエリ |
-| `status` | `text` | ✓ | `'ok'` | `ok` / `error` / `musa_unconfigured` |
+| `query` | `text` | ✓ | `''` | グラフ選択に使う検索クエリ |
+| `status` | `text` | ✓ | `'ok'` | `ok` / `error` / `anatomia_unconfigured` |
 | `node_count` / `edge_count` | `integer` | ✓ | `0` | upsert 件数 |
-| `summary` | `text` |  | NULL | MUSA からの要約 |
-| `raw` | `jsonb` | ✓ | `'{}'` | リレー応答 (失敗時は error detail) |
+| `summary` | `text` |  | NULL | Anatomia 選択結果の要約 |
+| `raw` | `jsonb` | ✓ | `'{}'` | Graph API 応答からの選択結果（失敗時は error detail） |
 | `requested_by` | `text` | ✓ | — | Cernere user UUID |
 | `created_at` | `timestamptz` | ✓ | `now()` | — |

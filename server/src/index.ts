@@ -122,13 +122,10 @@ if (!config.localMode) {
   app.route('/api/projects/:pid/feedback', makeFeedbackRouter());
   app.route('/api/projects/:pid/acceptance', makeAcceptanceRouter());
 }
-// 要件定義モード (Studio): LLM サジェスト + MUSA(Thaleia) 経由 Anatomia グラフ
+// 要件定義モード (Studio): LLM サジェスト + Anatomia 直接グラフ取得
 app.route(
   '/api/projects/:pid/studio',
-  makeStudioRouter(
-    { musaRelayUrl: config.musaRelayUrl, musaRelayToken: config.musaRelayToken },
-    config.claudeBin,
-  ),
+  makeStudioRouter({ baseUrl: config.anatomiaUrl, token: config.anatomiaToken }, config.claudeBin),
 );
 
 // Screen Flow: 遷移 / 書き出し / LLM トークエリア / Anatomia 突合 / Cc 接続 (spec/feature/screen-flow.md)

@@ -8,10 +8,8 @@ export interface AppConfig {
   projectKey: string;
   /** 要件サジェスト用 LLM = claude CLI のバイナリ (LUDIARS 規約: API 不使用、 claude -p)。 */
   claudeBin: string;
-  /** MUSA(Thaleia) リレーの base URL。 未設定なら Anatomia リンクは明示エラー (無言 fallback 禁止)。 */
-  musaRelayUrl: string | null;
-  /** MUSA リレーの bearer token (任意)。 */
-  musaRelayToken: string | null;
+  /** Anatomia の bearer token (任意)。 base URL は anatomiaUrl と共用。 */
+  anatomiaToken: string | null;
   /** claude CLI に固定で渡す --model (任意、 未設定なら付けない)。 */
   claudeModel: string | null;
   /** Anatomia web の base URL (ドメイン正本の読み取り)。 未設定なら突合は明示エラー。 */
@@ -38,8 +36,7 @@ export function loadConfig(): AppConfig {
       `http://localhost:${process.env.PRAEFORMA_PORT ?? 8889}`,
     projectKey: process.env.PRAEFORMA_PROJECT_KEY ?? 'praeforma',
     claudeBin: process.env.PRAEFORMA_CLAUDE_BIN ?? 'claude',
-    musaRelayUrl: process.env.PRAEFORMA_MUSA_URL ?? null,
-    musaRelayToken: process.env.PRAEFORMA_MUSA_TOKEN ?? null,
+    anatomiaToken: process.env.PRAEFORMA_ANATOMIA_TOKEN ?? null,
     claudeModel: process.env.PRAEFORMA_CLAUDE_MODEL ?? null,
     anatomiaUrl: process.env.PRAEFORMA_ANATOMIA_URL ?? null,
     ccUrl: process.env.PRAEFORMA_CC_URL ?? null,

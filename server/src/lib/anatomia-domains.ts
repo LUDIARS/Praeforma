@@ -2,7 +2,7 @@
 //
 //   - ドメイン情報は Anatomia に集約される = Anatomia が必ず正本 (neco 2026-08-22)。
 //     Praeforma は `GET {anatomiaUrl}/api/projects/:id/domain-view` を読み取り専用で参照する。
-//   - Thaleia(MUSA) は仕様↔コードの突合のみ。 ドメイン配布は経由しない。
+//   - Studio の関連処理グラフは Anatomia を直接参照する。ドメイン配布は経由しない。
 //   - 未設定なら mock に落とさず明示エラー (anatomia_unconfigured)。
 //
 // @spec 4.1 正本と突合

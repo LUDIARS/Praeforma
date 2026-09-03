@@ -1,7 +1,7 @@
 // code_graph_nodes + code_graph_edges + code_graph_runs — spec/schema/code-graph.md
 //
-// 要件定義モード (Studio) で domain / layout(=scene) に紐付く要件束を、 MUSA(Thaleia)
-// 経由で Anatomia にリレーして得た「関連処理グラフ」を保存する器。
+// 要件定義モード (Studio) で domain / layout(=scene) に紐付く要件束を、Anatomia から
+// 直接取得して正規化した「関連処理グラフ」を保存する器。
 
 import {
   index,
@@ -93,7 +93,7 @@ const codeGraphEdgesPg = pgTable(
   }),
 );
 
-export type GraphRunStatus = 'ok' | 'error' | 'musa_unconfigured';
+export type GraphRunStatus = 'ok' | 'error' | 'anatomia_unconfigured';
 
 const codeGraphRunsPg = pgTable(
   'code_graph_runs',

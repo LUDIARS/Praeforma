@@ -10,6 +10,10 @@
 
 詳細仕様: [spec/praeforma.md](spec/praeforma.md)
 
+Studio の関連処理グラフは `PRAEFORMA_ANATOMIA_URL`（任意で `PRAEFORMA_ANATOMIA_TOKEN`）を用いて Anatomia
+の API から直接取得する。対象プロジェクトには `anatomia_repo` の設定も必要。詳細は
+[Studio 仕様](spec/feature/studio.md) を参照。
+
 ## ステータス
 
 設計フェーズ。 まず仕様書を書いている段階で、 実装は未着手。

@@ -4,7 +4,7 @@
 //   1. (任意) 資料を ingest → ドラフトのドメイン/シーン/要件を提案
 //   2. メニュー (ドメイン新規/調整・シーン新規/調整) は既存 domains/layouts CRUD に乗る
 //   3. /suggest で LLM (claude -p) から要件+回帰テストを提案 → 確定は既存 /specs で作成
-//   4. /anatomia-link で MUSA(Thaleia) 経由 Anatomia にリレー → code graph を更新
+//   4. /anatomia-link で Anatomia のグラフを直接取得 → code graph を更新
 //   5. graph CRUD で調整
 //
 // role: 参照は全ロール、 変更/サジェスト/リンクは owner/planner (= プランナーの仕事)。
@@ -31,7 +31,7 @@ import { requireRole } from '../middleware/require-role.ts';
 import { AppError } from '../lib/errors.ts';
 import { recordAudit } from '../lib/audit.ts';
 import { suggestRequirements, ingestDocuments } from '../lib/llm.ts';
-import { relayAnatomia, type MusaRelayOptions } from '../lib/musa-relay.ts';
+import { fetchStudioGraph, type AnatomiaGraphOptions } from '../lib/anatomia-graph/client.ts';
 
 const ALL_ROLES: readonly ProjectRole[] = [
   'owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer',
@@ -54,15 +54,30 @@ async function getProjectName(pid: string): Promise<string> {
   return row?.name ?? pid;
 }
 
+async function getAnatomiaProject(pid: string): Promise<string> {
+  const [row] = await getDb()
+    .select({ anatomiaRepo: projects.anatomiaRepo })
+    .from(projects)
+    .where(eq(projects.id, pid))
+    .limit(1);
+  if (!row) throw AppError.notFound('project_not_found');
+  if (!row.anatomiaRepo) throw new AppError('anatomia_repo_unset', 409);
+  return row.anatomiaRepo;
+}
+
 /** UX kind に応じて domain / layout(scene) の名前・概要を解決する。 */
 async function resolveTarget(
   pid: string,
   kind: UxKind,
   id: string,
-): Promise<{ name: string; description: string | null }> {
+): Promise<{ name: string; description: string | null; anatomiaDomain?: string | null }> {
   if (kind === 'domain') {
     const [row] = await getDb()
-      .select({ name: domains.name, description: domains.description })
+      .select({
+        name: domains.name,
+        description: domains.description,
+        anatomiaDomain: domains.anatomiaDomain,
+      })
       .from(domains)
       .where(and(eq(domains.projectId, pid), eq(domains.id, id)))
       .limit(1);
@@ -70,7 +85,7 @@ async function resolveTarget(
     return row;
   }
   if (kind === 'transition') {
-    // 遷移: 「起点 UI 要素 label + trigger + 遷移先画面名」 を MUSA の検索文に合成する
+    // 遷移: 「起点 UI 要素 label + trigger + 遷移先画面名」 をグラフ検索文に合成する
     const [t] = await getDb()
       .select()
       .from(transitions)
@@ -141,10 +156,9 @@ const suggestSchema = targetSchema.extend({
 
 const linkSchema = targetSchema.extend({
   query: z.string().max(2000).optional(),
-  repo: z.string().max(500).optional(),
 });
 
-export function makeStudioRouter(relay: MusaRelayOptions, claudeBin: string): Hono {
+export function makeStudioRouter(anatomia: AnatomiaGraphOptions, claudeBin: string): Hono {
   const r = new Hono();
 
   // ── 1. ingest: 資料 → ドラフト提案 (永続化しない) ──────────────────────
@@ -188,7 +202,7 @@ export function makeStudioRouter(relay: MusaRelayOptions, claudeBin: string): Ho
     return c.json({ requirements });
   });
 
-  // ── 4. anatomia-link: MUSA(Thaleia) 経由でグラフ取得 → upsert ──────────
+  // ── 4. anatomia-link: Anatomia から直接グラフ取得 → upsert ─────────────
   r.post('/anatomia-link', requireAuth, requireRole(EDIT_ROLES), async (c) => {
     if (!getDbState().ok) throw AppError.internal('db_unavailable');
     const pid = c.req.param('pid')!;
@@ -197,29 +211,22 @@ export function makeStudioRouter(relay: MusaRelayOptions, claudeBin: string): Ho
     if (!parsed.success) throw AppError.badRequest('bad_body', parsed.error.flatten());
     const graphKind = toGraphKind(parsed.data.target_kind);
     const target = await resolveTarget(pid, parsed.data.target_kind, parsed.data.target_id);
-    const projectName = await getProjectName(pid);
-    const reqs = await loadRequirementsForTarget(pid, graphKind, parsed.data.target_id);
+    const anatomiaProject = await getAnatomiaProject(pid);
     const query = parsed.data.query ?? `${target.name} の関連処理`;
     const id = getIdentity(c);
 
-    // MUSA リレー (未設定/失敗は明示エラー)。 失敗時も run を error で残す。
+    // Anatomia は未設定/失敗を明示し、失敗時も run を error で残す。
     let result;
     try {
-      result = await relayAnatomia(relay, {
-        project: projectName,
-        target: {
-          kind: graphKind,
-          id: parsed.data.target_id,
-          name: target.name,
-          description: target.description,
-        },
-        requirements: reqs,
+      result = await fetchStudioGraph(
+        anatomia,
+        anatomiaProject,
+        { kind: graphKind, name: target.anatomiaDomain ?? target.name },
         query,
-        repo: parsed.data.repo,
-      });
+      );
     } catch (e) {
-      const status = e instanceof AppError && e.message === 'musa_relay_unconfigured'
-        ? 'musa_unconfigured'
+      const status = e instanceof AppError && e.message === 'anatomia_unconfigured'
+        ? 'anatomia_unconfigured'
         : 'error';
       await getDb().insert(codeGraphRuns).values({
         id: ulid(),

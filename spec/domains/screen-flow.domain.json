@@ -11,6 +11,12 @@
       "pathPattern": "(^|/)server/src/lib/(anatomia-domains|cc-client|conversation-prompt|apply-proposals)\\.ts$"
     },
     {
+      "pathPattern": "(^|/)server/src/lib/anatomia-graph/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)server/src/lib/__tests__/anatomia-graph-(?:client|select)\\.test\\.ts$"
+    },
+    {
       "pathPattern": "(^|/)server/src/lib/__tests__/screen-flow-pure\\.test\\.ts$"
     },
     {
