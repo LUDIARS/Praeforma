@@ -19,10 +19,12 @@ import { EvidencePanel } from '../components/ux-design/EvidencePanel.tsx';
 import type { EvidenceDraft } from '../components/ux-design/EvidencePanel.tsx';
 import { ImageImportPanel } from '../components/ux-design/ImageImportPanel.tsx';
 import { UseCasePanel } from '../components/ux-design/UseCasePanel.tsx';
+import { DefinitionTodoList } from '../components/ux-design/DefinitionTodoList.tsx';
+import { ScenarioFields } from '../components/ux-design/ScenarioFields.tsx';
 import { ScenarioSummary } from '../components/ux-design/ScenarioSummary.tsx';
 import { useCanvasHistory } from '../components/ux-design/useCanvasHistory.ts';
 
-type WorkspaceTab = 'canvas' | 'boundaries' | 'evidence';
+type WorkspaceTab = 'definition' | 'canvas' | 'boundaries' | 'evidence';
 const emptyCanvas: UxCanvasDocument = { revision: 0, frames: [], elements: [], transitions: [] };
 
 function errorText(error: unknown): string {
@@ -64,7 +66,7 @@ interface WorkspaceEditorProps {
 
 function WorkspaceEditor({ projectId, workspace, onReload }: WorkspaceEditorProps): React.ReactElement {
   const initialCanvas = React.useMemo(() => recoverDraft(projectId, workspace.scenario.id, workspace.canvas), [projectId, workspace.scenario.id, workspace.canvas]);
-  const [tab, setTab] = React.useState<WorkspaceTab>('canvas');
+  const [tab, setTab] = React.useState<WorkspaceTab>('definition');
   const [isDirty, setDirty] = React.useState(() => JSON.stringify(initialCanvas) !== JSON.stringify(workspace.canvas));
   const [message, setMessage] = React.useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [imageResult, setImageResult] = React.useState<ImageLayoutAnalysis | null>(null);
@@ -163,9 +165,10 @@ function WorkspaceEditor({ projectId, workspace, onReload }: WorkspaceEditorProp
       <ScenarioSummary scenario={workspace.scenario} isSaving={updateScenarioM.isPending} onUpdate={(fields) => updateScenarioM.mutate(fields)} />
       <UseCasePanel useCases={workspace.useCases} isSaving={createUseCaseM.isPending || updateUseCaseM.isPending} onCreate={(draft) => createUseCaseM.mutate(draft)} onUpdate={(useCase, draft) => updateUseCaseM.mutate({ useCase, draft })} />
       <nav className="ux-workspace-tabs" aria-label="設計ビュー">
-        {([['canvas', '画面・遷移'], ['boundaries', '境界レビュー'], ['evidence', '実装・検証']] as Array<[WorkspaceTab, string]>).map(([value, label]) => <button key={value} type="button" className={tab === value ? 'active' : ''} onClick={() => setTab(value)}>{label}</button>)}
+        {([['definition', 'UX定義'], ['canvas', '画面・遷移'], ['boundaries', '境界レビュー'], ['evidence', '実装・検証']] as Array<[WorkspaceTab, string]>).map(([value, label]) => <button key={value} type="button" className={tab === value ? 'active' : ''} onClick={() => setTab(value)}>{label}</button>)}
       </nav>
       {message ? <div className={`ux-message ${message.kind}`} role="status">{message.text}{message.kind === 'error' ? <button type="button" onClick={onReload}>最新状態を取得</button> : null}{workspace.canvas.revision !== history.canvas.revision ? <><button type="button" onClick={() => { history.reset(workspace.canvas); setDirty(false); localStorage.removeItem(storageKey); setMessage({ kind: 'ok', text: 'サーバ版を採用しました' }); }}>サーバ版を採用</button><button type="button" onClick={() => { history.reset({ ...history.canvas, revision: workspace.canvas.revision }); setDirty(true); setMessage({ kind: 'ok', text: 'ローカル下書きを最新 revision に載せ替えました。内容を確認して保存してください。' }); }}>ローカル案を載せ替え</button></> : null}</div> : null}
+      {tab === 'definition' ? <section className="ux-definition-guide"><h3>UX定義</h3><p>上のシナリオ欄と use case 欄で、誰が・どんな状況で・何を達成し・どうなれば成功かを文章で定義します。画面や遷移は「画面・遷移」タブで扱います。</p></section> : null}
       {tab === 'canvas' ? <>
         <ImageImportPanel result={imageResult} isAnalyzing={imageM.isPending} isApplying={applyImageM.isPending} isDisabled={isDirty} onAnalyze={(file) => imageM.mutate(file)} onApply={(ids) => applyImageM.mutate(ids)} />
         <DesignCanvas canvas={history.canvas} onPreview={history.preview} onCancelPreview={history.cancelPreview} onChange={(next) => { history.replace(next); setDirty(true); }} onUndo={history.undo} onRedo={history.redo} canUndo={history.canUndo} canRedo={history.canRedo} onSave={() => saveCanvasM.mutate(history.canvas)} isSaving={saveCanvasM.isPending} isReadOnly={applyImageM.isPending} />
@@ -180,6 +183,7 @@ export function UxCoreDesignPage(): React.ReactElement {
   const { pid = '' } = useParams();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [showTodos, setShowTodos] = React.useState(true);
   const [showCreate, setShowCreate] = React.useState(false);
   const [scenarioDraft, setScenarioDraft] = React.useState({ name: '', actor: '', context: '', goal: '', successOutcome: '', sourceProjectKey: '', sourceRefs: [] as string[] });
 
@@ -198,11 +202,19 @@ export function UxCoreDesignPage(): React.ReactElement {
   return (
     <div className="ux-design-page">
       <header className="ux-page-header"><div><Link to={`/projects/${pid}`}>← {projectName}</Link><h1>UX / Core Domain Design</h1><p>体験から use case を定義し、責務と境界を設計します。非コアドメインは Anatomia が管理します。</p></div>{workspaceQ.data?.workspace.scenario.sourceProjectKey ? <span className="ux-project-chip">Source: {workspaceQ.data.workspace.scenario.sourceProjectKey}</span> : null}</header>
+      <button className="ghost" type="button" onClick={() => setShowTodos((value) => !value)}>{showTodos ? 'TODO一覧を閉じる' : 'ドメイン整理TODOを開く'}</button>
+      {showTodos ? <DefinitionTodoList canOpen={scenariosQ.isSuccess && !createScenarioM.isPending} projectId={pid} scenarios={scenariosQ.data?.items ?? []} onOpen={(id) => { setSelectedId(id); setShowTodos(false); }} onDefine={(todo) => {
+        const hasInput = showCreate && Object.values(scenarioDraft).some((value) => typeof value === 'string' && value.length > 0);
+        if (hasInput && !window.confirm('入力中の新規UXを破棄して、この項目を開きますか？')) return;
+        setScenarioDraft({ name: todo.name.slice(0, 200), actor: '', context: '', goal: '', successOutcome: '', sourceProjectKey: '', sourceRefs: [todo.ref] });
+        setShowCreate(true); setShowTodos(false);
+      }} /> : null}
       <div className="ux-design-shell">
         <aside className="ux-scenario-rail">
-          <div className="ux-section-heading"><h2>シナリオ</h2><button type="button" className="ghost" onClick={() => setShowCreate((value) => !value)}>＋</button></div>
+          <div className="ux-section-heading"><h2>シナリオ</h2><button type="button" className="ghost" onClick={() => setShowCreate((value) => !value)}>新しいUX</button></div>
           {showCreate ? <form className="foundation-form ux-create-scenario" onSubmit={(event) => { event.preventDefault(); createScenarioM.mutate(); }}>
-            {([['name', 'シナリオ名'], ['actor', '誰が'], ['context', 'どんな状況で'], ['goal', '何を達成する'], ['successOutcome', '成功条件'], ['sourceProjectKey', '題材プロジェクト (例: Mp)']] as const).map(([key, label]) => <label key={key} className="simple-field"><span>{label}</span><input required={key !== 'sourceProjectKey'} value={scenarioDraft[key]} onChange={(event) => setScenarioDraft((current) => ({ ...current, [key]: event.target.value }))} /></label>)}
+            <ScenarioFields value={scenarioDraft} disabled={createScenarioM.isPending} onChange={(key, value) => setScenarioDraft((current) => ({ ...current, [key]: value }))} />
+            {scenarioDraft.sourceRefs.length > 0 ? <p className="muted">選択したTODOの根拠をUXと一緒に保存します。</p> : null}
             <button className="primary" type="submit" disabled={createScenarioM.isPending}>作成</button>
             {createScenarioM.isError ? <span className="error">{errorText(createScenarioM.error)}</span> : null}
           </form> : null}

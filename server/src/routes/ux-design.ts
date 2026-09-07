@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { makeDefinitionTodosRouter } from './ux-definition-todos.ts';
 import { bodyLimit } from 'hono/body-limit';
 import { createHash } from 'node:crypto';
 import { and, desc, eq } from 'drizzle-orm';
@@ -104,6 +105,7 @@ export function makeUxDesignRouter(options: {
   genius: GeniusOptions;
 }): Hono {
   const r = new Hono();
+  r.route('/', makeDefinitionTodosRouter(options.anatomia));
 
   r.get('/scenarios', requireAuth, requireRole(ALL_ROLES), async (c) => {
     if (!getDbState().ok) throw AppError.internal('db_unavailable');

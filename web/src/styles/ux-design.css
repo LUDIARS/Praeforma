@@ -1,4 +1,25 @@
 .ux-design-page { width: min(1600px, calc(100vw - 32px)); margin-left: 50%; transform: translateX(-50%); }
+.ux-scenario-fields { display: grid; gap: 12px; border: 0; padding: 0; margin: 0; min-width: 0; width: 100%; }
+.ux-scenario-fields textarea { resize: vertical; min-height: 100px; }
+.ux-scenario-summary { flex-wrap: wrap; }
+.ux-scenario-summary p, .ux-scenario-summary strong { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ux-definition-todos { margin: 16px 0; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+.ux-definition-todo-list { display: grid; gap: 12px; padding-left: 24px; }
+.ux-definition-todo-list li { padding: 12px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.ux-definition-todo-list h3 { margin: 8px 0; }
+.ux-definition-guide h3 { margin: 0 0 6px; }
+.ux-definition-guide p { margin: 0; color: var(--muted); }
+@media (max-width: 760px) {
+  .ux-design-page .ux-section-heading { flex-wrap: wrap; gap: 8px; }
+  .ux-design-page input, .ux-design-page textarea, .ux-design-page select { font-size: 16px; max-width: 100%; }
+  .ux-design-page button { min-height: 44px; }
+  .ux-design-page .ux-scenario-edit, .ux-design-page .ux-use-case-form { grid-template-columns: minmax(0, 1fr); }
+  .ux-design-page .ux-use-case-list { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .ux-design-page .ux-use-case-list article { min-width: 0; overflow-wrap: anywhere; }
+  .ux-definition-todos { padding: 12px; }
+  .ux-definition-todos .ux-kicker { white-space: normal; }
+  .ux-design-page .simple-field { min-width: 0; }
+}
 .ux-page-header, .ux-section-heading, .ux-scenario-summary, .ux-proposal-card > header, .ux-evidence-grid article > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .ux-page-header h1 { margin: 8px 0 4px; font-size: 24px; }
 .ux-page-header p, .ux-section-heading p, .ux-import-panel p, .ux-evidence-panel > p { margin: 0; color: var(--muted); }
