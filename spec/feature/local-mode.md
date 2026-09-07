@@ -5,14 +5,27 @@ Praeforma を **Postgres も Cernere も無しで** ローカル単体起動す�
 
 ## 起動
 
+### Cloudflare Tunnelから利用する
+
+Pfは常に `127.0.0.1` で待ち受け、他サービスと同じ既存Cloudflare Tunnelから接続する。
+LAN直接公開とWindows受信許可追加は行わない。
+公開URLは `PRAEFORMA_PUBLIC_URL` にHTTPSの正確なOriginを設定する。
+Tunnelのルート・DNS・既存アクセス制御はExの管理APIで確認して適用する。
+Tunnel開通まではExの画面リンクをloopbackのまま保持し、開通後に公開URLへ更新する。
+
+Anatomia接続先は `PRAEFORMA_ANATOMIA_URL` の明示設定、またはExがcatalogから注入する
+`ANATOMIA_URL` を使用する。プロジェクトの `anatomiaRepo` にはAnatomiaの登録IDを設定する。
+
 普段の利用は Excubitor の `praeforma` を起動セットへ追加して起動する。
 サービス定義とポートの正本はリポジトリ直下の `excubitor.catalog.yaml`。
 Excubitor は本体フォルダで Web をビルドしてからローカルモードを起動し、
 本体の `.praeforma-local/praeforma.sqlite` を使用する。
 認証を省略するローカルモードの HTTP リスナーは `127.0.0.1` に限定する。
 loopback 束縛は他ホストからの到達のみを塞ぐ。 browser は任意の web ページから
-`127.0.0.1` へ到達できるため、 CORS も同一ポートの loopback Origin に限定する
-(それ以外は `Access-Control-Allow-Origin` を返さない)。
+`127.0.0.1` へ到達できるため、Originは同一ポートのloopback (`127.0.0.1` / `localhost` /
+`[::1]`) または設定済みHTTPS公開URLに限定する。それ以外のOrigin付きリクエストは403で拒否する。
+CORSは応答の読み取りしか制限しないため、cross-site form POST のようにOriginが付かない
+状態変更要求も403で拒否する (GET / HEAD / OPTIONS 以外はOriginを必須とする)。
 起動・再起動の確認は Concordia の testing claim / release で調整する。
 以下はスクリプトの説明であり、運用時の直接起動には使用しない。
 

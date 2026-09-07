@@ -20,6 +20,7 @@ import { initDb, initLocalDb, getDbState } from './db/connection.ts';
 import { startPaseto } from './auth/paseto.ts';
 import { requireAuth, getIdentity, enableLocalAuth } from './middleware/require-auth.ts';
 import { AppError } from './lib/errors.ts';
+import { isAllowedLocalOrigin, requiresOriginHeader } from './lib/local-access.ts';
 import { makeReferenceRouter } from './routes/references.ts';
 import { makeReferenceContentRouter } from './routes/reference-content.ts';
 import { makeFeedbackRouter } from './routes/feedback.ts';
@@ -65,23 +66,22 @@ if (config.localMode) {
   });
 }
 
-/** ローカルモードで許可する Origin = 自ポートの loopback のみ。 */
-function isLocalOrigin(origin: string): boolean {
-  if (!origin) return false;
-  let u: URL;
-  try {
-    u = new URL(origin);
-  } catch {
-    return false;
-  }
-  if (u.protocol !== 'http:') return false;
-  if (u.hostname !== '127.0.0.1' && u.hostname !== 'localhost' && u.hostname !== '[::1]') {
-    return false;
-  }
-  return Number(u.port || 80) === config.port;
-}
-
 const app = new Hono();
+app.use('*', async (c, next) => {
+  if (config.localMode) {
+    const origin = c.req.header('origin');
+    if (origin) {
+      if (!isAllowedLocalOrigin(origin, config.publicUrl, config.port)) {
+        return c.json({ error: 'local_origin_rejected' }, 403);
+      }
+    } else if (requiresOriginHeader(c.req.method)) {
+      // browser の cross-site form POST 等は Origin を付けずに届く。 認証が無い
+      // ローカルモードでは、 これを通すと任意の web ページから書き換えられる。
+      return c.json({ error: 'local_origin_required' }, 403);
+    }
+  }
+  await next();
+});
 
 // ローカルモードは認証を持たないため、 loopback 束縛だけでは browser 経由の
 // cross-origin 到達を防げない (任意の web ページが 127.0.0.1 を叩ける)。
@@ -89,7 +89,7 @@ const app = new Hono();
 app.use(
   '*',
   cors({
-    origin: (origin) => (config.localMode ? (isLocalOrigin(origin) ? origin : null) : '*'),
+    origin: (origin) => (config.localMode ? (isAllowedLocalOrigin(origin, config.publicUrl, config.port) ? origin : null) : '*'),
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['content-type', 'authorization'],
   }),

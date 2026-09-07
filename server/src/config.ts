@@ -40,7 +40,7 @@ export function loadConfig(): AppConfig {
     claudeBin: process.env.PRAEFORMA_CLAUDE_BIN ?? 'claude',
     anatomiaToken: process.env.PRAEFORMA_ANATOMIA_TOKEN ?? null,
     claudeModel: process.env.PRAEFORMA_CLAUDE_MODEL ?? null,
-    anatomiaUrl: process.env.PRAEFORMA_ANATOMIA_URL ?? null,
+    anatomiaUrl: process.env.PRAEFORMA_ANATOMIA_URL ?? process.env.ANATOMIA_URL ?? null,
     geniusUrl: process.env.PRAEFORMA_GENIUS_URL ?? null,
     ccUrl: process.env.PRAEFORMA_CC_URL ?? null,
     ccToken: process.env.PRAEFORMA_CC_TOKEN ?? null,

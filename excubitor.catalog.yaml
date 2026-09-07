@@ -20,9 +20,10 @@ services:
     restart_policy: "no"
     env:
       PRAEFORMA_LOCAL_MODE: "1"
+      PRAEFORMA_PUBLIC_URL: https://pf.ai-run-do.com
       PRAEFORMA_LOCAL_DB: ${ARS_ROOT}/Praeforma/.praeforma-local/praeforma.sqlite
     provides:
-      PRAEFORMA_URL: http://${host}:${port}
+      PRAEFORMA_URL: http://127.0.0.1:${port}
     health:
       type: http
       url: http://127.0.0.1:8889/api/health
