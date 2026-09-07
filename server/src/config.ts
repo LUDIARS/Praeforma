@@ -14,6 +14,8 @@ export interface AppConfig {
   claudeModel: string | null;
   /** Anatomia web の base URL (ドメイン正本の読み取り)。 未設定なら突合は明示エラー。 */
   anatomiaUrl: string | null;
+  /** Genius judgment-card API base URL. No implicit local-port fallback. */
+  geniusUrl: string | null;
   /** Concordia base URL / bearer / 既定 delegation template。 未設定なら Cc 送出は明示エラー。 */
   ccUrl: string | null;
   ccToken: string | null;
@@ -39,6 +41,7 @@ export function loadConfig(): AppConfig {
     anatomiaToken: process.env.PRAEFORMA_ANATOMIA_TOKEN ?? null,
     claudeModel: process.env.PRAEFORMA_CLAUDE_MODEL ?? null,
     anatomiaUrl: process.env.PRAEFORMA_ANATOMIA_URL ?? null,
+    geniusUrl: process.env.PRAEFORMA_GENIUS_URL ?? null,
     ccUrl: process.env.PRAEFORMA_CC_URL ?? null,
     ccToken: process.env.PRAEFORMA_CC_TOKEN ?? null,
     ccTemplate: process.env.PRAEFORMA_CC_TEMPLATE ?? null,

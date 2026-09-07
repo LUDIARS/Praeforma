@@ -19,6 +19,9 @@ content が実装済。
 | | `/api/projects/:pid` | get / patch / delete |
 | | `/api/projects/:pid/members[...]` | CRUD (owner only) |
 | **domains** | `/api/projects/:pid/domains` | CRUD + 継承解決 (`resolveInheritedAttrs`) |
+| **UX core design** | `/api/projects/:pid/ux-design/scenarios[...]` | UX scenario / use case / canvas / boundary review |
+| | `/api/projects/:pid/ux-design/scenarios/:sid/analysis` | LLM 分解 + Anatomia + Genius 判断照合 |
+| | `/api/projects/:pid/ux-design/scenarios/:sid/evidence` | 版付き実装・検証証拠 |
 | **objects** | `/api/projects/:pid/objects` | CRUD + soft delete |
 | | `/api/projects/:pid/objects/:oid/attrs` | bulk replace |
 | **layouts** | `/api/projects/:pid/layouts` | CRUD |
@@ -88,10 +91,11 @@ HTTP status は `AppError` (400 / 401 / 403 / 404 / 409 / 500) を使う。
 
 ## 楽観ロック
 
-- `specs` のみ `version` を持つ
+- 既存 API では `specs` が `version` を持つ
 - PATCH `/api/projects/:pid/specs/:sid` は `prev_version` 必須
 - 不一致は `409 Conflict` + `{ server_version, provided_version }`
-- 他テーブル (objects/layouts/...) は LWW 既定 (= 競合検出なし)
+- UX Design は scenario/use-case/canvas の `revision` と、解析・判断の入力 snapshot で競合を検出する
+- その他の既存テーブル (objects/layouts/...) は LWW 既定 (= 競合検出なし)
 
 ## audit_log 蓄積
 

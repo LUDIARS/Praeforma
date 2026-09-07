@@ -1,8 +1,8 @@
 # Praeforma
 
-**仕様書 ↔ 実装連携ツール** — プランナーが placeholder で配置 + 仕様を書く →
-デザイナーが art を当てる → プログラマーが仕様通り実装する、 を 1 つの
-プロジェクトとして繋ぐ汎用ツール (ゲーム / 業務システム / 教育コンテンツ等)。
+**UX・コアドメイン設計 ↔ 実装連携ツール** — UX scenario と use case から責務・業務ルール・
+コアドメイン境界を設計し、編集可能な画面フロー、Anatomia の実装、版付きの検証証拠を
+一つのプロジェクトとして繋ぐ汎用ツール。
 
 > 命名: Latin **Praeforma** = 「前形 / 雛形 / template」。 placeholder という
 > 「後で実体が入る型枠」 を作り、 designer / programmer がそこに具体物を
@@ -10,13 +10,15 @@
 
 詳細仕様: [spec/praeforma.md](spec/praeforma.md)
 
+UX・コアドメイン設計: [spec/feature/ux-core-design.md](spec/feature/ux-core-design.md)
+
 Studio の関連処理グラフは `PRAEFORMA_ANATOMIA_URL`（任意で `PRAEFORMA_ANATOMIA_TOKEN`）を用いて Anatomia
 の API から直接取得する。対象プロジェクトには `anatomia_repo` の設定も必要。詳細は
 [Studio 仕様](spec/feature/studio.md) を参照。
 
 ## ステータス
 
-設計フェーズ。 まず仕様書を書いている段階で、 実装は未着手。
+UX・コアドメイン設計の初期実装まで完了。型検査済みで、単体・統合・動作・起動テストは未実施。
 
 ## 想定プラットフォーム
 

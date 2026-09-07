@@ -67,12 +67,16 @@ export function ProjectShowPage(): React.ReactElement {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <h2 style={{ margin: 0 }}>{p.name}</h2>
           <div style={{ flex: 1 }} />
-          <Link to={`/projects/${pid}/studio`} className="primary" style={{ textDecoration: 'none' }}>
-            要件定義モード →
+          <Link to={`/projects/${pid}/ux-design`} className="primary" style={{ textDecoration: 'none' }}>
+            UX / Core Domain Design →
           </Link>
-          <Link to={`/projects/${pid}/flow`} className="primary" style={{ textDecoration: 'none' }}>
-            Screen Flow →
-          </Link>
+          <details>
+            <summary className="ghost">旧設計ビュー</summary>
+            <div style={{ display: 'grid', gap: 6, marginTop: 6 }}>
+              <Link to={`/projects/${pid}/studio`}>旧 要件定義モード</Link>
+              <Link to={`/projects/${pid}/flow`}>旧 Screen Flow</Link>
+            </div>
+          </details>
         </div>
         <p style={{ color: 'var(--muted)' }}>{p.description}</p>
         <div style={{ fontSize: 12, color: 'var(--muted)' }}>

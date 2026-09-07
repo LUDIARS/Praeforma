@@ -23,6 +23,7 @@ const config: EnvCliConfig = {
     // Infisical 側で供給する (.env に平文で書かせない)。
     PRAEFORMA_CLAUDE_MODEL: "",
     PRAEFORMA_ANATOMIA_URL: "",
+    PRAEFORMA_GENIUS_URL: "",
     PRAEFORMA_CC_URL: "",
     PRAEFORMA_CC_TEMPLATE: "",
   },

@@ -37,6 +37,7 @@ import { makeConversationRouter } from './routes/conversations.ts';
 import { makeAnatomiaRouter } from './routes/anatomia.ts';
 import { makeCcRouter, syncAllCcLinks } from './routes/cc.ts';
 import { makeWidgetRouter } from './routes/widgets.ts';
+import { makeUxDesignRouter } from './routes/ux-design.ts';
 import { setClaudeModel } from './lib/llm.ts';
 
 const config = loadConfig();
@@ -70,7 +71,7 @@ app.use(
   '*',
   cors({
     origin: '*',
-    allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['content-type', 'authorization'],
   }),
 );
@@ -137,6 +138,11 @@ app.route('/api/projects/:pid/layouts/:lid/widgets', makeWidgetRouter());
 app.route('/api/projects/:pid/conversations', makeConversationRouter(config.claudeBin, anatomiaOpts));
 app.route('/api/projects/:pid/anatomia', makeAnatomiaRouter(anatomiaOpts));
 app.route('/api/projects/:pid/cc', makeCcRouter(ccOpts));
+app.route('/api/projects/:pid/ux-design', makeUxDesignRouter({
+  claudeBin: config.claudeBin,
+  anatomia: { baseUrl: config.anatomiaUrl, token: config.anatomiaToken },
+  genius: { baseUrl: config.geniusUrl },
+}));
 // Cc run 状態の取り込み (30s)。 未設定なら何もしない。
 if (config.ccUrl) {
   const CC_SYNC_MS = 30_000;

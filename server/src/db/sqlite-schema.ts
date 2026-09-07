@@ -257,6 +257,140 @@ export const codeGraphRuns = sqliteTable('code_graph_runs', {
   createdAt: ts('created_at').notNull().$defaultFn(now),
 });
 
+export const uxScenarios = sqliteTable('ux_scenarios', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull(),
+  name: text('name').notNull(),
+  actor: text('actor').notNull(),
+  context: text('context').notNull().default(''),
+  goal: text('goal').notNull(),
+  successOutcome: text('success_outcome').notNull(),
+  sourceProjectKey: text('source_project_key'),
+  sourceRefs: text('source_refs', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  status: text('status').notNull().default('draft'),
+  revision: integer('revision').notNull().default(1),
+  createdBy: text('created_by').notNull(),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+  updatedAt: ts('updated_at').notNull().$defaultFn(now),
+});
+
+export const uxUseCases = sqliteTable('ux_use_cases', {
+  id: text('id').primaryKey(),
+  scenarioId: text('scenario_id').notNull(),
+  title: text('title').notNull(),
+  userIntent: text('user_intent').notNull(),
+  trigger: text('trigger').notNull(),
+  preconditions: text('preconditions', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  successOutcome: text('success_outcome').notNull(),
+  failureOutcomes: text('failure_outcomes', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  interruptionRecovery: text('interruption_recovery').notNull().default(''),
+  ordinal: integer('ordinal').notNull().default(0),
+  revision: integer('revision').notNull().default(1),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+  updatedAt: ts('updated_at').notNull().$defaultFn(now),
+});
+
+export const uxCanvases = sqliteTable('ux_canvases', {
+  scenarioId: text('scenario_id').primaryKey(),
+  revision: integer('revision').notNull().default(1),
+  frames: text('frames', { mode: 'json' }).$type<unknown[]>().notNull().$defaultFn(() => []),
+  elements: text('elements', { mode: 'json' }).$type<unknown[]>().notNull().$defaultFn(() => []),
+  transitions: text('transitions', { mode: 'json' }).$type<unknown[]>().notNull().$defaultFn(() => []),
+  appliedImageAnalysisIds: text('applied_image_analysis_ids', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  updatedBy: text('updated_by').notNull(),
+  updatedAt: ts('updated_at').notNull().$defaultFn(now),
+});
+
+export const uxAnalysisRuns = sqliteTable('ux_analysis_runs', {
+  id: text('id').primaryKey(),
+  scenarioId: text('scenario_id').notNull(),
+  scenarioRevision: integer('scenario_revision').notNull(),
+  useCaseIds: text('use_case_ids', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  useCaseRevisions: text('use_case_revisions', { mode: 'json' }).$type<Record<string, number>>().notNull().$defaultFn(() => ({})),
+  note: text('note'),
+  visibility: text('visibility').notNull().default('sensitive'),
+  status: text('status').notNull().default('running'),
+  anatomiaSourceRevision: text('anatomia_source_revision'),
+  geniusQuery: text('genius_query', { mode: 'json' }).$type<Record<string, unknown>>().notNull().$defaultFn(() => ({})),
+  errorCode: text('error_code'),
+  requestedBy: text('requested_by').notNull(),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+  completedAt: ts('completed_at'),
+});
+
+export const uxBoundaryProposals = sqliteTable('ux_boundary_proposals', {
+  id: text('id').primaryKey(),
+  analysisId: text('analysis_id').notNull(),
+  scenarioId: text('scenario_id').notNull(),
+  useCaseIds: text('use_case_ids', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  name: text('name').notNull(),
+  purpose: text('purpose').notNull(),
+  classification: text('classification').notNull(),
+  responsibilities: text('responsibilities', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  businessRules: text('business_rules', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  inScope: text('in_scope', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  outOfScope: text('out_of_scope', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  collaborations: text('collaborations', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  assumptions: text('assumptions', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  unresolvedQuestions: text('unresolved_questions', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  alternatives: text('alternatives', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  confidence: integer('confidence').notNull(),
+  rationale: text('rationale').notNull(),
+  existingDomainRefs: text('existing_domain_refs', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  geniusAssessments: text('genius_assessments', { mode: 'json' }).$type<unknown[]>().notNull().$defaultFn(() => []),
+  humanQuestions: text('human_questions', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  status: text('status').notNull().default('pending'),
+  revision: integer('revision').notNull().default(1),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+  updatedAt: ts('updated_at').notNull().$defaultFn(now),
+});
+
+export const uxBoundaryDecisions = sqliteTable('ux_boundary_decisions', {
+  id: text('id').primaryKey(),
+  scenarioId: text('scenario_id').notNull(),
+  proposalId: text('proposal_id').notNull(),
+  action: text('action').notNull(),
+  proposalRevision: integer('proposal_revision').notNull(),
+  rationale: text('rationale').notNull(),
+  resultBoundaries: text('result_boundaries', { mode: 'json' }).$type<unknown[]>().notNull().$defaultFn(() => []),
+  decidedBy: text('decided_by').notNull(),
+  geniusPublishStatus: text('genius_publish_status').notNull().default('not_requested'),
+  geniusCardId: text('genius_card_id'),
+  geniusError: text('genius_error'),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+});
+
+export const uxEvidence = sqliteTable('ux_evidence', {
+  id: text('id').primaryKey(),
+  scenarioId: text('scenario_id').notNull(),
+  targetKind: text('target_kind').notNull(),
+  targetId: text('target_id').notNull(),
+  kind: text('kind').notNull(),
+  sourceProjectKey: text('source_project_key').notNull(),
+  sourceRevision: text('source_revision').notNull(),
+  sourceRef: text('source_ref').notNull(),
+  status: text('status').notNull(),
+  scenarioRevision: integer('scenario_revision').notNull(),
+  useCaseRevision: integer('use_case_revision'),
+  canvasRevision: integer('canvas_revision'),
+  payload: text('payload', { mode: 'json' }).$type<Record<string, unknown>>().notNull().$defaultFn(() => ({})),
+  recordedBy: text('recorded_by').notNull(),
+  recordedAt: ts('recorded_at').notNull().$defaultFn(now),
+});
+
+export const uxImageAnalyses = sqliteTable('ux_image_analyses', {
+  id: text('id').primaryKey(),
+  scenarioId: text('scenario_id').notNull(),
+  baseCanvasRevision: integer('base_canvas_revision').notNull(),
+  imageFingerprint: text('image_fingerprint').notNull(),
+  status: text('status').notNull().default('running'),
+  candidates: text('candidates', { mode: 'json' }).$type<Record<string, unknown>[]>().notNull().$defaultFn(() => []),
+  errorCode: text('error_code'),
+  requestedBy: text('requested_by').notNull(),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+  completedAt: ts('completed_at'),
+});
+
 export const auditLog = sqliteTable('audit_log', {
   id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
   projectId: text('project_id').notNull(),
@@ -277,6 +411,8 @@ export const sqliteTables = {
   layouts, layoutObjects, specs, specTargets, specAcceptance,
   codeGraphNodes, codeGraphEdges, codeGraphRuns, auditLog,
   transitions, specConversations, specMessages, ccLinks,
+  uxScenarios, uxUseCases, uxCanvases, uxAnalysisRuns, uxBoundaryProposals,
+  uxBoundaryDecisions, uxEvidence, uxImageAnalyses,
 };
 
 /** 起動時に流す DDL (CREATE TABLE IF NOT EXISTS + 必要な UNIQUE INDEX)。 FK は張らない (ローカル単一利用)。 */
@@ -318,6 +454,17 @@ export const SQLITE_DDL: string[] = [
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_code_graph_nodes_target_key ON code_graph_nodes(project_id, target_kind, target_id, node_key)`,
   `CREATE TABLE IF NOT EXISTS code_graph_edges (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, target_kind TEXT NOT NULL, target_id TEXT NOT NULL, from_node TEXT NOT NULL, to_node TEXT NOT NULL, relation TEXT NOT NULL DEFAULT 'related', source TEXT NOT NULL DEFAULT 'anatomia', meta TEXT NOT NULL DEFAULT '{}', created_at INTEGER)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_code_graph_edges_triple ON code_graph_edges(from_node, to_node, relation)`,
+  `CREATE TABLE IF NOT EXISTS ux_scenarios (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, actor TEXT NOT NULL, context TEXT NOT NULL DEFAULT '', goal TEXT NOT NULL, success_outcome TEXT NOT NULL, source_project_key TEXT, source_refs TEXT NOT NULL DEFAULT '[]', status TEXT NOT NULL DEFAULT 'draft', revision INTEGER NOT NULL DEFAULT 1, created_by TEXT NOT NULL, created_at INTEGER, updated_at INTEGER)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS uq_ux_scenarios_project_name ON ux_scenarios(project_id, name)`,
+  `CREATE TABLE IF NOT EXISTS ux_use_cases (id TEXT PRIMARY KEY, scenario_id TEXT NOT NULL, title TEXT NOT NULL, user_intent TEXT NOT NULL, trigger TEXT NOT NULL, preconditions TEXT NOT NULL DEFAULT '[]', success_outcome TEXT NOT NULL, failure_outcomes TEXT NOT NULL DEFAULT '[]', interruption_recovery TEXT NOT NULL DEFAULT '', ordinal INTEGER NOT NULL DEFAULT 0, revision INTEGER NOT NULL DEFAULT 1, created_at INTEGER, updated_at INTEGER)`,
+  `CREATE TABLE IF NOT EXISTS ux_canvases (scenario_id TEXT PRIMARY KEY, revision INTEGER NOT NULL DEFAULT 1, frames TEXT NOT NULL DEFAULT '[]', elements TEXT NOT NULL DEFAULT '[]', transitions TEXT NOT NULL DEFAULT '[]', applied_image_analysis_ids TEXT NOT NULL DEFAULT '[]', updated_by TEXT NOT NULL, updated_at INTEGER)`,
+  `CREATE TABLE IF NOT EXISTS ux_analysis_runs (id TEXT PRIMARY KEY, scenario_id TEXT NOT NULL, scenario_revision INTEGER NOT NULL, use_case_ids TEXT NOT NULL DEFAULT '[]', use_case_revisions TEXT NOT NULL DEFAULT '{}', note TEXT, visibility TEXT NOT NULL DEFAULT 'sensitive', status TEXT NOT NULL DEFAULT 'running', anatomia_source_revision TEXT, genius_query TEXT NOT NULL DEFAULT '{}', error_code TEXT, requested_by TEXT NOT NULL, created_at INTEGER, completed_at INTEGER)`,
+  `CREATE TABLE IF NOT EXISTS ux_boundary_proposals (id TEXT PRIMARY KEY, analysis_id TEXT NOT NULL, scenario_id TEXT NOT NULL, use_case_ids TEXT NOT NULL DEFAULT '[]', name TEXT NOT NULL, purpose TEXT NOT NULL, classification TEXT NOT NULL, responsibilities TEXT NOT NULL DEFAULT '[]', business_rules TEXT NOT NULL DEFAULT '[]', in_scope TEXT NOT NULL DEFAULT '[]', out_of_scope TEXT NOT NULL DEFAULT '[]', collaborations TEXT NOT NULL DEFAULT '[]', assumptions TEXT NOT NULL DEFAULT '[]', unresolved_questions TEXT NOT NULL DEFAULT '[]', alternatives TEXT NOT NULL DEFAULT '[]', confidence INTEGER NOT NULL, rationale TEXT NOT NULL, existing_domain_refs TEXT NOT NULL DEFAULT '[]', genius_assessments TEXT NOT NULL DEFAULT '[]', human_questions TEXT NOT NULL DEFAULT '[]', status TEXT NOT NULL DEFAULT 'pending', revision INTEGER NOT NULL DEFAULT 1, created_at INTEGER, updated_at INTEGER)`,
+  `CREATE TABLE IF NOT EXISTS ux_boundary_decisions (id TEXT PRIMARY KEY, scenario_id TEXT NOT NULL, proposal_id TEXT NOT NULL, action TEXT NOT NULL, proposal_revision INTEGER NOT NULL, rationale TEXT NOT NULL, result_boundaries TEXT NOT NULL DEFAULT '[]', decided_by TEXT NOT NULL, genius_publish_status TEXT NOT NULL DEFAULT 'not_requested', genius_card_id TEXT, genius_error TEXT, created_at INTEGER)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS uq_ux_boundary_decisions_proposal_revision ON ux_boundary_decisions(proposal_id, proposal_revision)`,
+  `CREATE TABLE IF NOT EXISTS ux_evidence (id TEXT PRIMARY KEY, scenario_id TEXT NOT NULL, target_kind TEXT NOT NULL, target_id TEXT NOT NULL, kind TEXT NOT NULL, source_project_key TEXT NOT NULL, source_revision TEXT NOT NULL, source_ref TEXT NOT NULL, status TEXT NOT NULL, scenario_revision INTEGER NOT NULL, use_case_revision INTEGER, canvas_revision INTEGER, payload TEXT NOT NULL DEFAULT '{}', recorded_by TEXT NOT NULL, recorded_at INTEGER)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS uq_ux_evidence_provenance ON ux_evidence(scenario_id, target_kind, target_id, kind, source_project_key, source_revision, source_ref)`,
+  `CREATE TABLE IF NOT EXISTS ux_image_analyses (id TEXT PRIMARY KEY, scenario_id TEXT NOT NULL, base_canvas_revision INTEGER NOT NULL, image_fingerprint TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'running', candidates TEXT NOT NULL DEFAULT '[]', error_code TEXT, requested_by TEXT NOT NULL, created_at INTEGER, completed_at INTEGER)`,
   `CREATE TABLE IF NOT EXISTS code_graph_runs (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, target_kind TEXT NOT NULL, target_id TEXT NOT NULL, query TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'ok', node_count INTEGER NOT NULL DEFAULT 0, edge_count INTEGER NOT NULL DEFAULT 0, summary TEXT, raw TEXT NOT NULL DEFAULT '{}', requested_by TEXT NOT NULL, created_at INTEGER)`,
   `CREATE TABLE IF NOT EXISTS audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL, actor_user_id TEXT NOT NULL, actor_display_name TEXT, action TEXT NOT NULL, target_kind TEXT, target_id TEXT, meta TEXT NOT NULL DEFAULT '{}', ip TEXT, user_agent TEXT, created_at INTEGER)`,
 ];

@@ -1,0 +1,51 @@
+.ux-design-page { width: min(1600px, calc(100vw - 32px)); margin-left: 50%; transform: translateX(-50%); }
+.ux-page-header, .ux-section-heading, .ux-scenario-summary, .ux-proposal-card > header, .ux-evidence-grid article > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.ux-page-header h1 { margin: 8px 0 4px; font-size: 24px; }
+.ux-page-header p, .ux-section-heading p, .ux-import-panel p, .ux-evidence-panel > p { margin: 0; color: var(--muted); }
+.ux-project-chip, .ux-kicker, .ux-status { border-radius: 999px; padding: 4px 9px; font-size: 11px; background: var(--accent-bg); color: var(--accent); white-space: nowrap; }
+.ux-design-shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 12px; margin-top: 16px; }
+.ux-scenario-rail, .ux-workspace-main > section, .ux-scenario-summary { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; box-shadow: var(--shadow); }
+.ux-scenario-rail { align-self: start; position: sticky; top: 68px; }
+.ux-section-heading h2, .ux-section-heading h3, .ux-scenario-summary h2, .ux-review-panel h3, .ux-import-panel h3, .ux-evidence-panel h3 { margin: 0; }
+.ux-scenario-list { display: grid; gap: 6px; margin: 12px 0; }
+.ux-scenario-list button { display: grid; gap: 4px; text-align: left; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: white; }
+.ux-scenario-list button.active { border-color: var(--accent); background: var(--accent-bg); }
+.ux-scenario-list span, .ux-use-case-list span, .ux-use-case-list small { color: var(--muted); font-size: 11px; }
+.ux-create-scenario { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.ux-principle { margin-top: 16px; padding: 10px; border-left: 3px solid #b7791f; background: #fffaf0; }
+.ux-principle p { margin: 5px 0 0; color: #75531c; font-size: 12px; }
+.ux-workspace-main { min-width: 0; display: grid; gap: 12px; }
+.ux-scenario-summary strong { max-width: 34ch; color: var(--success); }
+.ux-scenario-edit { width: 100%; grid-column: 1 / -1; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.ux-workspace-tabs { display: flex; overflow-x: auto; border-bottom: 1px solid var(--border); }
+.ux-workspace-tabs button { background: none; border: 0; padding: 10px 16px; color: var(--muted); white-space: nowrap; }
+.ux-workspace-tabs button.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+.ux-message { padding: 10px 14px; border-radius: 8px; background: #e6f7ec; color: var(--success); }
+.ux-message.error { background: #fdecea; color: var(--danger); }.ux-message button { margin-left: 12px; }
+.ux-use-cases { display: grid; gap: 10px; }.ux-use-case-list { display: flex; gap: 8px; overflow-x: auto; }
+.ux-use-case-list article { min-width: 220px; display: grid; gap: 5px; border: 1px solid var(--border); padding: 9px; border-radius: 8px; }
+.ux-use-case-form, .ux-analysis-form, .ux-evidence-form { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: end; }
+.ux-import-panel { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.ux-file-button { display: inline-block; padding: 9px 14px; background: var(--accent); color: white; border-radius: 8px; cursor: pointer; }.ux-file-button input { display: none; }
+.ux-image-candidates { width: 100%; display: flex; gap: 8px; flex-wrap: wrap; }.ux-image-candidate { display: flex; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
+.ux-image-candidate span { display: grid; gap: 3px; }.ux-image-candidate small, .ux-image-candidate em { color: var(--muted); font-size: 11px; }
+.ux-canvas-section { padding: 0 !important; overflow: hidden; }.ux-canvas-toolbar { display: flex; align-items: center; gap: 6px; padding: 9px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+.ux-canvas-section.locked .ux-canvas-world, .ux-canvas-section.locked .ux-element-inspector, .ux-canvas-section.locked .ux-transition-editor { pointer-events: none; opacity: .65; }
+.ux-canvas-controls { border: 0; padding: 0; margin: 0; min-width: 0; }
+.ux-toolbar-spacer { flex: 1; }.ux-zoom, .ux-connect-hint { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.ux-canvas-viewport { height: 720px; overflow: auto; background-color: #eef0f4; background-image: radial-gradient(#cfd3da 1px, transparent 1px); background-size: 16px 16px; touch-action: pan-x pan-y; }
+.ux-canvas-world { width: 2400px; height: 1400px; position: relative; transform-origin: 0 0; }
+.ux-transition-layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }.ux-transition-layer line { stroke: #5b6f93; stroke-width: 2; }.ux-transition-layer path { fill: #5b6f93; }.ux-transition-layer text { font-size: 11px; fill: #42516d; }
+.ux-frame { position: absolute; background: white; border: 2px solid #c7ccd5; border-radius: 8px; box-shadow: 0 8px 24px #2733491c; overflow: hidden; }.ux-frame.selected { border-color: var(--accent); }
+.ux-frame-title { height: 38px; padding: 8px 10px; display: flex; justify-content: space-between; background: #f7f8fa; cursor: grab; touch-action: none; }.ux-frame-title span { font-size: 10px; color: var(--muted); }
+.ux-frame-actions { display: flex; gap: 3px; overflow-x: auto; padding: 4px; }.ux-frame-actions button { border: 1px solid var(--border); background: white; font-size: 9px; padding: 3px; }
+.ux-element { position: absolute; border: 1px solid #8893a5; background: #f7f8fa; padding: 8px; display: flex; flex-direction: column; justify-content: center; touch-action: none; user-select: none; }.ux-element.box { border-style: dashed; }.ux-element.button { color: white; background: var(--accent); border-radius: 7px; text-align: center; }.ux-element.input { background: white; border-radius: 5px; }.ux-element.selected { outline: 3px solid #2a6df455; }.ux-element em { font-size: 9px; color: #9a5410; background: #fff3e0; align-self: flex-start; }.ux-resize { position: absolute; width: 13px; height: 13px; right: -5px; bottom: -5px; padding: 0; border: 2px solid white; background: var(--accent); border-radius: 3px; cursor: nwse-resize; }
+.ux-element-inspector { margin: 10px; padding: 10px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }.ux-number-fields { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }.ux-number-fields label { font-size: 10px; color: var(--muted); }.ux-number-fields input { width: 100%; }
+.ux-frame-states { grid-column: 1 / -1; display: grid; gap: 6px; }.ux-frame-states > div { display: grid; grid-template-columns: 130px 1fr 2fr auto; gap: 5px; }
+.ux-transition-editor { padding: 10px; }.ux-transition-editor > div { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; margin-top: 6px; }.ux-transition-editor input { min-width: 0; }
+.ux-proposal-list { display: grid; gap: 10px; margin-top: 12px; }.ux-proposal-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px; }.ux-proposal-card h4 { margin: 0; }.ux-boundary-editor { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; }.ux-boundary-card { border: 1px solid #d8dce5; padding: 9px; border-radius: 8px; }.ux-decision-form { display: grid; gap: 7px; margin-top: 10px; }.ux-decision-form > div { display: flex; gap: 5px; flex-wrap: wrap; }.ux-warning { color: #9a5410; }.ux-genius-card { display: grid; gap: 4px; padding: 8px; background: #f4f0ff; }
+.ux-genius-evidence, .ux-current-boundaries, .ux-decision-history { margin-top: 12px; }.ux-current-boundaries { display: flex; gap: 8px; flex-wrap: wrap; }.ux-current-boundaries h4 { width: 100%; }.ux-current-boundaries article { width: min(280px, 100%); padding: 10px; border: 1px solid var(--accent); border-radius: 8px; }.ux-current-boundaries article.external { border-style: dashed; }.ux-current-boundaries article > span { display: block; font-size: 10px; color: var(--muted); }.ux-decision-history article { display: grid; grid-template-columns: 80px 1fr auto; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.ux-anatomia-search { display: flex; gap: 6px; margin: 9px 0; }.ux-anatomia-search input { flex: 1; min-width: 0; }
+.ux-use-case-choices { border: 1px solid var(--border); border-radius: 8px; display: grid; gap: 5px; }.ux-use-case-choices label { display: flex; gap: 6px; align-items: center; }
+.ux-evidence-grid { display: grid; gap: 8px; margin-top: 12px; }.ux-evidence-grid article { border: 1px solid var(--border); padding: 10px; border-radius: 8px; }.ux-evidence-grid article.stale { border-color: #d8922b; }.ux-evidence-row { display: grid; grid-template-columns: 150px 1fr auto; gap: 8px; margin-top: 6px; }.ux-status.stale, .ux-status.failed { background: #fdecea; color: var(--danger); }.ux-status.passed, .ux-status.verified, .ux-status.accepted { background: #e6f7ec; color: var(--success); }
+@media (max-width: 760px) { .ux-design-page { width: calc(100vw - 16px); }.ux-page-header { align-items: flex-start; }.ux-design-shell { grid-template-columns: 1fr; }.ux-scenario-rail { position: static; }.ux-scenario-list { display: flex; overflow-x: auto; }.ux-scenario-list button { min-width: 190px; }.ux-scenario-summary { align-items: flex-start; flex-direction: column; }.ux-canvas-viewport { height: 560px; }.ux-canvas-toolbar .ghost, .ux-canvas-toolbar .primary { padding: 7px 10px; }.ux-evidence-row { grid-template-columns: 1fr; }.ux-transition-editor > div { grid-template-columns: 1fr; } }

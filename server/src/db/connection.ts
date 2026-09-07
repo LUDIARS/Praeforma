@@ -10,6 +10,13 @@ let pool: pg.Pool | null = null;
 let db: NodePgDatabase<typeof schema> | null = null;
 let connectError: string | null = null;
 
+export interface LocalSqliteDatabase {
+  prepare(sql: string): { run(...params: unknown[]): { changes: number } };
+  transaction<T>(work: () => T): () => T;
+}
+
+let localSqlite: LocalSqliteDatabase | null = null;
+
 export interface DbState {
   ok: boolean;
   pool: pg.Pool | null;
@@ -31,6 +38,7 @@ export async function initLocalDb(dbPath: string): Promise<DbState> {
     const { drizzle: drizzleSqlite } = await import('drizzle-orm/better-sqlite3');
     const { sqliteTables, SQLITE_DDL, SQLITE_ALTERS } = await import('./sqlite-schema.ts');
     const sqlite = new Database(dbPath);
+    localSqlite = sqlite as unknown as LocalSqliteDatabase;
     sqlite.pragma('journal_mode = WAL');
     for (const ddl of SQLITE_DDL) sqlite.exec(ddl);
     // 既存 DB への列追加。 SQLite の ALTER には IF NOT EXISTS が無いので duplicate column だけ握る。
@@ -59,6 +67,9 @@ export async function initDb(databaseUrl: string): Promise<DbState> {
     pool = new Pool({ connectionString: databaseUrl, max: 20 });
     // smoke ping
     await pool.query('SELECT 1');
+    // Postgres へ切り替えたら SQLite handle は無効。 残すと raw SQL だけ別 store に
+    // 書き込む経路ができるので必ず落とす。
+    localSqlite = null;
     db = drizzle(pool, { schema });
     connectError = null;
     console.log('[db] connected');
@@ -78,4 +89,8 @@ export function getDb(): NodePgDatabase<typeof schema> {
 
 export function getDbState(): DbState {
   return { ok: db !== null, pool, db, error: connectError };
+}
+
+export function getLocalSqlite(): LocalSqliteDatabase | null {
+  return localSqlite;
 }

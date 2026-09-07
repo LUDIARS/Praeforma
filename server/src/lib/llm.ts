@@ -18,6 +18,10 @@ export function setClaudeModel(model: string | null): void {
   pinnedModel = model;
 }
 
+export function getClaudeModel(): string | null {
+  return pinnedModel;
+}
+
 /** claude CLI を non-interactive (`-p`) で叩き、 stdout を返す。 プロンプトは stdin 経由。 */
 export function runClaude(
   claudeBin: string,

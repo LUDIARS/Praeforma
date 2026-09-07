@@ -13,3 +13,4 @@ export * from './reference.ts';
 export * from './feedback.ts';
 export * from './code-graph.ts';
 export * from './screen-flow.ts';
+export * from './ux-design.ts';

@@ -29,11 +29,11 @@ export interface ApiError extends Error {
   body?: unknown;
 }
 
-async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers = new Headers(init.headers);
   headers.set('accept', 'application/json');
-  if (init.body && !headers.has('content-type')) {
+  if (init.body && !(init.body instanceof FormData) && !headers.has('content-type')) {
     headers.set('content-type', 'application/json');
   }
   if (token) headers.set('authorization', `Bearer ${token}`);
