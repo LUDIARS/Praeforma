@@ -25,6 +25,7 @@ import { makeReferenceRouter } from './routes/references.ts';
 import { makeReferenceContentRouter } from './routes/reference-content.ts';
 import { makeFeedbackRouter } from './routes/feedback.ts';
 import { makeProjectRouter } from './routes/projects.ts';
+import { makeProjectUxGoalRouter } from './routes/project-ux-goal.ts';
 import { makeDomainRouter } from './routes/domains.ts';
 import { makeObjectRouter } from './routes/objects.ts';
 import { makeLayoutRouter } from './routes/layouts.ts';
@@ -130,6 +131,7 @@ app.get('/api/auth/me', requireAuth, (c) => {
 // Step 7: acceptance / Step 10: assets / Step 13: reference content
 // Studio 最小サブセット (ローカル SQLite でも動く範囲)
 app.route('/api/projects', makeProjectRouter());
+app.route('/api/projects/:pid/ux-goal', makeProjectUxGoalRouter());
 app.route('/api/projects/:pid/domains', makeDomainRouter());
 app.route('/api/projects/:pid/objects', makeObjectRouter());
 app.route('/api/projects/:pid/layouts', makeLayoutRouter());

@@ -3,14 +3,17 @@ import { Link, useParams, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api.ts';
 import { parseDeeplinkTab, useFocusEntity } from '../lib/deeplink.ts';
+import { ProjectUxGoal } from '../components/ProjectUxGoal.tsx';
 
-type Tab = 'overview' | 'domains' | 'objects' | 'layouts' | 'specs';
+type Tab = 'overview' | 'ux-goal' | 'domains' | 'objects' | 'layouts' | 'specs';
 
 export function ProjectShowPage(): React.ReactElement {
   const { pid } = useParams();
   const [searchParams] = useSearchParams();
   // Thaleia ディープリンク `?tab=&focus=` を消費する (発行側契約は lib/deeplink.ts 参照)。
-  const deeplinkTab = parseDeeplinkTab(searchParams.get('tab'));
+  // `ux-goal` は Thaleia の発行対象外で、 Praeforma 内部のタブ共有リンク専用。
+  const rawTab = searchParams.get('tab');
+  const deeplinkTab: Tab | null = rawTab === 'ux-goal' ? 'ux-goal' : parseDeeplinkTab(rawTab);
   const focus = searchParams.get('focus');
   const [tab, setTab] = React.useState<Tab>(() => deeplinkTab ?? 'overview');
   const projectQ = useQuery({
@@ -90,18 +93,20 @@ export function ProjectShowPage(): React.ReactElement {
         </div>
       )}
 
-      <div className="tabbar">
-        {(['overview', 'domains', 'objects', 'layouts', 'specs'] as Tab[]).map((t) => (
+      <div className="tabbar" style={{ overflowX: 'auto' }}>
+        {(['overview', 'ux-goal', 'domains', 'objects', 'layouts', 'specs'] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
             className={`tab ${tab === t ? 'active' : ''}`}
             onClick={() => setTab(t)}
           >
-            {t}
+            {t === 'ux-goal' ? 'UX/Goal' : t}
           </button>
         ))}
       </div>
+
+      {tab === 'ux-goal' && <ProjectUxGoal key={pid} pid={pid} />}
 
       {tab === 'overview' && (
         <>

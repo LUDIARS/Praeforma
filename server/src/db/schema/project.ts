@@ -3,7 +3,7 @@
 // 個人データは Cernere 単一情報源。 Praeforma DB は Cernere user UUID +
 // display_name snapshot のみ保持する。
 
-import { jsonb, pgTable, text, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
+import { integer, jsonb, pgTable, text, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
 import { LOCAL_MODE } from '../mode.ts';
 import { projects as projectsSqlite, projectMembers as projectMembersSqlite } from '../sqlite-schema.ts';
 
@@ -13,6 +13,10 @@ const projectsPg = pgTable(
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     description: text('description'),
+    uxExperience: text('ux_experience').notNull().default(''),
+    uxDesign: text('ux_design').notNull().default(''),
+    uxGoal: text('ux_goal').notNull().default(''),
+    uxGoalRevision: integer('ux_goal_revision').notNull().default(0),
     orgId: text('org_id').notNull(),
     ownerUserId: text('owner_user_id').notNull(),
     platforms: jsonb('platforms').$type<string[]>().notNull().default(['web']),

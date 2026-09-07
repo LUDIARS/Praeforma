@@ -16,6 +16,10 @@ export const projects = sqliteTable('projects', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
+  uxExperience: text('ux_experience').notNull().default(''),
+  uxDesign: text('ux_design').notNull().default(''),
+  uxGoal: text('ux_goal').notNull().default(''),
+  uxGoalRevision: integer('ux_goal_revision').notNull().default(0),
   orgId: text('org_id').notNull(),
   ownerUserId: text('owner_user_id').notNull(),
   platforms: text('platforms', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => ['web']),
@@ -418,6 +422,10 @@ export const sqliteTables = {
 /** 起動時に流す DDL (CREATE TABLE IF NOT EXISTS + 必要な UNIQUE INDEX)。 FK は張らない (ローカル単一利用)。 */
 /** 既存 DB へ後から足す列 (重複時はエラーになるので connection 側で個別に try する)。 */
 export const SQLITE_ALTERS: string[] = [
+  `ALTER TABLE projects ADD COLUMN ux_experience TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE projects ADD COLUMN ux_design TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE projects ADD COLUMN ux_goal TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE projects ADD COLUMN ux_goal_revision INTEGER NOT NULL DEFAULT 0`,
   `ALTER TABLE domains ADD COLUMN anatomia_domain TEXT`,
   `ALTER TABLE projects ADD COLUMN anatomia_repo TEXT`,
 ];

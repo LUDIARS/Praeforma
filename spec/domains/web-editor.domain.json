@@ -1,6 +1,7 @@
 {
   "name": "web-editor",
   "description": "ブラウザ側の編集画面。 配置と仕様記述の操作。",
+  "specRefs": ["spec/feature/project-ux-goal.md"],
   "presetRules": [],
   "templateRules": [],
   "membership": [
