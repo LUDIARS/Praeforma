@@ -1,0 +1,30 @@
+# Praeforma personal workspace: SQLite, without Cernere authentication.
+services:
+  - code: praeforma
+    name: Praeforma
+    tier: personal
+    project_code: praeforma
+    component: backend
+    repo: LUDIARS/Praeforma
+    runtime: node
+    cwd: ${ARS_ROOT}/Praeforma
+    command: node --import tsx server/src/local.ts
+    build_command: npm run build:web
+    port: 8889
+    ports:
+      - role: service
+        port: 8889
+        env: PRAEFORMA_PORT
+    frontend_url: http://127.0.0.1:8889
+    autostart: false
+    restart_policy: "no"
+    env:
+      PRAEFORMA_LOCAL_MODE: "1"
+      PRAEFORMA_LOCAL_DB: ${ARS_ROOT}/Praeforma/.praeforma-local/praeforma.sqlite
+    provides:
+      PRAEFORMA_URL: http://${host}:${port}
+    health:
+      type: http
+      url: http://127.0.0.1:8889/api/health
+      interval_sec: 30
+      grace_period_sec: 15

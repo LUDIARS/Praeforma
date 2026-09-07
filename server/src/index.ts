@@ -65,12 +65,31 @@ if (config.localMode) {
   });
 }
 
+/** ローカルモードで許可する Origin = 自ポートの loopback のみ。 */
+function isLocalOrigin(origin: string): boolean {
+  if (!origin) return false;
+  let u: URL;
+  try {
+    u = new URL(origin);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== 'http:') return false;
+  if (u.hostname !== '127.0.0.1' && u.hostname !== 'localhost' && u.hostname !== '[::1]') {
+    return false;
+  }
+  return Number(u.port || 80) === config.port;
+}
+
 const app = new Hono();
 
+// ローカルモードは認証を持たないため、 loopback 束縛だけでは browser 経由の
+// cross-origin 到達を防げない (任意の web ページが 127.0.0.1 を叩ける)。
+// 同一オリジン配信のみを許可し、 それ以外の Origin は CORS ヘッダを返さない。
 app.use(
   '*',
   cors({
-    origin: '*',
+    origin: (origin) => (config.localMode ? (isLocalOrigin(origin) ? origin : null) : '*'),
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['content-type', 'authorization'],
   }),
@@ -182,7 +201,7 @@ if (config.localMode) {
   });
 }
 
-const httpServer: ServerType = serve({ fetch: app.fetch, port: config.port }, (info) => {
+const httpServer: ServerType = serve({ fetch: app.fetch, port: config.port, ...(config.localMode ? { hostname: '127.0.0.1' } : {}) }, (info) => {
   console.log(`[praeforma] listening on http://localhost:${info.port}`);
   console.log(`[praeforma] db: ${dbState.ok ? (config.localMode ? 'sqlite' : 'connected') : 'down'}`);
   if (!config.localMode) console.log(`[praeforma] cernere: ${config.cernereBaseUrl}`);

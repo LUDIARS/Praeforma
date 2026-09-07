@@ -5,6 +5,17 @@ Praeforma を **Postgres も Cernere も無しで** ローカル単体起動す�
 
 ## 起動
 
+普段の利用は Excubitor の `praeforma` を起動セットへ追加して起動する。
+サービス定義とポートの正本はリポジトリ直下の `excubitor.catalog.yaml`。
+Excubitor は本体フォルダで Web をビルドしてからローカルモードを起動し、
+本体の `.praeforma-local/praeforma.sqlite` を使用する。
+認証を省略するローカルモードの HTTP リスナーは `127.0.0.1` に限定する。
+loopback 束縛は他ホストからの到達のみを塞ぐ。 browser は任意の web ページから
+`127.0.0.1` へ到達できるため、 CORS も同一ポートの loopback Origin に限定する
+(それ以外は `Access-Control-Allow-Origin` を返さない)。
+起動・再起動の確認は Concordia の testing claim / release で調整する。
+以下はスクリプトの説明であり、運用時の直接起動には使用しない。
+
 ```sh
 npm run local      # = build:web + server を LOCAL_MODE で起動 (port 8889)
 # → http://localhost:8889/ を開く (UI も同一オリジンで配信、 ログイン不要)
