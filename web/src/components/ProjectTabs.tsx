@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router';
 import '../styles/project-tabs.css';
 
 const PROJECT_TABS = [
@@ -18,8 +19,8 @@ export function parseProjectTab(value: string | null): ProjectTab {
   return PROJECT_TABS.find((item) => item.id === value)?.id ?? 'overview';
 }
 
-export function ProjectTabs({ tab, onChange }: {
-  tab: ProjectTab; onChange: (tab: ProjectTab) => void;
+export function ProjectTabs({ pid, tab, onChange }: {
+  pid: string; tab: ProjectTab; onChange: (tab: ProjectTab) => void;
 }): React.ReactElement {
   const moreButton = React.useRef<HTMLButtonElement>(null);
   const menuId = React.useId();
@@ -57,6 +58,10 @@ export function ProjectTabs({ tab, onChange }: {
             onChange(item.id);
             setIsMoreOpen(false);
           }}>{item.label}</button>)}
+        <Link to={`/projects/${pid}/studio`} role="menuitem" className="tab"
+          style={{ textDecoration: 'none' }} onClick={() => setIsMoreOpen(false)}>
+          要件定義モード
+        </Link>
       </div>}
     </div>
   </nav>;

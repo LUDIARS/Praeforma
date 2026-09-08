@@ -70,12 +70,6 @@ export function ProjectShowPage(): React.ReactElement {
             UXデザイン
           </Link>
           <Link to={`/projects/${pid}/flow`} className="ghost">ScreenFlow →</Link>
-          <details>
-            <summary className="ghost">旧設計ビュー</summary>
-            <div style={{ display: 'grid', gap: 6, marginTop: 6 }}>
-              <Link to={`/projects/${pid}/studio`}>旧 要件定義モード</Link>
-            </div>
-          </details>
         </div>
         <p style={{ color: 'var(--muted)' }}>{p.description}</p>
         <div style={{ fontSize: 12, color: 'var(--muted)' }}>
@@ -89,7 +83,7 @@ export function ProjectShowPage(): React.ReactElement {
         </div>
       )}
 
-      <ProjectTabs key={`tabs:${pid}`} tab={tab} onChange={(next) => {
+      <ProjectTabs key={`tabs:${pid}`} pid={pid} tab={tab} onChange={(next) => {
         setSearchParams((current) => {
           const params = new URLSearchParams(current);
           params.set('tab', next);
