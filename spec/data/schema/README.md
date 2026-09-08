@@ -19,6 +19,7 @@ Praeforma backend (`server/src/db/schema/`) の Drizzle テーブル定義に対
 | 外部 doc 参照 | [reference.md](reference.md) | `references` (= Notion/Confluence/Google 等のリンク) |
 | シーン FB / コメント | [feedback.md](feedback.md) | `object_feedback` / `feedback_comments` (Melpomene 互換) |
 | 画面遷移 / LLM 会話 / Cc 接続 | [screen-flow.md](screen-flow.md) | `transitions` / `spec_conversations` / `spec_messages` / `cc_links` |
+| デファードプランニング (未実装) | [deferred-planning.md](deferred-planning.md) | 保存契約案のみ。テーブル名・DDL・移行番号は実装時に決める |
 
 ## 表記
 

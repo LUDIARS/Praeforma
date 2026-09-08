@@ -10,6 +10,10 @@
 
 詳細仕様: [spec/praeforma.md](spec/praeforma.md)
 
+仕様考案・設計に集中するための次期設計: [デファードプランニング](spec/feature/deferred-planning.md)。
+指示をフラグメントとして蓄積し、既存の構造化仕様とレコンストラクションで統合して版を上げる。
+専用LLM相談ウインドウ、Ccからの自動登録、仕様画面での実装状態管理はこれから実装する。
+
 UX・コアドメイン設計: [spec/feature/ux-core-design.md](spec/feature/ux-core-design.md)
 
 プロジェクトの「データ設計」から、データセット・項目・型・参照・保護方針と、
