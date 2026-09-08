@@ -1,0 +1,19 @@
+.manual-layout{display:grid;grid-template-columns:minmax(160px,240px) minmax(0,1fr);gap:20px}
+.manual-layout aside{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.manual-layout aside button{text-align:left;white-space:normal;overflow-wrap:anywhere}
+.manual-layout button[aria-pressed=true]{outline:2px solid currentColor}
+.manual-content,.manual-reader,.manual-form{min-width:0;overflow-wrap:anywhere}
+.manual-reader{max-width:760px;line-height:1.8}
+.manual-reader p{white-space:pre-wrap}
+.manual-form label{display:flex;flex-direction:column;gap:5px;margin:12px 0}
+.manual-form input,.manual-form textarea,.manual-form select{width:100%;min-width:0;box-sizing:border-box}
+.manual-form fieldset,.manual-edit-tools{min-width:0;margin:16px 0;padding:12px;border:1px solid #8886;border-radius:12px}
+.manual-diagram{margin:24px 0;padding:20px;border:1px solid #8886;border-radius:16px}
+.manual-diagram figcaption{font-weight:bold;margin-bottom:16px}
+.manual-diagram ol,.manual-diagram ul{list-style:none;padding:0;margin:0}
+.manual-step{display:flex;gap:10px;align-items:center;border:2px solid #738aa6;border-radius:12px;padding:12px;background:#738aa612}
+.manual-step-number{font-weight:bold;flex-shrink:0}
+.manual-arrow{display:block;text-align:center;font-size:1.6rem}
+.manual-branches{margin-left:20px!important;border-left:2px solid #738aa6;padding-left:16px!important}
+.manual-branches li{padding:10px;border-bottom:1px dashed #8886}
+@media(max-width:700px){.manual-layout{grid-template-columns:1fr}.manual-layout aside{max-height:220px;overflow:auto}.manual-diagram{padding:10px}}

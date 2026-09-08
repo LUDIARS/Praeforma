@@ -8,6 +8,7 @@
 // 永続化対象外 (objects/assets 等も含めた最小集合)。 認証/個人データは持たない。
 
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { featureManualsSqlite, MANUAL_DDL } from './manual-sqlite.ts';
 import type { DataDesign } from '../../../shared/data-design.ts';
 import type { ImplementationState } from '../../../shared/spec-fragments.ts';
 
@@ -442,6 +443,7 @@ export const auditLog = sqliteTable('audit_log', {
 
 /** drizzle(sqlite, { schema }) に渡す束。 */
 export const sqliteTables = {
+  featureManuals: featureManualsSqlite,
   projects, projectMembers, dataDesigns, specFragments, domains, objects, objectAttrs, assets, objectAssets,
   layouts, layoutObjects, specs, specTargets, specAcceptance,
   codeGraphNodes, codeGraphEdges, codeGraphRuns, auditLog,
@@ -467,6 +469,7 @@ export const SQLITE_ALTERS: string[] = [
 ];
 
 export const SQLITE_DDL: string[] = [
+  ...MANUAL_DDL,
   `CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, org_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, platforms TEXT NOT NULL DEFAULT '["web"]', default_layout_id TEXT, anatomia_repo TEXT, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,
   `CREATE TABLE IF NOT EXISTS data_designs (project_id TEXT PRIMARY KEY REFERENCES projects(id), definition TEXT NOT NULL, revision INTEGER NOT NULL CHECK (revision > 0), updated_by TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`,
   // projects より後に置く (REFERENCES projects(id) を持つ他テーブルと同じ順序)。

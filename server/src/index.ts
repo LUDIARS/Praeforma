@@ -44,6 +44,7 @@ import { makeAnatomiaRouter } from './routes/anatomia.ts';
 import { makeCcRouter, syncAllCcLinks } from './routes/cc.ts';
 import { makeWidgetRouter } from './routes/widgets.ts';
 import { makeUxDesignRouter } from './routes/ux-design.ts';
+import { makeManualRouter } from './routes/manuals.ts';
 import { setClaudeModel } from './lib/llm.ts';
 
 const config = loadConfig();
@@ -143,6 +144,7 @@ app.route('/api/projects/:pid/objects', makeObjectRouter());
 app.route('/api/projects/:pid/layouts', makeLayoutRouter());
 app.route('/api/projects/:pid/specs', makeSpecRouter());
 app.route('/api/projects/:pid/spec-fragments', makeSpecFragmentRouter());
+app.route('/api/projects/:pid/manuals', makeManualRouter(config.claudeBin));
 app.route('/api/projects/:pid/assets', makeAssetRouter(config.publicUrl));
 // 以下は SQLite サブセット外のテーブルを使うため、 ローカルモードでは載せない
 if (!config.localMode) {
