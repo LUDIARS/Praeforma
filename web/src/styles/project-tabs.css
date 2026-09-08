@@ -1,8 +1,7 @@
-.project-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.project-tabs > .tab, .project-tabs summary { padding: 10px 2px; text-align: center; white-space: nowrap; }
+.tabbar.project-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.project-tabs > .tab, .project-tabs-more > .tab { padding: 10px 2px; text-align: center; white-space: nowrap; }
 .project-tabs-more { position: relative; min-width: 0; }
-.project-tabs-more summary { list-style: none; }
-.project-tabs-more summary::-webkit-details-marker { display: none; }
+.project-tabs-more > .tab { width: 100%; }
 .project-tabs-menu {
   position: absolute; right: 0; top: 100%; z-index: 20;
   display: grid; min-width: 150px; max-height: 60vh; overflow-y: auto;

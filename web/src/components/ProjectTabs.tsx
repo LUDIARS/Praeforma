@@ -15,7 +15,9 @@ const VISIBLE_TAB_COUNT = 4;
 export function ProjectTabs({ tab, onChange }: {
   tab: ProjectTab; onChange: (tab: ProjectTab) => void;
 }): React.ReactElement {
-  const details = React.useRef<HTMLDetailsElement>(null);
+  const moreButton = React.useRef<HTMLButtonElement>(null);
+  const menuId = React.useId();
+  const [isMoreOpen, setIsMoreOpen] = React.useState(false);
   const [order, setOrder] = React.useState<ProjectTab[]>(() => PROJECT_TABS.map((item) => item.id));
   const visibleIds = order.slice(0, VISIBLE_TAB_COUNT);
   // Memoria 同様、選択中のタブは必ず4枠内に置く。
@@ -23,7 +25,7 @@ export function ProjectTabs({ tab, onChange }: {
   const visible = visibleIds.flatMap((id) => PROJECT_TABS.filter((item) => item.id === id));
   const overflow = PROJECT_TABS.filter((item) => !visibleIds.includes(item.id));
   React.useEffect(() => {
-    if (details.current) details.current.open = false;
+    setIsMoreOpen(false);
   }, [tab]);
   return <nav className="tabbar project-tabs" aria-label="プロジェクトメニュー">
     {visible.map((item) => <button key={item.id}
@@ -31,24 +33,25 @@ export function ProjectTabs({ tab, onChange }: {
       aria-current={tab === item.id ? 'page' : undefined} onClick={() => onChange(item.id)}>
       {item.label}
     </button>)}
-    <details ref={details} className="project-tabs-more" onKeyDown={(event) => {
-      if (event.key === 'Escape' && details.current) {
-        details.current.open = false;
-        details.current.querySelector('summary')?.focus();
+    <div className="project-tabs-more" onKeyDown={(event) => {
+      if (event.key === 'Escape') {
+        setIsMoreOpen(false);
+        moreButton.current?.focus();
       }
     }} onBlur={(event) => {
-      if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
+      if (!event.currentTarget.contains(event.relatedTarget)) setIsMoreOpen(false);
     }}>
-      <summary className={`tab ${overflow.some((item) => item.id === tab) ? 'active' : ''}`}>その他</summary>
-      <div className="project-tabs-menu">
-        {overflow.map((item) => <button key={item.id} type="button"
-          className={`tab ${tab === item.id ? 'active' : ''}`}
-          aria-current={tab === item.id ? 'page' : undefined} onClick={() => {
+      <button ref={moreButton} type="button" className="tab"
+        aria-expanded={isMoreOpen} aria-haspopup="menu" aria-controls={isMoreOpen ? menuId : undefined}
+        onClick={() => setIsMoreOpen((current) => !current)}>その他</button>
+      {isMoreOpen && <div id={menuId} className="project-tabs-menu" role="menu">
+        {overflow.map((item) => <button key={item.id} type="button" role="menuitem"
+          className="tab" onClick={() => {
             setOrder((current) => [item.id, ...current.filter((id) => id !== item.id)]);
             onChange(item.id);
-            if (details.current) details.current.open = false;
+            setIsMoreOpen(false);
           }}>{item.label}</button>)}
-      </div>
-    </details>
+      </div>}
+    </div>
   </nav>;
 }
