@@ -96,7 +96,7 @@ export function ProjectShowPage(): React.ReactElement {
         </div>
       )}
 
-      <ProjectTabs key={pid} tab={tab} onChange={(next) => {
+      <ProjectTabs key={`tabs:${pid}`} tab={tab} onChange={(next) => {
         setTab(next);
         setSearchParams((current) => {
           const params = new URLSearchParams(current);
@@ -106,7 +106,7 @@ export function ProjectShowPage(): React.ReactElement {
         });
       }} />
 
-      {tab === 'ux-goal' && <ProjectUxGoal key={pid} pid={pid} />}
+      {tab === 'ux-goal' && <ProjectUxGoal key={`ux-goal:${pid}`} pid={pid} />}
 
       {tab === 'overview' && (
         <>
@@ -137,7 +137,7 @@ export function ProjectShowPage(): React.ReactElement {
         </>
       )}
 
-      {tab === 'domains' && <DomainDefinitionsPanel key={pid} pid={pid} />}
+      {tab === 'domains' && <DomainDefinitionsPanel key={`domains:${pid}`} pid={pid} />}
 
       {tab === 'objects' && (
         <div className="panel">
