@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api.ts';
+import { DomainDefinitionsPanel } from '../components/domain-definitions/DomainDefinitionsPanel.tsx';
 import { parseDeeplinkTab, useFocusEntity } from '../lib/deeplink.ts';
 import { ProjectUxGoal } from '../components/ProjectUxGoal.tsx';
 
@@ -26,11 +27,7 @@ export function ProjectShowPage(): React.ReactElement {
     queryFn: () => api.listMembers(pid!),
     enabled: !!pid && tab === 'overview',
   });
-  const domainsQ = useQuery({
-    queryKey: ['domains', pid],
-    queryFn: () => api.listDomains(pid!),
-    enabled: !!pid && tab === 'domains',
-  });
+  // domains タブは DomainDefinitionsPanel が自前で取得する (ここでは引かない)。
   const objectsQ = useQuery({
     queryKey: ['objects', pid],
     queryFn: () => api.listObjects(pid!),
@@ -54,7 +51,6 @@ export function ProjectShowPage(): React.ReactElement {
 
   // 該当タブのデータ取得が完了したら `?focus` のエンティティへスクロール/ハイライトする。
   const focusReady =
-    (tab === 'domains' && domainsQ.isSuccess) ||
     (tab === 'specs' && specsQ.isSuccess) ||
     (tab === 'layouts' && layoutsQ.isSuccess);
   const { notFound: focusNotFound } = useFocusEntity(focus, focusReady);
@@ -137,27 +133,7 @@ export function ProjectShowPage(): React.ReactElement {
         </>
       )}
 
-      {tab === 'domains' && (
-        <div className="panel">
-          <h3>Domains</h3>
-          {domainsQ.isLoading && <p>loading…</p>}
-          <ul className="item-list">
-            {domainsQ.data?.items.map((d) => (
-              <li key={d.id} className="item-row" data-focus={d.name}>
-                <div className="label">
-                  <span style={{
-                    display: 'inline-block', width: 12, height: 12,
-                    background: d.color, borderRadius: 3, marginRight: 6, verticalAlign: 'middle',
-                  }} />
-                  {d.name}
-                </div>
-                <div className="meta">{d.description}</div>
-                <div className="meta">required_attrs: {d.required_attrs.map((a) => a.name).join(', ') || '(none)'}</div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {tab === 'domains' && <DomainDefinitionsPanel key={pid} pid={pid} />}
 
       {tab === 'objects' && (
         <div className="panel">

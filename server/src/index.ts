@@ -26,6 +26,7 @@ import { makeReferenceContentRouter } from './routes/reference-content.ts';
 import { makeFeedbackRouter } from './routes/feedback.ts';
 import { makeProjectRouter } from './routes/projects.ts';
 import { makeProjectUxGoalRouter } from './routes/project-ux-goal.ts';
+import { makeDomainDefinitionsRouter } from './routes/domain-definitions.ts';
 import { makeDomainRouter } from './routes/domains.ts';
 import { makeObjectRouter } from './routes/objects.ts';
 import { makeLayoutRouter } from './routes/layouts.ts';
@@ -152,6 +153,7 @@ app.route(
 
 // Screen Flow: 遷移 / 書き出し / LLM トークエリア / Anatomia 突合 / Cc 接続 (spec/feature/screen-flow.md)
 const anatomiaOpts = { anatomiaUrl: config.anatomiaUrl };
+app.route('/api/projects/:pid/domain-definitions', makeDomainDefinitionsRouter(anatomiaOpts));
 const ccOpts = { ccUrl: config.ccUrl, ccToken: config.ccToken, ccTemplate: config.ccTemplate };
 app.route('/api/projects/:pid/transitions', makeTransitionRouter());
 app.route('/api/projects/:pid/export', makeExportRouter());
