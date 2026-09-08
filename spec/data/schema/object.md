@@ -10,6 +10,7 @@ placeholder として配置される実体。 1 つ以上の domain に属し、
 | `project_id` | `text` | ✓ | — | FK `projects.id` |
 | `domain_id` | `text` | ✓ | — | FK `domains.id` (主 domain) |
 | `label` | `text` | ✓ | — | 画面表示名 (`"プレイヤー (主人公)"` 等) |
+| `description` | `text` | | NULL | アクターの説明（最大4000文字）。登録・修正し、ボックス一覧に表示する |
 | `placeholder_shape` | `text` | ✓ | `'cube'` | `cube` / `sphere` / `plane` / `cylinder` / `sprite` / `image` |
 | `placeholder_color` | `text` | ✓ | `'#888888'` | `#RRGGBB` (= domain.color override) |
 | `placeholder_image_asset_id` | `text` |  | NULL | FK `assets.id` (= 仮画像) |
@@ -19,6 +20,11 @@ placeholder として配置される実体。 1 つ以上の domain に属し、
 | `deleted_at` | `timestamptz` |  | NULL | ソフトデリート |
 
 ### Note
+- `description` はプロジェクト作成者のユーザデータで、PfのPostgreSQL（ローカルモードはSQLite）を正本とする。プロジェクト閲覧権限で保護し、編集はowner/plannerに限定する。個人プロフィールとしては扱わない。
+- `/api/projects/:pid/objects` の response は Drizzle の row をそのまま返すため、
+  列名は上表の snake_case ではなく camelCase (`domainId` / `placeholderShape` 等) で出る。
+  request body 側は zod schema どおり snake_case。 frontend の `PfObject` はこの
+  response 契約 (camelCase) に合わせる
 - transform は `layout_objects` 側に持つ (= 同じ object を複数 layout で
   別位置に置けるため)。 「default transform」 が要るなら `layouts/_default` を
   使う規約

@@ -147,7 +147,7 @@ export function LayoutEditorPage(): React.ReactElement {
   }
 
   function addObject(obj: PfObject): void {
-    addPlacement(obj.id, { sx: 2, sy: 1, meta: { kind: kindFromShape(obj.placeholder_shape), status: 'implemented' } });
+    addPlacement(obj.id, { sx: 2, sy: 1, meta: { kind: kindFromShape(obj.placeholderShape), status: 'implemented' } });
   }
 
   async function ensureWireDomain(): Promise<string> {
@@ -339,15 +339,15 @@ export function LayoutEditorPage(): React.ReactElement {
           <h3>Project Objects</h3>
           <ul className="item-list scroll-list">
             {objectsQ.data?.items.map((o) => {
-              const d = domainsById.get(o.domain_id);
-              const color = d?.color ?? o.placeholder_color;
+              const d = domainsById.get(o.domainId);
+              const color = d?.color ?? o.placeholderColor;
               return (
                 <li key={o.id} className="item-row">
                   <div className="label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ display: 'inline-block', width: 14, height: 14, background: color, borderRadius: 3 }} />
                     {o.label}
                   </div>
-                  <div className="meta">{d?.name} / {o.placeholder_shape}</div>
+                  <div className="meta">{d?.name} / {o.placeholderShape}</div>
                   <div style={{ marginTop: 6 }}>
                     <button type="button" className="ghost" onClick={() => addObject(o)}>Add</button>
                   </div>
@@ -377,11 +377,11 @@ export function LayoutEditorPage(): React.ReactElement {
                 onChange={(next) => pushHistory(next)}
                 colorFor={(it) => {
                   const obj = objectsById.get(it.objectId);
-                  const dom = obj ? domainsById.get(obj.domain_id) : undefined;
-                  return dom?.color ?? obj?.placeholder_color ?? '#888888';
+                  const dom = obj ? domainsById.get(obj.domainId) : undefined;
+                  return dom?.color ?? obj?.placeholderColor ?? '#888888';
                 }}
                 labelFor={(it) => objectsById.get(it.objectId)?.label ?? '(unknown)'}
-                kindFor={(it) => kindFromShape(objectsById.get(it.objectId)?.placeholder_shape ?? '')}
+                kindFor={(it) => kindFromShape(objectsById.get(it.objectId)?.placeholderShape ?? '')}
               />
             </div>
           ) : (
@@ -389,14 +389,14 @@ export function LayoutEditorPage(): React.ReactElement {
               items={state.items}
               shapeFor={(it) => {
                 const obj = objectsById.get(it.objectId);
-                const s = obj?.placeholder_shape ?? 'cube';
+                const s = obj?.placeholderShape ?? 'cube';
                 if (s === 'sphere' || s === 'plane' || s === 'cylinder') return s;
                 return 'cube';
               }}
               colorFor={(it) => {
                 const obj = objectsById.get(it.objectId);
-                const dom = obj ? domainsById.get(obj.domain_id) : undefined;
-                return dom?.color ?? obj?.placeholder_color ?? '#888888';
+                const dom = obj ? domainsById.get(obj.domainId) : undefined;
+                return dom?.color ?? obj?.placeholderColor ?? '#888888';
               }}
             />
           )}

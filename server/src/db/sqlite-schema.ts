@@ -64,6 +64,7 @@ export const objects = sqliteTable('objects', {
   projectId: text('project_id').notNull(),
   domainId: text('domain_id').notNull(),
   label: text('label').notNull(),
+  description: text('description'),
   placeholderShape: text('placeholder_shape').notNull().default('cube'),
   placeholderColor: text('placeholder_color').notNull().default('#888888'),
   placeholderImageAssetId: text('placeholder_image_asset_id'),
@@ -426,6 +427,7 @@ export const sqliteTables = {
 /** 起動時に流す DDL (CREATE TABLE IF NOT EXISTS + 必要な UNIQUE INDEX)。 FK は張らない (ローカル単一利用)。 */
 /** 既存 DB へ後から足す列 (重複時はエラーになるので connection 側で個別に try する)。 */
 export const SQLITE_ALTERS: string[] = [
+  `ALTER TABLE objects ADD COLUMN description TEXT`,
   `ALTER TABLE projects ADD COLUMN ux_experience TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE projects ADD COLUMN ux_design TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE projects ADD COLUMN ux_goal TEXT NOT NULL DEFAULT ''`,

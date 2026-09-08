@@ -15,6 +15,7 @@ import { requireAuth, getIdentity } from '../middleware/require-auth.ts';
 import { requireRole } from '../middleware/require-role.ts';
 import { AppError } from '../lib/errors.ts';
 import { recordAudit } from '../lib/audit.ts';
+import { requireProjectDomains } from '../lib/project-domain-validation.ts';
 
 const ALL_ROLES: readonly ProjectRole[] = [
   'owner',
@@ -46,6 +47,12 @@ const createSchema = z.object({
 });
 
 const updateSchema = createSchema.partial();
+const registrationSchema = createSchema.extend({
+  definition: z.object({
+    kind: z.enum(['core', 'business']),
+    value: z.string().trim().min(1).max(4000),
+  }).optional(),
+});
 
 /** 親をたどって required_attrs をマージ (子が上書き)。 循環は防御的に depth で打切る。 */
 async function resolveInheritedAttrs(domainId: string): Promise<RequiredAttr[]> {
@@ -100,8 +107,11 @@ export function makeDomainRouter(): Hono {
     if (!getDbState().ok) throw AppError.internal('db_unavailable');
     const pid = c.req.param('pid')!;
     const body = await c.req.json().catch(() => null);
-    const parsed = createSchema.safeParse(body);
+    const parsed = registrationSchema.safeParse(body);
     if (!parsed.success) throw AppError.badRequest('bad_body', parsed.error.flatten());
+
+    // 親は他 project のものを指せない (入力検証なので name 重複より先に弾く)。
+    if (parsed.data.parent_id) await requireProjectDomains(pid, [parsed.data.parent_id]);
 
     // project 内で name unique は DB UNIQUE で担保するが、 事前 lookup でわかりやすい error
     const existing = await getDb()
@@ -118,6 +128,9 @@ export function makeDomainRouter(): Hono {
         id: did,
         projectId: pid,
         name: parsed.data.name,
+        definitionKind: parsed.data.definition?.kind ?? null,
+        definitionValue: parsed.data.definition?.value ?? '',
+        definitionRevision: parsed.data.definition ? 1 : 0,
         description: parsed.data.description ?? null,
         color: parsed.data.color ?? '#888888',
         icon: parsed.data.icon ?? null,
@@ -145,6 +158,12 @@ export function makeDomainRouter(): Hono {
     const body = await c.req.json().catch(() => null);
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) throw AppError.badRequest('bad_body', parsed.error.flatten());
+
+    // 親は他 project のものを指せない。 自己参照も弾く (循環の最小ケース)。
+    if (parsed.data.parent_id) {
+      if (parsed.data.parent_id === did) throw AppError.badRequest('domain_parent_self');
+      await requireProjectDomains(pid, [parsed.data.parent_id]);
+    }
 
     const patch: Record<string, unknown> = { updatedAt: new Date() };
     if (parsed.data.name !== undefined) patch.name = parsed.data.name;

@@ -1,7 +1,7 @@
 {
   "name": "spec-authoring",
   "description": "仕様の作成。 プランナーが placeholder を配置し仕様を書くための表現とその保存。",
-  "specRefs": ["spec/feature/project-ux-goal.md", "spec/feature/domain-definition-links.md"],
+  "specRefs": ["spec/feature/project-ux-goal.md", "spec/feature/domain-definition-links.md", "spec/feature/project-registration.md"],
   "presetRules": [],
   "templateRules": [],
   "membership": [

@@ -11,6 +11,7 @@ import { ulid } from 'ulid';
 import { z } from 'zod';
 import { getDb, getDbState } from '../db/connection.ts';
 import { objects, objectAttrs } from '../db/schema/object.ts';
+import { requireProjectDomains } from '../lib/project-domain-validation.ts';
 import { type ProjectRole } from '../db/schema/project.ts';
 import { requireAuth, getIdentity } from '../middleware/require-auth.ts';
 import { requireRole } from '../middleware/require-role.ts';
@@ -26,6 +27,7 @@ const EDIT_ROLES: readonly ProjectRole[] = ['owner', 'planner'];
 const createSchema = z.object({
   domain_id: z.string().min(1),
   label: z.string().min(1).max(200),
+  description: z.string().trim().max(4000).nullish(),
   placeholder_shape: z.string().max(40).optional(),
   placeholder_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   placeholder_image_asset_id: z.string().nullish(),
@@ -66,7 +68,8 @@ export function makeObjectRouter(): Hono {
   r.get('/:oid', requireAuth, requireRole(ALL_ROLES), async (c) => {
     if (!getDbState().ok) throw AppError.internal('db_unavailable');
     const oid = c.req.param('oid')!;
-    const [row] = await getDb().select().from(objects).where(eq(objects.id, oid)).limit(1);
+    const [row] = await getDb().select().from(objects)
+      .where(and(eq(objects.id, oid), eq(objects.projectId, c.req.param('pid')!), isNull(objects.deletedAt))).limit(1);
     if (!row) throw AppError.notFound();
     const attrs = await getDb()
       .select()
@@ -82,6 +85,7 @@ export function makeObjectRouter(): Hono {
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) throw AppError.badRequest('bad_body', parsed.error.flatten());
     const oid = ulid();
+    await requireProjectDomains(pid, [parsed.data.domain_id]);
     await getDb()
       .insert(objects)
       .values({
@@ -89,6 +93,7 @@ export function makeObjectRouter(): Hono {
         projectId: pid,
         domainId: parsed.data.domain_id,
         label: parsed.data.label,
+        description: parsed.data.description ?? null,
         placeholderShape: parsed.data.placeholder_shape ?? 'cube',
         placeholderColor: parsed.data.placeholder_color ?? '#888888',
         placeholderImageAssetId: parsed.data.placeholder_image_asset_id ?? null,
@@ -114,7 +119,13 @@ export function makeObjectRouter(): Hono {
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) throw AppError.badRequest('bad_body', parsed.error.flatten());
 
+    const scope = and(eq(objects.id, oid), eq(objects.projectId, pid), isNull(objects.deletedAt));
+    const [before] = await getDb().select({ id: objects.id }).from(objects).where(scope).limit(1);
+    if (!before) throw AppError.notFound();
+
     const patch: Record<string, unknown> = { updatedAt: new Date() };
+    if (parsed.data.domain_id !== undefined) await requireProjectDomains(pid, [parsed.data.domain_id]);
+    if (parsed.data.description !== undefined) patch.description = parsed.data.description;
     if (parsed.data.domain_id !== undefined) patch.domainId = parsed.data.domain_id;
     if (parsed.data.label !== undefined) patch.label = parsed.data.label;
     if (parsed.data.placeholder_shape !== undefined) patch.placeholderShape = parsed.data.placeholder_shape;
@@ -123,7 +134,7 @@ export function makeObjectRouter(): Hono {
       patch.placeholderImageAssetId = parsed.data.placeholder_image_asset_id;
     if (parsed.data.parent_object_id !== undefined) patch.parentObjectId = parsed.data.parent_object_id;
 
-    await getDb().update(objects).set(patch).where(eq(objects.id, oid));
+    await getDb().update(objects).set(patch).where(scope);
     await recordAudit({
       projectId: pid,
       actor: getIdentity(c),

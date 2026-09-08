@@ -1,0 +1,8 @@
+.entity-card-list { list-style: none; display: grid; gap: 12px; padding: 0; }
+.entity-card { min-width: 0; overflow-wrap: anywhere; }
+.entity-card summary { cursor: pointer; padding: 8px; }
+.entity-description { display: block; white-space: pre-wrap; margin: 8px 0; color: var(--muted); }
+.entity-children { border-top: 1px solid var(--border); margin-top: 8px; padding: 8px; }
+.entity-children .entity-children { padding-right: 0; }
+.entity-menu { display: flex; flex-wrap: wrap; gap: 8px; }
+.entity-menu > button { min-height: 40px; }

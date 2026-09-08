@@ -5,16 +5,22 @@ import { api } from '../lib/api.ts';
 import { DomainDefinitionsPanel } from '../components/domain-definitions/DomainDefinitionsPanel.tsx';
 import { parseDeeplinkTab, useFocusEntity } from '../lib/deeplink.ts';
 import { ProjectUxGoal } from '../components/ProjectUxGoal.tsx';
+import { ProjectTabs, type ProjectTab } from '../components/ProjectTabs.tsx';
+import { ActorRegistration } from '../components/registration/ActorRegistration.tsx';
+import { SceneRegistration } from '../components/registration/SceneRegistration.tsx';
+import { SpecRegistration } from '../components/registration/SpecRegistration.tsx';
+import { ActorCards } from '../components/ActorCards.tsx';
 
-type Tab = 'overview' | 'ux-goal' | 'domains' | 'objects' | 'layouts' | 'specs';
+type Tab = ProjectTab;
 
 export function ProjectShowPage(): React.ReactElement {
   const { pid } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   // Thaleia ディープリンク `?tab=&focus=` を消費する (発行側契約は lib/deeplink.ts 参照)。
-  // `ux-goal` は Thaleia の発行対象外で、 Praeforma 内部のタブ共有リンク専用。
+  // 概要・アクター・UX/ゴールはPf内部の共有URLにも対応する。
   const rawTab = searchParams.get('tab');
-  const deeplinkTab: Tab | null = rawTab === 'ux-goal' ? 'ux-goal' : parseDeeplinkTab(rawTab);
+  const deeplinkTab: Tab | null = rawTab === 'ux-goal' || rawTab === 'overview' || rawTab === 'objects'
+    ? rawTab : parseDeeplinkTab(rawTab);
   const focus = searchParams.get('focus');
   const [tab, setTab] = React.useState<Tab>(() => deeplinkTab ?? 'overview');
   const projectQ = useQuery({
@@ -89,25 +95,22 @@ export function ProjectShowPage(): React.ReactElement {
         </div>
       )}
 
-      <div className="tabbar" style={{ overflowX: 'auto' }}>
-        {(['overview', 'ux-goal', 'domains', 'objects', 'layouts', 'specs'] as Tab[]).map((t) => (
-          <button
-            key={t}
-            type="button"
-            className={`tab ${tab === t ? 'active' : ''}`}
-            onClick={() => setTab(t)}
-          >
-            {t === 'ux-goal' ? 'UX/Goal' : t}
-          </button>
-        ))}
-      </div>
+      <ProjectTabs key={pid} tab={tab} onChange={(next) => {
+        setTab(next);
+        setSearchParams((current) => {
+          const params = new URLSearchParams(current);
+          params.set('tab', next);
+          params.delete('focus');
+          return params;
+        });
+      }} />
 
       {tab === 'ux-goal' && <ProjectUxGoal key={pid} pid={pid} />}
 
       {tab === 'overview' && (
         <>
           <div className="panel">
-            <h3>Members ({membersQ.data?.items.length ?? 0})</h3>
+            <h3>メンバー ({membersQ.data?.items.length ?? 0})</h3>
             <ul className="item-list">
               {membersQ.data?.items.map((m) => (
                 <li key={m.id} className="item-row">
@@ -120,7 +123,7 @@ export function ProjectShowPage(): React.ReactElement {
             </ul>
           </div>
           <div className="panel">
-            <h3>Layouts ({layoutsQ.data?.items.length ?? 0})</h3>
+            <h3>シーン ({layoutsQ.data?.items.length ?? 0})</h3>
             <ul className="item-list">
               {layoutsQ.data?.items.map((l) => (
                 <li key={l.id} className="item-row">
@@ -137,25 +140,21 @@ export function ProjectShowPage(): React.ReactElement {
 
       {tab === 'objects' && (
         <div className="panel">
-          <h3>Objects</h3>
-          {objectsQ.isLoading && <p>loading…</p>}
-          <ul className="item-list">
-            {objectsQ.data?.items.map((o) => (
-              <li key={o.id} className="item-row">
-                <div className="label">{o.label}</div>
-                <div className="meta">
-                  {o.placeholder_shape} {o.placeholder_color} / domain={o.domain_id}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <ActorRegistration key={pid} pid={pid} />
+          <h3>アクター</h3>
+          {objectsQ.isLoading && <p>読み込み中…</p>}
+          {objectsQ.isError && <p role="alert">アクターを取得できませんでした。</p>}
+          {objectsQ.isSuccess && objectsQ.data.items.length === 0 && <p>アクターは未登録です。</p>}
+          <ActorCards pid={pid} actors={objectsQ.data?.items ?? []} />
         </div>
       )}
 
       {tab === 'layouts' && (
         <div className="panel">
-          <h3>Layouts</h3>
-          {layoutsQ.isLoading && <p>loading…</p>}
+          <SceneRegistration key={pid} pid={pid} />
+          <h3>シーン</h3>
+          {layoutsQ.isLoading && <p>読み込み中…</p>}
+          {layoutsQ.isError && <p role="alert">シーンを取得できませんでした。</p>}
           <ul className="item-list">
             {layoutsQ.data?.items.map((l) => (
               <li key={l.id} className="item-row" data-focus={l.name}>
@@ -169,8 +168,10 @@ export function ProjectShowPage(): React.ReactElement {
 
       {tab === 'specs' && (
         <div className="panel">
-          <h3>Specs</h3>
-          {specsQ.isLoading && <p>loading…</p>}
+          <SpecRegistration key={pid} pid={pid} />
+          <h3>仕様</h3>
+          {specsQ.isLoading && <p>読み込み中…</p>}
+          {specsQ.isError && <p role="alert">仕様を取得できませんでした。</p>}
           <ul className="item-list">
             {specsQ.data?.items.map((s) => (
               <li key={s.id} className="item-row" data-focus={s.code}>

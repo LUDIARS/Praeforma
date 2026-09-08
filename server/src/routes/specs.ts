@@ -14,6 +14,7 @@ import { requireRole } from '../middleware/require-role.ts';
 import { AppError } from '../lib/errors.ts';
 import { parsePagination } from '../lib/pagination.ts';
 import { recordAudit } from '../lib/audit.ts';
+import { requireProjectDomains } from '../lib/project-domain-validation.ts';
 
 const ALL_ROLES: readonly ProjectRole[] = [
   'owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer',
@@ -92,7 +93,10 @@ export function makeSpecRouter(): Hono {
   r.get('/:sid', requireAuth, requireRole(ALL_ROLES), async (c) => {
     if (!getDbState().ok) throw AppError.internal('db_unavailable');
     const sid = c.req.param('sid')!;
-    const [row] = await getDb().select().from(specs).where(eq(specs.id, sid)).limit(1);
+    // role は :pid に対して検査されるので、 対象が :pid のものかは自分で絞る (他 project 参照防止)。
+    const [row] = await getDb().select().from(specs)
+      .where(and(eq(specs.id, sid), eq(specs.projectId, c.req.param('pid')!), isNull(specs.deletedAt)))
+      .limit(1);
     if (!row) throw AppError.notFound();
     const targets = await getDb()
       .select()
@@ -114,6 +118,8 @@ export function makeSpecRouter(): Hono {
     if (!parsed.success) throw AppError.badRequest('bad_body', parsed.error.flatten());
 
     // code unique check
+    await requireProjectDomains(pid, (parsed.data.targets ?? []).filter((target) => target.kind === 'domain').map((target) => target.ref_id));
+
     const existing = await getDb()
       .select()
       .from(specs)
@@ -181,8 +187,10 @@ export function makeSpecRouter(): Hono {
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) throw AppError.badRequest('bad_body', parsed.error.flatten());
 
+    // 対象が :pid のものかを絞ってから CAS する (他 project の spec を書き換えられない)。
+    const scope = and(eq(specs.id, sid), eq(specs.projectId, pid), isNull(specs.deletedAt));
     // 楽観ロック CAS
-    const [before] = await getDb().select().from(specs).where(eq(specs.id, sid)).limit(1);
+    const [before] = await getDb().select().from(specs).where(scope).limit(1);
     if (!before) throw AppError.notFound();
     if (before.version !== parsed.data.prev_version) {
       throw AppError.conflict('version_conflict', {
@@ -203,7 +211,7 @@ export function makeSpecRouter(): Hono {
     if (parsed.data.postconditions !== undefined) patch.postconditions = parsed.data.postconditions;
     if (parsed.data.status !== undefined) patch.status = parsed.data.status;
 
-    await getDb().update(specs).set(patch).where(eq(specs.id, sid));
+    await getDb().update(specs).set(patch).where(scope);
     await recordAudit({
       projectId: pid,
       actor: getIdentity(c),
@@ -212,7 +220,7 @@ export function makeSpecRouter(): Hono {
       targetId: sid,
       meta: { from_version: before.version, to_version: before.version + 1 },
     });
-    const [row] = await getDb().select().from(specs).where(eq(specs.id, sid)).limit(1);
+    const [row] = await getDb().select().from(specs).where(scope).limit(1);
     return c.json({ spec: row });
   });
 
@@ -223,7 +231,7 @@ export function makeSpecRouter(): Hono {
     await getDb()
       .update(specs)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
-      .where(eq(specs.id, sid));
+      .where(and(eq(specs.id, sid), eq(specs.projectId, pid)));
     await recordAudit({
       projectId: pid,
       actor: getIdentity(c),
@@ -243,6 +251,12 @@ export function makeSpecRouter(): Hono {
     const body = await c.req.json().catch(() => null);
     const parsed = targetsReplaceSchema.safeParse(body);
     if (!parsed.success) throw AppError.badRequest('bad_body', parsed.error.flatten());
+    // 対象 spec と domain target が :pid のものであることを確認する (他 project 参照防止)。
+    const [target] = await getDb().select({ id: specs.id }).from(specs)
+      .where(and(eq(specs.id, sid), eq(specs.projectId, pid), isNull(specs.deletedAt))).limit(1);
+    if (!target) throw AppError.notFound();
+    const domainRefs = parsed.data.targets.filter((t) => t.kind === 'domain').map((t) => t.ref_id);
+    if (domainRefs.length > 0) await requireProjectDomains(pid, domainRefs);
     await getDb().delete(specTargets).where(eq(specTargets.specId, sid));
     if (parsed.data.targets.length > 0) {
       await getDb()
@@ -277,6 +291,11 @@ export function makeSpecRouter(): Hono {
         throw AppError.badRequest('expression_required_for_non_manual');
       }
     }
+
+    // 対象 spec が :pid のものであることを確認する (他 project 参照防止)。
+    const [target] = await getDb().select({ id: specs.id }).from(specs)
+      .where(and(eq(specs.id, sid), eq(specs.projectId, pid), isNull(specs.deletedAt))).limit(1);
+    if (!target) throw AppError.notFound();
 
     await getDb().delete(specAcceptance).where(eq(specAcceptance.specId, sid));
     if (parsed.data.items.length > 0) {

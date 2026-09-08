@@ -7,6 +7,7 @@
 import React from 'react';
 import { Link, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { DomainSelect } from '../components/registration/DomainSelect.tsx';
 import {
   api,
   type GraphNode,
@@ -47,6 +48,7 @@ export function StudioPage(): React.ReactElement {
   const [target, setTarget] = React.useState<{ kind: UxTargetKind; id: string; name: string } | null>(null);
   const [central, setCentral] = React.useState('');
   const [desc, setDesc] = React.useState('');
+  const [requirementDomain, setRequirementDomain] = React.useState('');
   const [status, setStatus] = React.useState<{ msg: string; kind: 'ok' | 'err' } | null>(null);
   const [proposal, setProposal] = React.useState<IngestProposal | null>(null);
   const [suggestions, setSuggestions] = React.useState<Array<SuggestedRequirement & { _sel: boolean }>>([]);
@@ -104,6 +106,7 @@ export function StudioPage(): React.ReactElement {
     mutationFn: async () => {
       const chosen = suggestions.filter((s) => s._sel);
       const dbKind = target!.kind === 'scene' ? ('layout' as const) : ('domain' as const);
+      if (dbKind === 'layout' && !requirementDomain) throw new Error('仕様のドメインを選択してください。');
       for (const s of chosen) {
         await api.createSpec(pid!, {
           code: s.code || genCode(target!.name),
@@ -113,7 +116,8 @@ export function StudioPage(): React.ReactElement {
           category: s.category,
           preconditions: s.preconditions,
           postconditions: s.postconditions,
-          targets: [{ kind: dbKind, ref_id: target!.id }],
+          targets: dbKind === 'domain' ? [{ kind: 'domain', ref_id: target!.id }]
+            : [{ kind: 'layout', ref_id: target!.id }, { kind: 'domain', ref_id: requirementDomain }],
           acceptance: s.acceptance.map((a) => ({ text: a.text, level: a.level, kind: a.kind })),
         });
       }
@@ -321,6 +325,9 @@ export function StudioPage(): React.ReactElement {
           {suggestions.length > 0 && (
             <div style={{ marginTop: 12 }}>
               <h3>提案 ({suggestions.filter((s) => s._sel).length}/{suggestions.length} 選択)</h3>
+              {target?.kind === 'scene' && <div className="foundation-form">
+                <DomainSelect pid={pid!} value={requirementDomain} onChange={setRequirementDomain} />
+              </div>}
               <ul className="item-list">
                 {suggestions.map((s, i) => (
                   <li key={i} className={`item-row ${s._sel ? 'active' : ''}`}>
@@ -340,7 +347,7 @@ export function StudioPage(): React.ReactElement {
                 ))}
               </ul>
               <div className="simple-actions">
-                <button type="button" className="primary" disabled={confirmM.isPending || suggestions.every((s) => !s._sel)} onClick={() => confirmM.mutate()}>
+                <button type="button" className="primary" disabled={confirmM.isPending || suggestions.every((s) => !s._sel) || (target?.kind === 'scene' && !requirementDomain)} onClick={() => confirmM.mutate()}>
                   {confirmM.isPending ? '保存中…' : '選択した要件を確定 (spec 作成)'}
                 </button>
                 <button type="button" className="ghost" onClick={() => { setCentral(''); setPhase('graph'); setStatus(null); }}>

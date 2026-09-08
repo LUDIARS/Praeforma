@@ -67,7 +67,7 @@ export function DomainDefinitionEditor({ pid, domain, data, onSaved }: {
           <p>コアドメインの価値を露出させるシーンを選びます。未選択でも保存できます。</p>
           {draft.kind === 'core' && !draft.sceneIds.some((id) => data.scenes.some((s) => s.id === id))
             && <p role="status">⚠ 露出するシーン定義がありません。</p>}
-          {data.scenes.length === 0 && <p>シーン定義がありません。<Link to={`/projects/${pid}/studio`}>シーンを定義する</Link></p>}
+          {data.scenes.length === 0 && <p>シーン定義がありません。<Link to={`/projects/${pid}?tab=layouts`}>シーンを登録する</Link></p>}
           {data.scenes.map((s) => <label key={s.id} style={{ display: 'block', padding: '8px 0' }}>
             <input type="checkbox" checked={draft.sceneIds.includes(s.id)} onChange={(e) => setDraft({ ...draft,
               sceneIds: e.target.checked ? [...draft.sceneIds, s.id] : draft.sceneIds.filter((id) => id !== s.id) })} /> {s.name}
@@ -94,7 +94,7 @@ export function DomainDefinitionEditor({ pid, domain, data, onSaved }: {
     </form>
     <h4>関連する要件定義</h4>
     {!domain.definitionKind && <p>先にドメインの価値と分類を保存してください。</p>}
-    {data.requirements.length === 0 && <p>要件定義がありません。<Link to={`/projects/${pid}/studio`}>要件を定義する</Link></p>}
+    {data.requirements.length === 0 && <p>要件定義がありません。<Link to={`/projects/${pid}?tab=specs`}>仕様を登録する</Link></p>}
     {data.requirements.map((s) => <label key={s.id} style={{ display: 'block', padding: '8px 0' }}>
       <input type="checkbox" disabled={busy || !domain.definitionKind}
         checked={data.links.some((l) => l.domainId === domain.id && l.specId === s.id)}

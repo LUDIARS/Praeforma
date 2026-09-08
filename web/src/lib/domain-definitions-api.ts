@@ -4,6 +4,7 @@ export interface DefinedDomain {
   id: string;
   name: string;
   description: string | null;
+  parentId: string | null;
   definitionKind: 'core' | 'business' | null;
   definitionValue: string;
   definitionSceneIds: string[];

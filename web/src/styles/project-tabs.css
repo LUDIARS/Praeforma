@@ -1,0 +1,13 @@
+.project-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.project-tabs > .tab, .project-tabs summary { padding: 10px 2px; text-align: center; white-space: nowrap; }
+.project-tabs-more { position: relative; min-width: 0; }
+.project-tabs-more summary { list-style: none; }
+.project-tabs-more summary::-webkit-details-marker { display: none; }
+.project-tabs-menu {
+  position: absolute; right: 0; top: 100%; z-index: 20;
+  display: grid; min-width: 150px; max-height: 60vh; overflow-y: auto;
+  padding: 6px; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; box-shadow: var(--shadow);
+}
+.project-tabs-menu .tab { text-align: left; }
+.project-tabs-menu .tab:hover { background: var(--accent-bg); }

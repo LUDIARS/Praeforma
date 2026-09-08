@@ -93,14 +93,16 @@ export interface Domain {
   required_attrs: Array<{ name: string; type: string }>;
 }
 
+// objects の route は Drizzle の row をそのまま返すので camelCase が wire 契約。
 export interface PfObject {
   id: string;
-  project_id: string;
-  domain_id: string;
+  projectId: string;
+  domainId: string;
   label: string;
-  placeholder_shape: string;
-  placeholder_color: string;
-  parent_object_id: string | null;
+  description: string | null;
+  placeholderShape: string;
+  placeholderColor: string;
+  parentObjectId: string | null;
 }
 
 export interface Layout {
@@ -244,7 +246,8 @@ export const api = {
 
   // domains
   listDomains: (pid: string) => req<{ items: Domain[] }>(`/api/projects/${pid}/domains`),
-  createDomain: (pid: string, body: { name: string; description?: string; color?: string }) =>
+  createDomain: (pid: string, body: { name: string; description?: string; color?: string;
+    parent_id?: string | null; definition?: { kind: 'core' | 'business'; value: string } }) =>
     req<{ domain: Domain }>(`/api/projects/${pid}/domains`, {
       method: 'POST',
       body: JSON.stringify(body),
@@ -257,6 +260,7 @@ export const api = {
     body: {
       domain_id: string;
       label: string;
+      description?: string;
       placeholder_shape?: string;
       placeholder_color?: string;
       parent_object_id?: string | null;

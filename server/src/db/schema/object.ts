@@ -25,6 +25,7 @@ const objectsPg = pgTable(
       .notNull()
       .references(() => domains.id),
     label: text('label').notNull(),
+    description: text('description'),
     placeholderShape: text('placeholder_shape').notNull().default('cube'),
     placeholderColor: text('placeholder_color').notNull().default('#888888'),
     placeholderImageAssetId: text('placeholder_image_asset_id'),
