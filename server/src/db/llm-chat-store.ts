@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { versionRows } from './spec-version-store.ts';
+import { versionBatch, versionRows } from './spec-version-store.ts';
 import type { ChatMessage } from '../../../shared/llm-chat.ts';
 import { AppError } from '../lib/errors.ts';
 
@@ -10,7 +10,8 @@ export interface ChatRecord {
 }
 export interface StoredChat { revision: number; record: ChatRecord | null }
 export async function readChat(pid: string, uid: string): Promise<StoredChat> {
-  await versionRows('INSERT INTO llm_chats(project_id,user_id,revision,data) VALUES(?,?,0,NULL) ON CONFLICT(project_id,user_id) DO NOTHING', [pid, uid]);
+  // This insert intentionally returns no rows; SQLite must execute it with run(), not all().
+  await versionBatch([{ sql: 'INSERT INTO llm_chats(project_id,user_id,revision,data) VALUES(?,?,0,NULL) ON CONFLICT(project_id,user_id) DO NOTHING', args: [pid, uid] }]);
   const [row] = await versionRows('SELECT revision,data FROM llm_chats WHERE project_id=? AND user_id=?', [pid, uid]);
   if (!row) throw AppError.internal('chat_storage_unavailable');
   return { revision: Number(row.revision), record: row.data === null ? null : JSON.parse(String(row.data)) as ChatRecord };
