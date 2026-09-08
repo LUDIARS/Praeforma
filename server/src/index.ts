@@ -14,6 +14,7 @@ import { Hono } from 'hono';
 import { makeSpecFragmentRouter } from './routes/spec-fragments.ts';
 import { makeSpecVersionRouter } from './routes/spec-versions.ts';
 import { makeDomainProposalRouter } from './routes/domain-proposals.ts';
+import { makeLlmChatRouter } from './routes/llm-chat.ts';
 import { noStoreResponses } from './middleware/no-store.ts';
 import { cors } from 'hono/cors';
 import { serve, type ServerType } from '@hono/node-server';
@@ -166,6 +167,7 @@ app.route(
 
 // Screen Flow: 遷移 / 書き出し / LLM トークエリア / Anatomia 突合 / Cc 接続 (spec/feature/screen-flow.md)
 const anatomiaOpts = { anatomiaUrl: config.anatomiaUrl };
+app.route('/api/projects/:pid/llm-chat', makeLlmChatRouter(config));
 app.route('/api/projects/:pid/domain-proposals', makeDomainProposalRouter(config.claudeBin,anatomiaOpts));
 app.route('/api/projects/:pid/domain-definitions', makeDomainDefinitionsRouter(anatomiaOpts));
 const ccOpts = { ccUrl: config.ccUrl, ccToken: config.ccToken, ccTemplate: config.ccTemplate };

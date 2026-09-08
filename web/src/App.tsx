@@ -1,10 +1,14 @@
 import React from 'react';
-import { Outlet, Link, useNavigate } from 'react-router';
+import { Outlet, Link, useNavigate, useMatch } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api, clearToken } from './lib/api.ts';
+import { LlmChatWindow } from './components/llm-chat/LlmChatWindow.tsx';
 
 export function App(): React.ReactElement {
   const navigate = useNavigate();
+  const projectMatch = useMatch('/projects/:pid/*');
+  const pid = projectMatch?.params.pid;
+  const [chatOpen, setChatOpen] = React.useState(false);
   const meQ = useQuery({ queryKey: ['me'], queryFn: () => api.me() });
 
   function onSignOut(): void {
@@ -19,6 +23,9 @@ export function App(): React.ReactElement {
           <Link to="/" style={{ color: 'inherit' }}>Praeforma</Link>
         </div>
         <div className="topbar-spacer" />
+        <button type="button" className="ghost" disabled={!pid} title={pid ? 'AI相談' : 'プロジェクトを開いて相談してください'}
+          aria-expanded={chatOpen && !!pid} aria-controls={chatOpen && pid ? 'pf-llm-window' : undefined}
+          onClick={() => setChatOpen(open => !open)}>AI相談</button>
         <div className="topbar-info">
           {meQ.data ? (
             <>
@@ -34,6 +41,7 @@ export function App(): React.ReactElement {
       <main className="content">
         <Outlet />
       </main>
+      {chatOpen && pid && <LlmChatWindow key={`${meQ.data?.userId}:${pid}`} pid={pid} onClose={() => setChatOpen(false)} />}
     </>
   );
 }

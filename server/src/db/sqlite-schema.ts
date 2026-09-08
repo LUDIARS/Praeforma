@@ -472,6 +472,7 @@ export const SQLITE_ALTERS: string[] = [
 ];
 
 export const SQLITE_DDL: string[] = [
+  `CREATE TABLE IF NOT EXISTS llm_chats (project_id TEXT NOT NULL REFERENCES projects(id), user_id TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 0, data TEXT, PRIMARY KEY(project_id,user_id))`,
   ...MANUAL_DDL,
   ...SCENE_DDL,
   `CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, org_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, platforms TEXT NOT NULL DEFAULT '["web"]', default_layout_id TEXT, anatomia_repo TEXT, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,
