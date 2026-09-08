@@ -9,7 +9,7 @@ export function FragmentList({ pid }: { pid: string }): React.ReactElement {
   const [content, setContent] = React.useState('');
   const eventId = React.useRef<string | null>(null);
   const query = useQuery({ queryKey: ['spec-fragments', pid, offset], queryFn: () => fragmentApi.list(pid, offset) });
-  const refresh = async (): Promise<void> => { await client.invalidateQueries({ queryKey: ['spec-fragments', pid] }); };
+  const refresh = async (): Promise<void> => { await Promise.all([client.invalidateQueries({ queryKey: ['spec-fragments', pid] }),client.invalidateQueries({queryKey:['spec-versions',pid]})]); };
   const create = useMutation({
     mutationFn: () => {
       eventId.current ??= crypto.randomUUID();

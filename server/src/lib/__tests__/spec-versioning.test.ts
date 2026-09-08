@@ -1,0 +1,58 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {Hono} from 'hono';
+import {nextSpecVersion,versionLabel,type ReconstructionPlan} from '../../../../shared/spec-versioning.ts';
+process.env.PRAEFORMA_LOCAL_MODE='1';
+test('PF-RECON-3 patch, minor and major reset the lower components',()=>{
+  const base={major:2,minor:3,patch:4,revision:12};
+  assert.equal(versionLabel(nextSpecVersion(base,'patch')),'2.3.5');
+  assert.equal(versionLabel(nextSpecVersion(base,'minor')),'2.4.0');
+  assert.equal(versionLabel(nextSpecVersion(base,'major')),'3.0.0');
+});
+test('PF-RECON-1/4/5 preview, atomic confirmation, immutable logs, replay and permissions',async()=>{
+  const {initLocalDb,getDb,getLocalSqlite}=await import('../../db/connection.ts');
+  const {projects,projectMembers}=await import('../../db/schema/project.ts');
+  const {domains}=await import('../../db/schema/domain.ts');
+  const {enableLocalAuth}=await import('../../middleware/require-auth.ts');
+  const {makeSpecFragmentRouter}=await import('../../routes/spec-fragments.ts');
+  const {makeSpecVersionRouter}=await import('../../routes/spec-versions.ts');
+  const {versionRows}=await import('../../db/spec-version-store.ts');
+  const {AppError}=await import('../errors.ts');
+  const state=await initLocalDb(':memory:');assert.equal(state.ok,true,state.error??undefined);
+  const sqlite=getLocalSqlite() as unknown as {close():void};
+  try{
+    const identify=(userId:string)=>enableLocalAuth({userId,displayName:null,role:'user',projectKey:null});identify('author');
+    await getDb().insert(projects).values([{id:'p',name:'One',orgId:'test',ownerUserId:'author'},{id:'q',name:'Two',orgId:'test',ownerUserId:'author'}]);
+    await getDb().insert(projectMembers).values([{id:'a',projectId:'p',userId:'author',role:'owner'},{id:'b',projectId:'q',userId:'author',role:'owner'},{id:'c',projectId:'p',userId:'reader',role:'viewer'}]);
+    await getDb().insert(domains).values({id:'d',projectId:'p',name:'Inventory'});
+    const app=new Hono();app.onError(e=>new Response(JSON.stringify({error:e.message}),{status:e instanceof AppError?e.status:500}));
+    app.route('/projects/:pid/spec-fragments',makeSpecFragmentRouter());
+    app.route('/projects/:pid/spec-versions',makeSpecVersionRouter('unused',async(_binary,material):Promise<ReconstructionPlan>=>({changes:[{specId:material.specs[0]?.id??null,domainId:'d',title:'Inventory',description:material.fragments.map(f=>f.content).join('\n'),fragmentIds:material.fragments.map(f=>f.id),rationale:'Integrate observed requirements'}],deferred:[]})));
+    const post=(path:string,body?:unknown)=>app.request(path,{method:'POST',...(body?{headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{})});
+    const history=async()=>await(await app.request('/projects/p/spec-versions')).json() as {version:string;head:{revision:number};logs:Array<{kind:string;payload:unknown}>};
+    const fragment={content:'Open inventory',sourceEventId:'00000000-0000-4000-8000-000000000001'};
+    assert.equal((await post('/projects/p/spec-fragments',fragment)).status,201);
+    assert.equal((await history()).version,'0.0.1');
+    assert.equal((await post('/projects/p/spec-fragments',fragment)).status,200);assert.equal((await history()).version,'0.0.1');
+    let response=await post('/projects/p/spec-versions/reconstructions');assert.equal(response.status,201);
+    let draft=await response.json() as {proposal:{id:string}};const firstId=draft.proposal.id;
+    assert.equal((await history()).version,'0.0.1');
+    identify('reader');assert.equal((await post(`/projects/p/spec-versions/reconstructions/${firstId}/confirm`)).status,403);identify('author');
+    assert.equal((await post(`/projects/q/spec-versions/reconstructions/${firstId}/confirm`)).status,404);
+    assert.equal((await post(`/projects/p/spec-versions/reconstructions/${firstId}/confirm`)).status,200);
+    assert.equal((await history()).version,'0.1.0');assert.equal((await history()).logs.length,2);
+    assert.equal((await post(`/projects/p/spec-versions/reconstructions/${firstId}/confirm`)).status,409);
+    assert.equal((await versionRows('SELECT id FROM spec_fragments WHERE project_id=?',['p'])).length,1);
+    assert.equal((await versionRows('SELECT id FROM specs WHERE project_id=?',['p'])).length,1);
+    const originalLog=JSON.stringify((await history()).logs);
+    assert.equal((await post('/projects/p/spec-fragments',{...fragment,content:'Show item count',sourceEventId:'00000000-0000-4000-8000-000000000002'})).status,201);
+    response=await post('/projects/p/spec-versions/reconstructions');draft=await response.json() as {proposal:{id:string}};
+    const latest=await history();assert.equal(latest.version,'0.1.1');
+    assert.equal((await post('/projects/p/spec-versions/releases',{expectedRevision:latest.head.revision,note:'First release'})).status,200);
+    assert.equal((await history()).version,'1.0.0');
+    assert.equal((await post('/projects/p/spec-versions/releases',{expectedRevision:latest.head.revision,note:'Retry'})).status,409);
+    assert.equal((await post(`/projects/p/spec-versions/reconstructions/${draft.proposal.id}/confirm`)).status,409);
+    assert.equal(JSON.stringify((await history()).logs.slice(-2)),originalLog);
+    identify('reader');assert.equal((await app.request('/projects/p/spec-versions')).status,200);assert.equal((await post('/projects/p/spec-versions/releases',{expectedRevision:4,note:'No'})).status,403);
+  }finally{sqlite.close();}
+});

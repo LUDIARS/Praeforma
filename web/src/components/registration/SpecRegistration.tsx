@@ -18,6 +18,7 @@ export function SpecRegistration({ pid }: { pid: string }): React.ReactElement {
       setCode(''); setTitle(''); setDescription('');
       await Promise.all([
         client.invalidateQueries({ queryKey: ['specs', pid] }),
+        client.invalidateQueries({ queryKey: ['spec-versions', pid] }),
         client.invalidateQueries({ queryKey: ['domain-definitions', pid] }),
       ]);
     },

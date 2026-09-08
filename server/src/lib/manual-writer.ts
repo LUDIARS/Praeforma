@@ -1,46 +1,23 @@
 /** Dedicated, bounded CLI invocation; no tool execution is granted to source material. */
-import { spawn } from 'node:child_process';
+import { runRestrictedWriter } from './llm-restricted-writer.ts';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { extractJson, getClaudeModel } from './llm.ts';
+import { extractJson } from './llm.ts';
 import { manualDocumentSchema } from './manual-input.ts';
 import { AppError } from './errors.ts';
 import type { ManualDocument } from '../../../shared/feature-manual.ts';
 
 export const digest = (value: string): string => createHash('sha256').update(value).digest('hex');
+/** Keeps the manual_* error contract stable now that the CLI plumbing is shared. */
+async function runManualWriter(binary:string,prompt:string):Promise<string> {
+  try{return await runRestrictedWriter(binary,prompt);}catch(error){
+    if(error instanceof AppError&&error.message.startsWith('llm_'))throw new AppError(error.message.replace(/^llm_/,'manual_'),error.status);
+    throw error;
+  }
+}
 export async function loadManualSkill(): Promise<{ text: string; digest: string }> {
   const text = await readFile(new URL('../../../skills/feature-manual/SKILL.md', import.meta.url), 'utf8');
   return { text, digest: digest(text) };
-}
-
-export function runManualWriter(binary: string, prompt: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const model = getClaudeModel();
-    const child = spawn(binary, ['-p', '--tools', '', '--disable-slash-commands', '--no-session-persistence',
-      '--setting-sources', '', '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', ...(model ? ['--model', model] : [])], {
-      shell: false, cwd: new URL('../../../', import.meta.url), stdio: ['pipe', 'pipe', 'pipe'],
-    });
-    let settled = false;
-    let out = '';
-    const finish = (error?: AppError): void => {
-      if (settled) return;
-      settled = true; clearTimeout(timer);
-      // Stop accumulating output from a child that may ignore termination.
-      child.stdout.removeAllListeners('data'); child.stderr.removeAllListeners('data');
-      if (error) { child.kill('SIGKILL'); reject(error); } else resolve(out);
-    };
-    const timer = setTimeout(() => finish(new AppError('manual_generation_timeout', 504)), 120000);
-    child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
-    child.stdout.on('data', (text: string) => {
-      out += text;
-      if (out.length > 100000) finish(new AppError('manual_generation_too_large', 502));
-    });
-    child.stderr.on('data', () => { /* Drain diagnostics without disclosing source material or credentials. */ });
-    child.on('error', () => finish(new AppError('manual_writer_unavailable', 503)));
-    child.stdin.on('error', () => finish(new AppError('manual_writer_unavailable', 503)));
-    child.on('close', code => finish(code === 0 ? undefined : new AppError('manual_generation_failed', 502)));
-    child.stdin.end(prompt, 'utf8');
-  });
 }
 
 export async function writeManual(binary: string, material: unknown): Promise<{ document: ManualDocument; skillDigest: string }> {

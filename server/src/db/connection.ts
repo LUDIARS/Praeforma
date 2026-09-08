@@ -11,7 +11,7 @@ let db: NodePgDatabase<typeof schema> | null = null;
 let connectError: string | null = null;
 
 export interface LocalSqliteDatabase {
-  prepare(sql: string): { run(...params: unknown[]): { changes: number } };
+  prepare(sql: string): { run(...params: unknown[]): { changes: number }; all(...params: unknown[]): Record<string,unknown>[] };
   transaction<T>(work: () => T): () => T;
 }
 

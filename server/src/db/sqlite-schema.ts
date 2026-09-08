@@ -1,3 +1,4 @@
+import { SPEC_VERSION_DDL } from './spec-version-sqlite.ts';
 // SQLite 版スキーマ (ローカル「仕様書レビュー」モード用、 Studio 最小サブセット 15 テーブル)。
 //
 // 既存 pg スキーマと同じテーブル名 / カラム名 / JS キーで定義し、 各 pg schema ファイルが
@@ -522,4 +523,5 @@ export const SQLITE_DDL: string[] = [
   `CREATE TABLE IF NOT EXISTS ux_image_analyses (id TEXT PRIMARY KEY, scenario_id TEXT NOT NULL, base_canvas_revision INTEGER NOT NULL, image_fingerprint TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'running', candidates TEXT NOT NULL DEFAULT '[]', error_code TEXT, requested_by TEXT NOT NULL, created_at INTEGER, completed_at INTEGER)`,
   `CREATE TABLE IF NOT EXISTS code_graph_runs (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, target_kind TEXT NOT NULL, target_id TEXT NOT NULL, query TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'ok', node_count INTEGER NOT NULL DEFAULT 0, edge_count INTEGER NOT NULL DEFAULT 0, summary TEXT, raw TEXT NOT NULL DEFAULT '{}', requested_by TEXT NOT NULL, created_at INTEGER)`,
   `CREATE TABLE IF NOT EXISTS audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL, actor_user_id TEXT NOT NULL, actor_display_name TEXT, action TEXT NOT NULL, target_kind TEXT, target_id TEXT, meta TEXT NOT NULL DEFAULT '{}', ip TEXT, user_agent TEXT, created_at INTEGER)`,
+  ...SPEC_VERSION_DDL,
 ];

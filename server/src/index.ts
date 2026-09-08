@@ -12,6 +12,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
 import { makeSpecFragmentRouter } from './routes/spec-fragments.ts';
+import { makeSpecVersionRouter } from './routes/spec-versions.ts';
+import { makeDomainProposalRouter } from './routes/domain-proposals.ts';
 import { noStoreResponses } from './middleware/no-store.ts';
 import { cors } from 'hono/cors';
 import { serve, type ServerType } from '@hono/node-server';
@@ -146,6 +148,7 @@ app.route('/api/projects/:pid/layouts', makeLayoutRouter());
 app.route('/api/projects/:pid/layouts/:lid/scene-editor', makeSceneEditorRouter(config.claudeBin));
 app.route('/api/projects/:pid/specs', makeSpecRouter());
 app.route('/api/projects/:pid/spec-fragments', makeSpecFragmentRouter());
+app.route('/api/projects/:pid/spec-versions', makeSpecVersionRouter(config.claudeBin));
 app.route('/api/projects/:pid/manuals', makeManualRouter(config.claudeBin));
 app.route('/api/projects/:pid/assets', makeAssetRouter(config.publicUrl));
 // 以下は SQLite サブセット外のテーブルを使うため、 ローカルモードでは載せない
@@ -163,6 +166,7 @@ app.route(
 
 // Screen Flow: 遷移 / 書き出し / LLM トークエリア / Anatomia 突合 / Cc 接続 (spec/feature/screen-flow.md)
 const anatomiaOpts = { anatomiaUrl: config.anatomiaUrl };
+app.route('/api/projects/:pid/domain-proposals', makeDomainProposalRouter(config.claudeBin,anatomiaOpts));
 app.route('/api/projects/:pid/domain-definitions', makeDomainDefinitionsRouter(anatomiaOpts));
 const ccOpts = { ccUrl: config.ccUrl, ccToken: config.ccToken, ccTemplate: config.ccTemplate };
 app.route('/api/projects/:pid/transitions', makeTransitionRouter());

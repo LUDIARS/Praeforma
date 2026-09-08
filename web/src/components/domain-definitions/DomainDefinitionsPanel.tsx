@@ -6,6 +6,7 @@ import { DomainDefinitionEditor } from './DomainDefinitionEditor.tsx';
 import { DomainRegistration } from './DomainRegistration.tsx';
 import { DomainCards } from './DomainCards.tsx';
 import { useFocusEntity } from '../../lib/deeplink.ts';
+import { DomainProposalPanel } from './DomainProposalPanel.tsx';
 
 export function DomainDefinitionsPanel({ pid }: { pid: string }): React.ReactElement {
   const client = useQueryClient();
@@ -23,6 +24,7 @@ export function DomainDefinitionsPanel({ pid }: { pid: string }): React.ReactEle
   }
   const domain = query.data?.items.find((item) => item.id === selected);
   return <>
+    <DomainProposalPanel key={pid} pid={pid}/>
     <section className="panel">
       <h3>ドメイン定義</h3>
       <nav className="entity-menu" aria-label="ドメイン定義メニュー">
