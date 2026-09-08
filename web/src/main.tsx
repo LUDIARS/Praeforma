@@ -13,7 +13,8 @@ import { UxCoreDesignPage } from './pages/UxCoreDesignPage.tsx';
 import { getToken, setToken } from './lib/api.ts';
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
+  // UI調整期間は再訪時に必ず再取得し、未使用のquery結果を保持しない。
+  defaultOptions: { queries: { staleTime: 0, gcTime: 0, retry: 1 } },
 });
 
 function RequireAuth({ children }: { children: React.ReactNode }): React.ReactElement {
@@ -27,7 +28,7 @@ function RequireAuth({ children }: { children: React.ReactNode }): React.ReactEl
 async function ensureLocalToken(): Promise<void> {
   if (getToken()) return;
   try {
-    const res = await fetch('/api/health');
+    const res = await fetch('/api/health', { cache: 'no-store' });
     if (!res.ok) return;
     const h = (await res.json()) as { localMode?: boolean };
     if (h.localMode) setToken('local');

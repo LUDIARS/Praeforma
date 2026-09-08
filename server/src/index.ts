@@ -11,6 +11,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
+import { noStoreResponses } from './middleware/no-store.ts';
 import { cors } from 'hono/cors';
 import { serve, type ServerType } from '@hono/node-server';
 import { attachCollab } from './ws/collab.ts';
@@ -69,6 +70,7 @@ if (config.localMode) {
 }
 
 const app = new Hono();
+app.use('*', noStoreResponses);
 app.use('*', async (c, next) => {
   if (config.localMode) {
     const origin = c.req.header('origin');

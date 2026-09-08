@@ -37,7 +37,7 @@ export async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers.set('content-type', 'application/json');
   }
   if (token) headers.set('authorization', `Bearer ${token}`);
-  const res = await fetch(path, { ...init, headers });
+  const res = await fetch(path, { ...init, headers, cache: 'no-store' });
   if (!res.ok) {
     let body: unknown = null;
     try { body = await res.json(); } catch { /* ignore */ }
