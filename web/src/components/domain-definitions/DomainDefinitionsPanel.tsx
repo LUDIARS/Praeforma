@@ -40,6 +40,6 @@ export function DomainDefinitionsPanel({ pid }: { pid: string }): React.ReactEle
     {query.isError && <p role="alert">定義を取得できませんでした。</p>}
     {notFound && <p role="alert">リンク先のドメイン「{notFound}」が見つかりません。</p>}
     {query.isSuccess && query.data.items.length === 0 && <p>ドメインは未登録です。上のメニューから登録してください。</p>}
-    {query.data && <DomainCards domains={query.data.items} sceneIds={query.data.scenes.map((scene) => scene.id)} focus={focus} onEdit={(item) => { setRegistration(null); setSelected(item.id); }} />}
+    {query.data && <DomainCards pid={pid} domains={query.data.items} sceneIds={query.data.scenes.map((scene) => scene.id)} focus={focus} onEdit={(item) => { setRegistration(null); setSelected(item.id); }} />}
   </>;
 }

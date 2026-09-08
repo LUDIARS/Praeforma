@@ -22,6 +22,8 @@ export interface DefinitionInput {
   anatomiaDomain: string | null; expectedRevision: number;
 }
 export const domainDefinitionsApi = {
+  assignBusiness: (pid: string, coreId: string, businessId: string) => req<{ assigned: boolean }>(
+    `/api/projects/${pid}/domain-definitions/${coreId}/business-domains/${businessId}`, { method: 'POST' }),
   read: (pid: string) => req<DomainDefinitions>(`/api/projects/${pid}/domain-definitions`),
   save: (pid: string, did: string, body: DefinitionInput) => req<{ revision: number }>(
     `/api/projects/${pid}/domain-definitions/${did}`, { method: 'PUT', body: JSON.stringify(body) }),

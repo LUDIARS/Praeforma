@@ -1,6 +1,7 @@
 import React from 'react';
 import type { DefinedDomain } from '../../lib/domain-definitions-api.ts';
 import '../../styles/entity-cards.css';
+import { BusinessDomainAssignment } from './BusinessDomainAssignment.tsx';
 
 const GROUPS = [
   { kind: 'core', label: 'コアドメイン' },
@@ -24,7 +25,8 @@ function rootDomains(domains: DefinedDomain[]): DefinedDomain[] {
   return roots;
 }
 
-export function DomainCards({ domains, onEdit, focus, roots, sceneIds, ancestors = [] }: {
+export function DomainCards({ pid, domains, onEdit, focus, roots, sceneIds, ancestors = [] }: {
+  pid?: string;
   domains: DefinedDomain[]; onEdit?: (domain: DefinedDomain) => void; focus?: string | null;
   roots?: DefinedDomain[]; ancestors?: string[]; sceneIds?: string[];
 }): React.ReactElement {
@@ -59,7 +61,8 @@ export function DomainCards({ domains, onEdit, focus, roots, sceneIds, ancestors
               <div className="entity-children">
                 {domain.definitionValue && <p className="entity-description">提供する価値：{domain.definitionValue}</p>}
                 {onEdit && <button type="button" className="ghost" onClick={() => onEdit(domain)}>定義を編集</button>}
-                {children.length ? <DomainCards domains={domains} roots={children} ancestors={path} onEdit={onEdit} focus={focus} sceneIds={sceneIds} />
+                {pid && domain.definitionKind === 'core' && <BusinessDomainAssignment pid={pid} coreId={domain.id} domains={domains} ancestors={path} />}
+                {children.length ? <DomainCards pid={pid} domains={domains} roots={children} ancestors={path} onEdit={onEdit} focus={focus} sceneIds={sceneIds} />
                   : <p className="meta">子ドメインはありません。</p>}
               </div>
             </details>

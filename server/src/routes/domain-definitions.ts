@@ -21,6 +21,7 @@ import { saveDomainDefinition } from '../db/domain-definition-persistence.ts';
 import { fetchAnatomiaDomains, type AnatomiaDomainsOptions } from '../lib/anatomia-domains.ts';
 import { AppError } from '../lib/errors.ts';
 import { recordAudit } from '../lib/audit.ts';
+import { assignBusinessDomain } from '../db/domain-assignment.ts';
 
 export function makeDomainDefinitionsRouter(options: AnatomiaDomainsOptions): Hono {
   const r = new Hono();
@@ -37,6 +38,13 @@ export function makeDomainDefinitionsRouter(options: AnatomiaDomainsOptions): Ho
       .innerJoin(specs, eq(specTargets.specId, specs.id))
       .where(and(eq(specs.projectId, pid), isNull(specs.deletedAt), eq(specTargets.kind, 'domain')));
     return c.json({ items, scenes, requirements, links });
+  });
+  r.post('/:did/business-domains/:bid', requireRole(['owner', 'planner']), async (c) => {
+    const pid = c.req.param('pid')!, did = c.req.param('did')!, bid = c.req.param('bid')!;
+    await assignBusinessDomain(pid, did, bid);
+    await recordAudit({ projectId: pid, actor: getIdentity(c), action: 'domain.business.assign',
+      targetKind: 'domain', targetId: bid, meta: { parentId: did } });
+    return c.json({ assigned: true });
   });
   r.put('/:did', requireRole(['owner', 'planner']), async (c) => {
     const pid = c.req.param('pid')!, did = c.req.param('did')!;
