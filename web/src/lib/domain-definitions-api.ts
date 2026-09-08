@@ -1,4 +1,5 @@
 import { req } from './api.ts';
+import type { DomainMembership } from '../../../shared/domain-relations.ts';
 
 export interface DefinedDomain {
   id: string;
@@ -12,6 +13,7 @@ export interface DefinedDomain {
   anatomiaDomain: string | null;
 }
 export interface DomainDefinitions {
+  memberships: DomainMembership[];
   items: DefinedDomain[];
   scenes: Array<{ id: string; name: string }>;
   requirements: Array<{ id: string; code: string; title: string }>;
@@ -22,6 +24,8 @@ export interface DefinitionInput {
   anatomiaDomain: string | null; expectedRevision: number;
 }
 export const domainDefinitionsApi = {
+  assignBusinesses: (pid: string, coreId: string, businessIds: string[]) => req<{ assigned: boolean }>(
+    `/api/projects/${pid}/domain-definitions/${coreId}/business-domains`, { method: 'POST', body: JSON.stringify({ businessIds }) }),
   assignBusiness: (pid: string, coreId: string, businessId: string) => req<{ assigned: boolean }>(
     `/api/projects/${pid}/domain-definitions/${coreId}/business-domains/${businessId}`, { method: 'POST' }),
   read: (pid: string) => req<DomainDefinitions>(`/api/projects/${pid}/domain-definitions`),

@@ -21,7 +21,9 @@ import { saveDomainDefinition } from '../db/domain-definition-persistence.ts';
 import { fetchAnatomiaDomains, type AnatomiaDomainsOptions } from '../lib/anatomia-domains.ts';
 import { AppError } from '../lib/errors.ts';
 import { recordAudit } from '../lib/audit.ts';
-import { assignBusinessDomain } from '../db/domain-assignment.ts';
+import { assignBusinessDomain, assignBusinessDomains, readMemberships } from '../db/domain-assignment.ts';
+import { z } from 'zod';
+import { bodyLimit } from 'hono/body-limit';
 
 export function makeDomainDefinitionsRouter(options: AnatomiaDomainsOptions): Hono {
   const r = new Hono();
@@ -37,13 +39,23 @@ export function makeDomainDefinitionsRouter(options: AnatomiaDomainsOptions): Ho
     const links = await getDb().select({ specId: specTargets.specId, domainId: specTargets.refId }).from(specTargets)
       .innerJoin(specs, eq(specTargets.specId, specs.id))
       .where(and(eq(specs.projectId, pid), isNull(specs.deletedAt), eq(specTargets.kind, 'domain')));
-    return c.json({ items, scenes, requirements, links });
+    return c.json({ items, scenes, requirements, links, memberships: await readMemberships(pid) });
+  });
+  r.post('/:did/business-domains', requireRole(['owner', 'planner']), bodyLimit({ maxSize: 16384 }), async (c) => {
+    const parsed = z.object({ businessIds: z.array(z.string().min(1).max(200)).min(1).max(100) }).strict().safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) throw AppError.badRequest('business_selection_required');
+    const pid = c.req.param('pid')!, did = c.req.param('did')!;
+    await assignBusinessDomains(pid, did, parsed.data.businessIds);
+    await recordAudit({ projectId: pid, actor: getIdentity(c), action: 'domain.business.assign', targetKind: 'domain', targetId: did,
+      meta: { businessIds: parsed.data.businessIds } });
+    return c.json({ assigned: true });
   });
   r.post('/:did/business-domains/:bid', requireRole(['owner', 'planner']), async (c) => {
     const pid = c.req.param('pid')!, did = c.req.param('did')!, bid = c.req.param('bid')!;
     await assignBusinessDomain(pid, did, bid);
+    // parent_id は書き換えず domain_memberships に積むだけなので、 監査も所属先として残す。
     await recordAudit({ projectId: pid, actor: getIdentity(c), action: 'domain.business.assign',
-      targetKind: 'domain', targetId: bid, meta: { parentId: did } });
+      targetKind: 'domain', targetId: bid, meta: { coreId: did } });
     return c.json({ assigned: true });
   });
   r.put('/:did', requireRole(['owner', 'planner']), async (c) => {

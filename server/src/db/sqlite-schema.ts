@@ -525,4 +525,5 @@ export const SQLITE_DDL: string[] = [
   `CREATE TABLE IF NOT EXISTS code_graph_runs (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, target_kind TEXT NOT NULL, target_id TEXT NOT NULL, query TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'ok', node_count INTEGER NOT NULL DEFAULT 0, edge_count INTEGER NOT NULL DEFAULT 0, summary TEXT, raw TEXT NOT NULL DEFAULT '{}', requested_by TEXT NOT NULL, created_at INTEGER)`,
   `CREATE TABLE IF NOT EXISTS audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL, actor_user_id TEXT NOT NULL, actor_display_name TEXT, action TEXT NOT NULL, target_kind TEXT, target_id TEXT, meta TEXT NOT NULL DEFAULT '{}', ip TEXT, user_agent TEXT, created_at INTEGER)`,
   ...SPEC_VERSION_DDL,
+  `CREATE TABLE IF NOT EXISTS domain_memberships (project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE, core_id TEXT NOT NULL REFERENCES domains(id) ON DELETE CASCADE, business_id TEXT NOT NULL REFERENCES domains(id) ON DELETE CASCADE, PRIMARY KEY(project_id,core_id,business_id), CHECK(core_id <> business_id))`,
 ];

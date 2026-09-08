@@ -4,7 +4,7 @@ import { Hono } from 'hono';
 
 process.env.PRAEFORMA_LOCAL_MODE = '1';
 
-test('PF-DA-1 assigns unplaced business domains and rejects invalid or competing placement', async () => {
+test('PF-DA-1 supports multiple memberships and rejects invalid or cyclic placement atomically', async () => {
   const { initLocalDb, getDb, getLocalSqlite } = await import('../../db/connection.ts');
   const { projects, projectMembers } = await import('../../db/schema/project.ts');
   const { domains } = await import('../../db/schema/domain.ts');
@@ -34,9 +34,19 @@ test('PF-DA-1 assigns unplaced business domains and rejects invalid or competing
     const assign = async (core: string, child: string): Promise<Response> => app.request(
       `/projects/p1/domain-definitions/${core}/business-domains/${child}`, { method: 'POST' });
     const attempts = await Promise.all([assign('core', 'business'), assign('core2', 'business')]);
-    assert.deepEqual(attempts.map(result => result.status).sort(), [200, 409]);
+    assert.deepEqual(attempts.map(result => result.status).sort(), [200, 200]);
     const saved = sqlite.prepare('SELECT parent_id, description FROM domains WHERE id = ?').all('business') as Array<{ parent_id: string; description: string }>;
-    assert.ok(['core', 'core2'].includes(saved[0]!.parent_id));
+    assert.equal(saved[0]!.parent_id, null);
+    assert.equal(sqlite.prepare('SELECT core_id FROM domain_memberships WHERE business_id=?').all('business').length, 2);
+    assert.equal((await assign('core', 'business')).status, 200);
+    assert.equal(sqlite.prepare('SELECT core_id FROM domain_memberships WHERE business_id=?').all('business').length, 2);
+    const batch = async (ids: string[]): Promise<Response> => app.request('/projects/p1/domain-definitions/core/business-domains', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ businessIds: ids }),
+    });
+    assert.equal((await batch(['ancestor', 'foreign'])).status, 409);
+    assert.equal(sqlite.prepare('SELECT core_id FROM domain_memberships WHERE business_id=?').all('ancestor').length, 0);
+    assert.equal((await batch(['ancestor', 'business'])).status, 200);
+    assert.equal((await batch([])).status, 400);
     assert.equal(saved[0]!.description, 'Keep description');
     for (const [parent, child] of [
       ['nested', 'ancestor'], ['core', 'foreign'], ['core', 'undefined'],
