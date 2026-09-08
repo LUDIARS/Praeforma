@@ -27,6 +27,7 @@ import { makeReferenceContentRouter } from './routes/reference-content.ts';
 import { makeFeedbackRouter } from './routes/feedback.ts';
 import { makeProjectRouter } from './routes/projects.ts';
 import { makeProjectUxGoalRouter } from './routes/project-ux-goal.ts';
+import { makeDataDesignRouter } from './routes/data-design.ts';
 import { makeDomainDefinitionsRouter } from './routes/domain-definitions.ts';
 import { makeDomainRouter } from './routes/domains.ts';
 import { makeObjectRouter } from './routes/objects.ts';
@@ -135,6 +136,7 @@ app.get('/api/auth/me', requireAuth, (c) => {
 // Studio 最小サブセット (ローカル SQLite でも動く範囲)
 app.route('/api/projects', makeProjectRouter());
 app.route('/api/projects/:pid/ux-goal', makeProjectUxGoalRouter());
+app.route('/api/projects/:pid/data-design', makeDataDesignRouter());
 app.route('/api/projects/:pid/domains', makeDomainRouter());
 app.route('/api/projects/:pid/objects', makeObjectRouter());
 app.route('/api/projects/:pid/layouts', makeLayoutRouter());

@@ -1,11 +1,12 @@
 {
   "name": "shared-packages",
-  "description": "共有パッケージ。 Unity 側 (UPM) の実装。",
+  "description": "共有パッケージ。 Unity 側 (UPM) の実装と、サーバー・Web 共通の設計契約。",
+  "specRefs": ["spec/feature/data-design.md"],
   "presetRules": [],
   "templateRules": [],
   "membership": [
     {
-      "pathPattern": "(^|/)Packages/(?:.*/)?[^/]+$"
+      "pathPattern": "(^|/)(?:Packages|shared)/(?:.*/)?[^/]+$"
     }
   ]
 }

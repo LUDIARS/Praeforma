@@ -8,6 +8,7 @@ Praeforma backend (`server/src/db/schema/`) の Drizzle テーブル定義に対
 | ドメイン | spec | 主テーブル |
 |---|---|---|
 | プロジェクト / メンバー | [project.md](project.md) | `projects` / `project_members` |
+| データスキーマ設計 | [data-design.md](data-design.md) | `data_designs` |
 | ドメイン定義 | [domain.md](domain.md) | `domains` |
 | オブジェクト | [object.md](object.md) | `objects` / `object_attrs` |
 | 配置 (layout / camera) | [layout.md](layout.md) | `layouts` / `layout_objects` / `cameras` |

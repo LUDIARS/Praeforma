@@ -14,3 +14,4 @@ export * from './feedback.ts';
 export * from './code-graph.ts';
 export * from './screen-flow.ts';
 export * from './ux-design.ts';
+export * from './data-design.ts';

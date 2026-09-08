@@ -72,6 +72,7 @@ export function ProjectShowPage(): React.ReactElement {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <h2 style={{ margin: 0 }}>{p.name}</h2>
           <div style={{ flex: 1 }} />
+          <Link to={`/projects/${pid}/data-design`} className="ghost">データ設計 →</Link>
           <Link to={`/projects/${pid}/ux-design`} className="primary" style={{ textDecoration: 'none' }}>
             UX / Core Domain Design →
           </Link>

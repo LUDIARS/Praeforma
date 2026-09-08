@@ -12,6 +12,10 @@
 
 UX・コアドメイン設計: [spec/feature/ux-core-design.md](spec/feature/ux-core-design.md)
 
+プロジェクトの「データ設計」から、データセット・項目・型・参照・保護方針と、
+Cernere を含む項目ごとの論理保存先を設計できます。版付きで保存し、設計 JSON と保存先一覧を
+書き出せます。詳細: [データスキーマと論理保存先](spec/feature/data-design.md)。
+
 Studio の関連処理グラフは `PRAEFORMA_ANATOMIA_URL`（任意で `PRAEFORMA_ANATOMIA_TOKEN`）を用いて Anatomia
 の API から直接取得する。対象プロジェクトには `anatomia_repo` の設定も必要。詳細は
 [Studio 仕様](spec/feature/studio.md) を参照。

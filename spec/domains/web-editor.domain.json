@@ -1,7 +1,7 @@
 {
   "name": "web-editor",
   "description": "ブラウザ側の編集画面。 配置と仕様記述の操作。",
-  "specRefs": ["spec/feature/project-ux-goal.md", "spec/feature/domain-definition-links.md", "spec/feature/project-registration.md"],
+  "specRefs": ["spec/feature/project-ux-goal.md", "spec/feature/domain-definition-links.md", "spec/feature/project-registration.md", "spec/feature/data-design.md"],
   "presetRules": [],
   "templateRules": [],
   "membership": [

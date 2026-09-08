@@ -8,6 +8,7 @@
 // 永続化対象外 (objects/assets 等も含めた最小集合)。 認証/個人データは持たない。
 
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import type { DataDesign } from '../../../shared/data-design.ts';
 
 const ts = (name: string) => integer(name, { mode: 'timestamp_ms' });
 const now = () => new Date();
@@ -38,6 +39,15 @@ export const projectMembers = sqliteTable('project_members', {
   displayName: text('display_name'),
   joinedAt: ts('joined_at').notNull().$defaultFn(now),
   lastSeenAt: ts('last_seen_at'),
+});
+
+export const dataDesigns = sqliteTable('data_designs', {
+  projectId: text('project_id').primaryKey().references(() => projects.id),
+  definition: text('definition', { mode: 'json' }).$type<DataDesign>().notNull(),
+  revision: integer('revision').notNull(),
+  updatedBy: text('updated_by').notNull(),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+  updatedAt: ts('updated_at').notNull().$defaultFn(now),
 });
 
 export const domains = sqliteTable('domains', {
@@ -416,7 +426,7 @@ export const auditLog = sqliteTable('audit_log', {
 
 /** drizzle(sqlite, { schema }) に渡す束。 */
 export const sqliteTables = {
-  projects, projectMembers, domains, objects, objectAttrs, assets, objectAssets,
+  projects, projectMembers, dataDesigns, domains, objects, objectAttrs, assets, objectAssets,
   layouts, layoutObjects, specs, specTargets, specAcceptance,
   codeGraphNodes, codeGraphEdges, codeGraphRuns, auditLog,
   transitions, specConversations, specMessages, ccLinks,
@@ -442,6 +452,7 @@ export const SQLITE_ALTERS: string[] = [
 
 export const SQLITE_DDL: string[] = [
   `CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, org_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, platforms TEXT NOT NULL DEFAULT '["web"]', default_layout_id TEXT, anatomia_repo TEXT, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,
+  `CREATE TABLE IF NOT EXISTS data_designs (project_id TEXT PRIMARY KEY REFERENCES projects(id), definition TEXT NOT NULL, revision INTEGER NOT NULL CHECK (revision > 0), updated_by TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS project_members (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, user_id TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'viewer', display_name TEXT, joined_at INTEGER, last_seen_at INTEGER)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_project_members_project_user ON project_members(project_id, user_id)`,
   `CREATE TABLE IF NOT EXISTS domains (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, description TEXT, color TEXT NOT NULL DEFAULT '#888888', icon TEXT, parent_id TEXT, max_count INTEGER, required_attrs TEXT NOT NULL DEFAULT '[]', anatomia_domain TEXT, created_at INTEGER, updated_at INTEGER)`,
