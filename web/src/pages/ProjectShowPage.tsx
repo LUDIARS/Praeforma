@@ -13,6 +13,7 @@ import { ActorCards } from '../components/ActorCards.tsx';
 import { DataDesignPanel } from '../components/data-design/DataDesignPanel.tsx';
 import { FlowDiagram } from '../components/flow/FlowDiagram.tsx';
 import { ProjectTodos } from '../components/ProjectTodos.tsx';
+import { SpecWorkspace } from '../components/specs/SpecWorkspace.tsx';
 
 export function ProjectShowPage(): React.ReactElement {
   const { pid } = useParams();
@@ -165,9 +166,9 @@ export function ProjectShowPage(): React.ReactElement {
       )}
 
       {tab === 'specs' && (
-        <div className="panel">
+        <SpecWorkspace key={`specs:${pid}`} pid={pid}>
           <SpecRegistration key={pid} pid={pid} />
-          <h3>仕様</h3>
+          <h3>ストラクチャード</h3>
           {specsQ.isLoading && <p>読み込み中…</p>}
           {specsQ.isError && <p role="alert">仕様を取得できませんでした。</p>}
           <ul className="item-list">
@@ -181,7 +182,7 @@ export function ProjectShowPage(): React.ReactElement {
               </li>
             ))}
           </ul>
-        </div>
+        </SpecWorkspace>
       )}
     </>
   );

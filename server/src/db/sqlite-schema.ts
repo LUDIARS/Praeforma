@@ -9,6 +9,7 @@
 
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import type { DataDesign } from '../../../shared/data-design.ts';
+import type { ImplementationState } from '../../../shared/spec-fragments.ts';
 
 const ts = (name: string) => integer(name, { mode: 'timestamp_ms' });
 const now = () => new Date();
@@ -48,6 +49,21 @@ export const dataDesigns = sqliteTable('data_designs', {
   updatedBy: text('updated_by').notNull(),
   createdAt: ts('created_at').notNull().$defaultFn(now),
   updatedAt: ts('updated_at').notNull().$defaultFn(now),
+});
+
+export const specFragments = sqliteTable('spec_fragments', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull().references(() => projects.id),
+  content: text('content').notNull(),
+  source: text('source').notNull(),
+  sourceEventId: text('source_event_id').notNull(),
+  createdBy: text('created_by').notNull(),
+  createdAt: ts('created_at').notNull().$defaultFn(now),
+  implementationState: text('implementation_state').$type<ImplementationState>().notNull().default('unimplemented'),
+  implementationEvidence: text('implementation_evidence').notNull().default(''),
+  implementationUpdatedBy: text('implementation_updated_by'),
+  implementationUpdatedAt: ts('implementation_updated_at'),
+  revision: integer('revision').notNull().default(1),
 });
 
 export const domains = sqliteTable('domains', {
@@ -426,7 +442,7 @@ export const auditLog = sqliteTable('audit_log', {
 
 /** drizzle(sqlite, { schema }) に渡す束。 */
 export const sqliteTables = {
-  projects, projectMembers, dataDesigns, domains, objects, objectAttrs, assets, objectAssets,
+  projects, projectMembers, dataDesigns, specFragments, domains, objects, objectAttrs, assets, objectAssets,
   layouts, layoutObjects, specs, specTargets, specAcceptance,
   codeGraphNodes, codeGraphEdges, codeGraphRuns, auditLog,
   transitions, specConversations, specMessages, ccLinks,
@@ -453,6 +469,10 @@ export const SQLITE_ALTERS: string[] = [
 export const SQLITE_DDL: string[] = [
   `CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, org_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, platforms TEXT NOT NULL DEFAULT '["web"]', default_layout_id TEXT, anatomia_repo TEXT, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,
   `CREATE TABLE IF NOT EXISTS data_designs (project_id TEXT PRIMARY KEY REFERENCES projects(id), definition TEXT NOT NULL, revision INTEGER NOT NULL CHECK (revision > 0), updated_by TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`,
+  // projects より後に置く (REFERENCES projects(id) を持つ他テーブルと同じ順序)。
+  `CREATE TABLE IF NOT EXISTS spec_fragments (id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), content TEXT NOT NULL, source TEXT NOT NULL, source_event_id TEXT NOT NULL, created_by TEXT NOT NULL, created_at INTEGER NOT NULL, implementation_state TEXT NOT NULL DEFAULT 'unimplemented' CHECK (implementation_state IN ('unverified','unimplemented','implemented')), implementation_evidence TEXT NOT NULL DEFAULT '', implementation_updated_by TEXT, implementation_updated_at INTEGER, revision INTEGER NOT NULL DEFAULT 1 CHECK (revision > 0))`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS uq_spec_fragments_event ON spec_fragments(project_id, source, source_event_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_spec_fragments_project ON spec_fragments(project_id, created_at)`,
   `CREATE TABLE IF NOT EXISTS project_members (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, user_id TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'viewer', display_name TEXT, joined_at INTEGER, last_seen_at INTEGER)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_project_members_project_user ON project_members(project_id, user_id)`,
   `CREATE TABLE IF NOT EXISTS domains (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, description TEXT, color TEXT NOT NULL DEFAULT '#888888', icon TEXT, parent_id TEXT, max_count INTEGER, required_attrs TEXT NOT NULL DEFAULT '[]', anatomia_domain TEXT, created_at INTEGER, updated_at INTEGER)`,

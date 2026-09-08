@@ -11,6 +11,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
+import { makeSpecFragmentRouter } from './routes/spec-fragments.ts';
 import { noStoreResponses } from './middleware/no-store.ts';
 import { cors } from 'hono/cors';
 import { serve, type ServerType } from '@hono/node-server';
@@ -141,6 +142,7 @@ app.route('/api/projects/:pid/domains', makeDomainRouter());
 app.route('/api/projects/:pid/objects', makeObjectRouter());
 app.route('/api/projects/:pid/layouts', makeLayoutRouter());
 app.route('/api/projects/:pid/specs', makeSpecRouter());
+app.route('/api/projects/:pid/spec-fragments', makeSpecFragmentRouter());
 app.route('/api/projects/:pid/assets', makeAssetRouter(config.publicUrl));
 // 以下は SQLite サブセット外のテーブルを使うため、 ローカルモードでは載せない
 if (!config.localMode) {

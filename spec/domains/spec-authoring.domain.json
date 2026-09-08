@@ -1,12 +1,15 @@
 {
   "name": "spec-authoring",
   "description": "仕様の作成。 プランナーが placeholder を配置し仕様を書くための表現とその保存。",
-  "specRefs": ["spec/feature/project-ux-goal.md", "spec/feature/domain-definition-links.md", "spec/feature/project-registration.md", "spec/feature/data-design.md"],
+  "specRefs": ["spec/feature/project-ux-goal.md", "spec/feature/domain-definition-links.md", "spec/feature/project-registration.md", "spec/feature/data-design.md", "spec/feature/deferred-planning.md", "spec/data/schema/deferred-planning.md"],
   "presetRules": [],
   "templateRules": [],
   "membership": [
     {
       "pathPattern": "(^|/)server/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)shared/spec-fragments\\.ts$"
     }
   ]
 }
