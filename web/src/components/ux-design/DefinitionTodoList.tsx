@@ -30,7 +30,7 @@ export function DefinitionTodoList({ projectId, scenarios, canOpen, onDefine, on
     .sort((a, b) => Number(linked.has(a.ref)) - Number(linked.has(b.ref)) || a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name) || a.ref.localeCompare(b.ref));
   const error = (query.error as ApiError | null)?.body as { error?: string } | undefined;
   return <section className="ux-definition-todos">
-    <div className="ux-section-heading"><div><h2>ドメイン整理 TODO</h2><p>上から項目を選び、誰のために何を実現する実装かを定義します。</p></div><button type="button" className="ghost" disabled={query.isFetching} onClick={() => void query.refetch()}>一覧を更新</button></div>
+    <div className="ux-section-heading"><div><h2>TODO</h2><p>上から項目を選び、誰のために何を実現する実装かを定義します。</p></div><button type="button" className="ghost" disabled={query.isFetching} onClick={() => void query.refetch()}>一覧を更新</button></div>
     <p className="muted">UXを保存しても実装の課題は自動で解決扱いにしません。対応付けや不要候補の判断は、根拠を確認して進めます。</p>
     <label className="simple-field"><span>名前・ファイルで絞り込む</span><input type="search" value={filter} onChange={(event) => { setFilter(event.target.value); setLimit(20); }} /></label>
     {query.isPending ? <p role="status">Anatomia の根拠を読み込み中…</p> : null}

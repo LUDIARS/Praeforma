@@ -1,10 +1,11 @@
-// 下段タブ「遷移図」: サーバ生成の Mermaid を描画 + 生テキスト表示 / ダウンロード (§7.1)。
+// 共通タブとScreenFlow下段で共有する遷移図 (§7.1)。
 //
 // @spec 7.1 遷移図
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { screenFlowApi } from '../../lib/screen-flow-api.ts';
+import { screenFlowApi, errorText } from '../../lib/screen-flow-api.ts';
+import '../../styles/flow-diagram.css';
 
 interface Props {
   pid: string;
@@ -72,6 +73,7 @@ export function FlowDiagram({ pid, revision }: Props): React.ReactElement {
         </button>
       </div>
       {q.isLoading ? <div className="muted">loading…</div> : null}
+      {q.isError ? <p role="alert">遷移図を取得できませんでした: {errorText(q.error)}</p> : null}
       {renderError ? <div className="error">Mermaid 描画失敗: {renderError}</div> : null}
       {/* mermaid の出力は securityLevel=strict でサニタイズ済み */}
       <div className="flow-svg" dangerouslySetInnerHTML={{ __html: svg }} />

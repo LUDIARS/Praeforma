@@ -18,7 +18,13 @@ Praeforma は、画面仕様だけでなく、体験を成立させるコアド�
 `supporting` と `generic` は `externalized` と表示し、Anatomia 管理へ引き渡す対象とする。
 Praeforma から Anatomia の Gate A を代理承認しない。
 
-## 権限
+## 画面の入口
+
+プロジェクト上部のボタンと画面名は「UXデザイン」。TODO一覧はプロジェクトの概要へ移し、UXデザインはシナリオ選択とその編集を表示する。シナリオはプルダウンで選択し、編集領域を1列で表示する。定義・キャンバス・境界・根拠は選択したシナリオ内の編集として維持する。
+
+既存シナリオへの入口は `?scenario=<id>`。概要のTODOから新規定義へ進む場合は `?todo=<ref>&name=<name>` を初期入力として使い、登録時に元の参照をsourceRefsに保存する。TODOをクリックしただけではシナリオを自動登録しない。
+
+## 編集権限
 
 scenario / use case / canvas の本文編集は `owner` / `planner` / `designer` が行う。
 解析、判断、証拠登録は `owner` / `planner` / `reviewer` が行う。

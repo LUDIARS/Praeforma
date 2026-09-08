@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type ApiError } from '../lib/api.ts';
 import {
@@ -19,8 +19,7 @@ import { EvidencePanel } from '../components/ux-design/EvidencePanel.tsx';
 import type { EvidenceDraft } from '../components/ux-design/EvidencePanel.tsx';
 import { ImageImportPanel } from '../components/ux-design/ImageImportPanel.tsx';
 import { UseCasePanel } from '../components/ux-design/UseCasePanel.tsx';
-import { DefinitionTodoList } from '../components/ux-design/DefinitionTodoList.tsx';
-import { ScenarioFields } from '../components/ux-design/ScenarioFields.tsx';
+import { ScenarioFields, type ScenarioDraft } from '../components/ux-design/ScenarioFields.tsx';
 import { ScenarioSummary } from '../components/ux-design/ScenarioSummary.tsx';
 import { useCanvasHistory } from '../components/ux-design/useCanvasHistory.ts';
 
@@ -36,6 +35,17 @@ function errorText(error: unknown): string {
 
 function draftKey(projectId: string, scenarioId: string): string {
   return `praeforma.ux-canvas.${projectId}.${scenarioId}`;
+}
+
+type ScenarioDraftState = ScenarioDraft & { sourceRefs: string[] };
+
+/** 新規UXの初期値。 TODO 由来なら名前と元の参照を引き継ぐ (登録時に sourceRefs へ残す)。 */
+function emptyScenarioDraft(todoRef?: string | null, todoName?: string | null): ScenarioDraftState {
+  return {
+    name: todoRef ? (todoName ?? '').slice(0, 200) : '',
+    actor: '', context: '', goal: '', successOutcome: '', sourceProjectKey: '',
+    sourceRefs: todoRef ? [todoRef] : [],
+  };
 }
 
 /**
@@ -182,10 +192,32 @@ function WorkspaceEditor({ projectId, workspace, onReload }: WorkspaceEditorProp
 export function UxCoreDesignPage(): React.ReactElement {
   const { pid = '' } = useParams();
   const queryClient = useQueryClient();
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
-  const [showTodos, setShowTodos] = React.useState(true);
-  const [showCreate, setShowCreate] = React.useState(false);
-  const [scenarioDraft, setScenarioDraft] = React.useState({ name: '', actor: '', context: '', goal: '', successOutcome: '', sourceProjectKey: '', sourceRefs: [] as string[] });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedId = searchParams.get('scenario');
+  const todoRef = searchParams.get('todo');
+  const todoName = searchParams.get('name');
+  const [showCreate, setShowCreate] = React.useState(!!todoRef);
+  const [scenarioDraft, setScenarioDraft] = React.useState(() => emptyScenarioDraft(todoRef, todoName));
+
+  // `?todo=` はURLが正本。概要のTODOからの遷移も戻る/進むも、同じ入力状態に復元する。
+  React.useEffect(() => {
+    if (!todoRef) return;
+    setScenarioDraft(emptyScenarioDraft(todoRef, todoName));
+    setShowCreate(true);
+  }, [todoRef, todoName]);
+
+  function selectScenario(id: string): void {
+    setSearchParams({ scenario: id });
+  }
+
+  /** 入力途中の新規UXは黙って捨てない (旧TODO一覧の確認を選択操作でも維持する)。 */
+  function selectExistingScenario(id: string): void {
+    const hasInput = showCreate && Object.values(scenarioDraft).some((value) => typeof value === 'string' && value.length > 0);
+    if (hasInput && !window.confirm('入力中の新規UXを破棄して、このシナリオを開きますか？')) return;
+    setShowCreate(false);
+    setScenarioDraft(emptyScenarioDraft());
+    selectScenario(id);
+  }
 
   const projectQ = useQuery({ queryKey: ['project', pid], queryFn: () => api.getProject(pid), enabled: !!pid });
   const scenariosQ = useQuery({ queryKey: ['ux-scenarios', pid], queryFn: () => uxDesignApi.listScenarios(pid), enabled: !!pid });
@@ -193,7 +225,7 @@ export function UxCoreDesignPage(): React.ReactElement {
   const workspaceQ = useQuery({ queryKey: ['ux-workspace', pid, activeId], queryFn: () => uxDesignApi.getWorkspace(pid, activeId as string), enabled: !!pid && !!activeId });
   const createScenarioM = useMutation({
     mutationFn: () => uxDesignApi.createScenario(pid, { ...scenarioDraft, sourceProjectKey: scenarioDraft.sourceProjectKey || null }),
-    onSuccess: ({ scenario }) => { setSelectedId(scenario.id); setShowCreate(false); setScenarioDraft({ name: '', actor: '', context: '', goal: '', successOutcome: '', sourceProjectKey: '', sourceRefs: [] }); queryClient.invalidateQueries({ queryKey: ['ux-scenarios', pid] }); },
+    onSuccess: ({ scenario }) => { selectScenario(scenario.id); setShowCreate(false); setScenarioDraft(emptyScenarioDraft()); queryClient.invalidateQueries({ queryKey: ['ux-scenarios', pid] }); },
   });
 
   if (!pid) return <p>missing project id</p>;
@@ -201,17 +233,16 @@ export function UxCoreDesignPage(): React.ReactElement {
 
   return (
     <div className="ux-design-page">
-      <header className="ux-page-header"><div><Link to={`/projects/${pid}`}>← {projectName}</Link><h1>UX / Core Domain Design</h1><p>体験から use case を定義し、責務と境界を設計します。非コアドメインは Anatomia が管理します。</p></div>{workspaceQ.data?.workspace.scenario.sourceProjectKey ? <span className="ux-project-chip">Source: {workspaceQ.data.workspace.scenario.sourceProjectKey}</span> : null}</header>
-      <button className="ghost" type="button" onClick={() => setShowTodos((value) => !value)}>{showTodos ? 'TODO一覧を閉じる' : 'ドメイン整理TODOを開く'}</button>
-      {showTodos ? <DefinitionTodoList canOpen={scenariosQ.isSuccess && !createScenarioM.isPending} projectId={pid} scenarios={scenariosQ.data?.items ?? []} onOpen={(id) => { setSelectedId(id); setShowTodos(false); }} onDefine={(todo) => {
-        const hasInput = showCreate && Object.values(scenarioDraft).some((value) => typeof value === 'string' && value.length > 0);
-        if (hasInput && !window.confirm('入力中の新規UXを破棄して、この項目を開きますか？')) return;
-        setScenarioDraft({ name: todo.name.slice(0, 200), actor: '', context: '', goal: '', successOutcome: '', sourceProjectKey: '', sourceRefs: [todo.ref] });
-        setShowCreate(true); setShowTodos(false);
-      }} /> : null}
+      <header className="ux-page-header"><div><Link to={`/projects/${pid}`}>← {projectName}</Link><h1>UXデザイン</h1><p>シナリオを選んで、体験を設計します。</p></div>{workspaceQ.data?.workspace.scenario.sourceProjectKey ? <span className="ux-project-chip">Source: {workspaceQ.data.workspace.scenario.sourceProjectKey}</span> : null}</header>
       <div className="ux-design-shell">
-        <aside className="ux-scenario-rail">
-          <div className="ux-section-heading"><h2>シナリオ</h2><button type="button" className="ghost" onClick={() => setShowCreate((value) => !value)}>新しいUX</button></div>
+        <section className="ux-scenario-selector">
+          <div className="ux-section-heading"><label className="simple-field" htmlFor="ux-scenario-select"><span>シナリオ</span>
+            <select id="ux-scenario-select" value={activeId ?? ''} disabled={!scenariosQ.isSuccess || scenariosQ.data.items.length === 0}
+              onChange={(event) => selectExistingScenario(event.target.value)}>
+              <option value="" disabled>シナリオを選択</option>
+              {scenariosQ.data?.items.map((scenario: UxScenario) => <option key={scenario.id} value={scenario.id}>{scenario.name}</option>)}
+            </select>
+          </label><button type="button" className="ghost" onClick={() => setShowCreate((value) => !value)}>新しいUX</button></div>
           {showCreate ? <form className="foundation-form ux-create-scenario" onSubmit={(event) => { event.preventDefault(); createScenarioM.mutate(); }}>
             <ScenarioFields value={scenarioDraft} disabled={createScenarioM.isPending} onChange={(key, value) => setScenarioDraft((current) => ({ ...current, [key]: value }))} />
             {scenarioDraft.sourceRefs.length > 0 ? <p className="muted">選択したTODOの根拠をUXと一緒に保存します。</p> : null}
@@ -219,9 +250,8 @@ export function UxCoreDesignPage(): React.ReactElement {
             {createScenarioM.isError ? <span className="error">{errorText(createScenarioM.error)}</span> : null}
           </form> : null}
           {scenariosQ.isError ? <p className="error">{errorText(scenariosQ.error)}</p> : null}
-          <div className="ux-scenario-list">{scenariosQ.data?.items.map((scenario: UxScenario) => <button key={scenario.id} type="button" className={activeId === scenario.id ? 'active' : ''} onClick={() => setSelectedId(scenario.id)}><strong>{scenario.name}</strong><span>{scenario.actor} · {scenario.status} · r{scenario.revision}</span></button>)}{scenariosQ.isSuccess && scenariosQ.data.items.length === 0 ? <p className="muted">最初の UX シナリオを作成してください。</p> : null}</div>
-          <div className="ux-principle"><strong>境界の原則</strong><p>画面や scene に domain を割り当てません。UX シナリオと use case の業務ルールから境界を判断します。</p></div>
-        </aside>
+          {scenariosQ.isSuccess && scenariosQ.data.items.length === 0 ? <p className="muted">最初の UX シナリオを作成してください。</p> : null}
+        </section>
         {workspaceQ.data ? <WorkspaceEditor key={`${pid}:${workspaceQ.data.workspace.scenario.id}`} projectId={pid} workspace={workspaceQ.data.workspace} onReload={() => queryClient.invalidateQueries({ queryKey: ['ux-workspace', pid, activeId] })} /> : <main className="ux-workspace-empty">{workspaceQ.isError ? <p className="error">{errorText(workspaceQ.error)}</p> : <p>{activeId ? '設計データを読み込み中…' : 'シナリオを選択してください'}</p>}</main>}
       </div>
     </div>

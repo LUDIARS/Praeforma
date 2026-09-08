@@ -8,9 +8,15 @@ const PROJECT_TABS = [
   { id: 'objects', label: 'アクター' },
   { id: 'layouts', label: 'シーン' },
   { id: 'specs', label: '仕様' },
+  { id: 'data-design', label: 'データ設計' },
+  { id: 'flow-diagram', label: '遷移図' },
 ] as const;
 export type ProjectTab = typeof PROJECT_TABS[number]['id'];
 const VISIBLE_TAB_COUNT = 4;
+
+export function parseProjectTab(value: string | null): ProjectTab {
+  return PROJECT_TABS.find((item) => item.id === value)?.id ?? 'overview';
+}
 
 export function ProjectTabs({ tab, onChange }: {
   tab: ProjectTab; onChange: (tab: ProjectTab) => void;

@@ -69,8 +69,7 @@
 
 /* 下段 */
 .flow-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
-.flow-svg svg { max-width: 100%; height: auto; }
-.flow-source, .spec-source { font-size: 12px; white-space: pre-wrap; background: #f4f6f8; padding: 10px; border-radius: 8px; }
+.spec-source { font-size: 12px; white-space: pre-wrap; background: #f4f6f8; padding: 10px; border-radius: 8px; }
 .cc-send { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
 .cc-send input { flex: 1; min-width: 160px; }
 .cc-links, .anatomia-grid table { width: 100%; border-collapse: collapse; font-size: 13px; }

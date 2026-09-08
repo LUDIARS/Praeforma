@@ -1,0 +1,4 @@
+.flow-diagram .flow-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.flow-diagram .flow-svg { overflow-x: auto; }
+.flow-diagram .flow-svg svg { max-width: 100%; height: auto; }
+.flow-diagram .flow-source { font-size: 12px; white-space: pre-wrap; background: var(--bg); padding: 10px; border-radius: 8px; }

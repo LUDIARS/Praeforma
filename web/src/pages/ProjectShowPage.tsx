@@ -3,26 +3,24 @@ import { Link, useParams, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api.ts';
 import { DomainDefinitionsPanel } from '../components/domain-definitions/DomainDefinitionsPanel.tsx';
-import { parseDeeplinkTab, useFocusEntity } from '../lib/deeplink.ts';
+import { useFocusEntity } from '../lib/deeplink.ts';
 import { ProjectUxGoal } from '../components/ProjectUxGoal.tsx';
-import { ProjectTabs, type ProjectTab } from '../components/ProjectTabs.tsx';
+import { ProjectTabs, parseProjectTab } from '../components/ProjectTabs.tsx';
 import { ActorRegistration } from '../components/registration/ActorRegistration.tsx';
 import { SceneRegistration } from '../components/registration/SceneRegistration.tsx';
 import { SpecRegistration } from '../components/registration/SpecRegistration.tsx';
 import { ActorCards } from '../components/ActorCards.tsx';
-
-type Tab = ProjectTab;
+import { DataDesignPanel } from '../components/data-design/DataDesignPanel.tsx';
+import { FlowDiagram } from '../components/flow/FlowDiagram.tsx';
+import { ProjectTodos } from '../components/ProjectTodos.tsx';
 
 export function ProjectShowPage(): React.ReactElement {
   const { pid } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   // Thaleia ディープリンク `?tab=&focus=` を消費する (発行側契約は lib/deeplink.ts 参照)。
-  // 概要・アクター・UX/ゴールはPf内部の共有URLにも対応する。
-  const rawTab = searchParams.get('tab');
-  const deeplinkTab: Tab | null = rawTab === 'ux-goal' || rawTab === 'overview' || rawTab === 'objects'
-    ? rawTab : parseDeeplinkTab(rawTab);
+  // 選択の正本はURL。タブ追加・直接URL・戻る/進むを同じ定義で処理する。
+  const tab = parseProjectTab(searchParams.get('tab'));
   const focus = searchParams.get('focus');
-  const [tab, setTab] = React.useState<Tab>(() => deeplinkTab ?? 'overview');
   const projectQ = useQuery({
     queryKey: ['project', pid],
     queryFn: () => api.getProject(pid!),
@@ -50,11 +48,6 @@ export function ProjectShowPage(): React.ReactElement {
     enabled: !!pid && tab === 'specs',
   });
 
-  // ディープリンクの `?tab` が後から変わった場合に追従する (初期値は useState で設定済み)。
-  React.useEffect(() => {
-    if (deeplinkTab) setTab(deeplinkTab);
-  }, [deeplinkTab]);
-
   // 該当タブのデータ取得が完了したら `?focus` のエンティティへスクロール/ハイライトする。
   const focusReady =
     (tab === 'specs' && specsQ.isSuccess) ||
@@ -69,18 +62,17 @@ export function ProjectShowPage(): React.ReactElement {
   return (
     <>
       <div className="panel">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <h2 style={{ margin: 0 }}>{p.name}</h2>
           <div style={{ flex: 1 }} />
-          <Link to={`/projects/${pid}/data-design`} className="ghost">データ設計 →</Link>
           <Link to={`/projects/${pid}/ux-design`} className="primary" style={{ textDecoration: 'none' }}>
-            UX / Core Domain Design →
+            UXデザイン
           </Link>
+          <Link to={`/projects/${pid}/flow`} className="ghost">ScreenFlow →</Link>
           <details>
             <summary className="ghost">旧設計ビュー</summary>
             <div style={{ display: 'grid', gap: 6, marginTop: 6 }}>
               <Link to={`/projects/${pid}/studio`}>旧 要件定義モード</Link>
-              <Link to={`/projects/${pid}/flow`}>旧 Screen Flow</Link>
             </div>
           </details>
         </div>
@@ -97,7 +89,6 @@ export function ProjectShowPage(): React.ReactElement {
       )}
 
       <ProjectTabs key={`tabs:${pid}`} tab={tab} onChange={(next) => {
-        setTab(next);
         setSearchParams((current) => {
           const params = new URLSearchParams(current);
           params.set('tab', next);
@@ -107,9 +98,15 @@ export function ProjectShowPage(): React.ReactElement {
       }} />
 
       {tab === 'ux-goal' && <ProjectUxGoal key={`ux-goal:${pid}`} pid={pid} />}
+      {tab === 'data-design' && <DataDesignPanel key={`data-design:${pid}`} pid={pid} />}
+      {tab === 'flow-diagram' && <section key={`flow-diagram:${pid}`} className="panel">
+        <h3>遷移図</h3>
+        <FlowDiagram pid={pid} revision={0} />
+      </section>}
 
       {tab === 'overview' && (
         <>
+          <ProjectTodos key={`todos:${pid}`} pid={pid} />
           <div className="panel">
             <h3>メンバー ({membersQ.data?.items.length ?? 0})</h3>
             <ul className="item-list">

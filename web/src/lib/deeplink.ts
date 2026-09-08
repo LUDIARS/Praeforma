@@ -1,22 +1,12 @@
 import React from 'react';
 
-// Thaleia (突合サービス) が発行するディープリンク `?tab=&focus=` を消費する補助。
+// Thaleia (突合サービス) が発行するディープリンク `?tab=&focus=` の `?focus` 側を消費する補助。
 //
 // 発行側契約は Thaleia の `src/links/deeplink.ts` (praeformaTabUrl) を正本とする:
 //   tab   ∈ {domains, specs, layouts}
 //   focus = domains → domain.name / specs → spec.code / layouts → layout.name
-// 発行側に無い tab 値は受け付けない (勝手に拡張しない)。
-
-/** Thaleia がディープリンクで指定し得る Praeforma のタブ。 */
-export type DeeplinkTab = 'domains' | 'specs' | 'layouts';
-
-const DEEPLINK_TABS: readonly DeeplinkTab[] = ['domains', 'specs', 'layouts'];
-
-/** `?tab` クエリ値を検証し、 発行側契約に一致する場合のみ返す (不一致/未指定は null)。 */
-export function parseDeeplinkTab(raw: string | null | undefined): DeeplinkTab | null {
-  if (!raw) return null;
-  return (DEEPLINK_TABS as readonly string[]).includes(raw) ? (raw as DeeplinkTab) : null;
-}
+// `?tab` の解釈は Pf 内部の共有URLと共通化したため components/ProjectTabs.tsx の
+// parseProjectTab が正本 (発行側契約の3値はその部分集合)。
 
 /** CSS セレクタに focus 値を安全に埋め込む (CSS.escape が無い環境向けの素朴な代替付き)。 */
 function escapeAttr(value: string): string {
