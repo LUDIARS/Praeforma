@@ -1,7 +1,7 @@
 {
   "name": "shared-packages",
   "description": "共有パッケージ。 Unity 側 (UPM) の実装と、サーバー・Web 共通の設計契約。",
-  "specRefs": ["spec/feature/data-design.md", "spec/feature/feature-manual.md", "spec/data/schema/feature-manual.md"],
+  "specRefs": ["spec/feature/data-design.md", "spec/feature/feature-manual.md", "spec/data/schema/feature-manual.md", "spec/feature/integrated-scene-editor.md", "spec/data/schema/scene-editor.md"],
   "presetRules": [],
   "templateRules": [],
   "membership": [

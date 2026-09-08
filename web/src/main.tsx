@@ -6,7 +6,7 @@ import { App } from './App.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { ProjectListPage } from './pages/ProjectListPage.tsx';
 import { ProjectShowPage } from './pages/ProjectShowPage.tsx';
-import { LayoutEditorPage } from './pages/LayoutEditorPage.tsx';
+import { SceneEditorPage } from './pages/SceneEditorPage.tsx';
 import { StudioPage } from './pages/StudioPage.tsx';
 import { ScreenFlowPage } from './pages/ScreenFlowPage.tsx';
 import { UxCoreDesignPage } from './pages/UxCoreDesignPage.tsx';
@@ -53,7 +53,7 @@ void ensureLocalToken().then(() => {
               <Route path="projects/:pid/flow" element={<ScreenFlowPage />} />
               <Route path="projects/:pid/ux-design" element={<UxCoreDesignPage />} />
               <Route path="projects/:pid/data-design" element={<DataDesignPage />} />
-              <Route path="projects/:pid/layouts/:lid" element={<LayoutEditorPage />} />
+              <Route path="projects/:pid/layouts/:lid" element={<SceneEditorPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

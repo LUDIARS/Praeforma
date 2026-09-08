@@ -13,6 +13,8 @@ interface Props {
   onSave: () => void;
   isSaving: boolean;
   isReadOnly?: boolean;
+  showLayers?: boolean;
+  referenceImages?: Record<string, string>;
 }
 
 type MoveTarget = { kind: 'frame' | 'element'; id: string; startX: number; startY: number; originalX: number; originalY: number };
@@ -36,6 +38,22 @@ export function DesignCanvas(props: Props): React.ReactElement {
   const [resize, setResize] = React.useState<ResizeTarget | null>(null);
   const [transitionFrom, setTransitionFrom] = React.useState<{ frameId: string; elementId: string | null } | null>(null);
   const previewRef = React.useRef<UxCanvasDocument | null>(null);
+  const viewportRef = React.useRef<HTMLDivElement>(null);
+  const previousFrameCount = React.useRef(canvas.frames.length);
+  React.useEffect(() => {
+    if (props.showLayers && canvas.frames.length > previousFrameCount.current) {
+      const frame = canvas.frames.at(-1); if (frame) setSelected({kind:'frame',id:frame.id});
+    }
+    previousFrameCount.current = canvas.frames.length;
+  }, [canvas.frames.length, props.showLayers]);
+  React.useEffect(() => {
+    if (!props.showLayers || !selected) return;
+    const element = selected.kind === 'element' ? canvas.elements.find(item => item.id === selected.id) : undefined;
+    const frame = canvas.frames.find(item => item.id === (element?.frame_id ?? selected.id));
+    if (frame) viewportRef.current?.scrollTo({left: Math.max(0,(frame.x+(element?.x??0))*zoom-60),top:Math.max(0,(frame.y+(element?.y??0))*zoom-90)});
+    // Only changing selection should move the viewport; dragging and zoom keep the current view.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id, selected?.kind, props.showLayers]);
 
   const updateElement = (id: string, patch: Partial<CanvasElement>) => {
     onChange({ ...canvas, elements: canvas.elements.map((element) => element.id === id ? { ...element, ...patch } : element) });
@@ -92,8 +110,13 @@ export function DesignCanvas(props: Props): React.ReactElement {
       </div>
 
       <fieldset className="ux-canvas-controls" disabled={props.isReadOnly}>
+      {props.showLayers ? <aside className="ux-layer-list" aria-label="パーツ一覧">{canvas.frames.map(frame => <div key={frame.id}>
+        <button type="button" className="ghost" aria-pressed={selected?.kind === 'frame' && selected.id === frame.id} onClick={() => setSelected({kind:'frame',id:frame.id})}>{frame.name}</button>
+        {canvas.elements.filter(element => element.frame_id === frame.id).map(element => <button type="button" key={element.id} className="ghost ux-layer-element" aria-pressed={selected?.kind === 'element' && selected.id === element.id} onClick={() => setSelected({kind:'element',id:element.id})}>{element.label}</button>)}
+      </div>)}</aside> : null}
       <div
         className="ux-canvas-viewport"
+        ref={viewportRef}
         onPointerMove={(event) => {
           if (props.isReadOnly) return;
           if (move) {
@@ -116,7 +139,7 @@ export function DesignCanvas(props: Props): React.ReactElement {
         onPointerUp={() => { if (previewRef.current) props.onChange(previewRef.current); previewRef.current = null; setMove(null); setResize(null); }}
         onPointerCancel={() => { previewRef.current = null; props.onCancelPreview(); setMove(null); setResize(null); }}
       >
-        <div className="ux-canvas-world" style={{ transform: `scale(${zoom})` }}>
+        <div className="ux-canvas-world" style={{ transform: `scale(${zoom})`, width: Math.max(2400,...canvas.frames.map(frame => frame.x + frame.width + 120)), height: Math.max(1400,...canvas.frames.map(frame => frame.y + frame.height + 120)) }}>
           <svg className="ux-transition-layer" aria-hidden="true"><defs><marker id="ux-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" /></marker></defs>
             {canvas.transitions.map((transition) => {
               const from = canvas.frames.find((frame) => frame.id === transition.from.frame_id);
@@ -135,6 +158,7 @@ export function DesignCanvas(props: Props): React.ReactElement {
               style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height }}
               onClick={() => { setSelected({ kind: 'frame', id: frame.id }); connectTo(frame.id); }}
             >
+              {props.referenceImages?.[frame.id] ? <img src={props.referenceImages[frame.id]} alt="参照キャプチャ" style={{position:'absolute',inset:0,width:'100%',height:'100%',opacity:.35,pointerEvents:'none'}} /> : null}
               <header
                 className="ux-frame-title"
                 onPointerDown={(event) => {
@@ -185,6 +209,7 @@ export function DesignCanvas(props: Props): React.ReactElement {
           <label className="simple-field"><span>表示名</span><input value={selectedElement.label} onChange={(event) => updateElement(selectedElement.id, { label: event.target.value })} /></label>
           <div className="ux-number-fields"><label>X<input type="number" value={Math.round(selectedElement.x)} onChange={(event) => updateElement(selectedElement.id, { x: Number(event.target.value) })} /></label><label>Y<input type="number" value={Math.round(selectedElement.y)} onChange={(event) => updateElement(selectedElement.id, { y: Number(event.target.value) })} /></label><label>W<input type="number" min={minimumSize} value={Math.round(selectedElement.width)} onChange={(event) => updateElement(selectedElement.id, { width: Number(event.target.value) })} /></label><label>H<input type="number" min={minimumSize} value={Math.round(selectedElement.height)} onChange={(event) => updateElement(selectedElement.id, { height: Number(event.target.value) })} /></label></div>
           <label className="simple-field"><span>動的オブジェクトのサンプル</span><input value={selectedElement.sample_text ?? ''} placeholder="表示するサンプル" onChange={(event) => updateElement(selectedElement.id, { sample_text: event.target.value || null })} /></label>
+          {props.showLayers ? <label className="simple-field"><span>対応するノード・定義</span><input maxLength={500} value={selectedElement.dynamic?.source ?? ''} onChange={event => updateElement(selectedElement.id,{dynamic:{enabled:selectedElement.dynamic?.enabled??false,update_condition:selectedElement.dynamic?.update_condition??null,source:event.target.value||null}})} /></label> : null}
           <label className="check-row"><input type="checkbox" checked={selectedElement.dynamic?.enabled ?? false} onChange={(event) => updateElement(selectedElement.id, { dynamic: event.target.checked ? { enabled: true, source: null, update_condition: null } : null })} />動的に変わる</label>
           {selectedElement.dynamic ? <input aria-label="更新条件" placeholder="更新・消滅条件" value={selectedElement.dynamic.update_condition ?? ''} onChange={(event) => updateElement(selectedElement.id, { dynamic: { ...selectedElement.dynamic!, update_condition: event.target.value || null } })} /> : null}
           <label className="simple-field"><span>追従先（同じ画面内）</span><select value={selectedElement.follow?.target_element_id ?? ''} onChange={(event) => updateElement(selectedElement.id, { follow: event.target.value ? { target_element_id: event.target.value, condition: selectedElement.follow?.condition ?? '' } : null })}><option value="">追従しない</option>{canvas.elements.filter((item) => item.id !== selectedElement.id && item.frame_id === selectedElement.frame_id && item.follow?.target_element_id !== selectedElement.id).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>

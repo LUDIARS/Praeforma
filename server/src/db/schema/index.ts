@@ -17,3 +17,4 @@ export * from './ux-design.ts';
 export * from './data-design.ts';
 export * from './spec-fragment.ts';
 export * from './feature-manual.ts';
+export * from './scene-editor.ts';
