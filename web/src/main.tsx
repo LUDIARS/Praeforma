@@ -18,6 +18,25 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 0, gcTime: 0, retry: 1 } },
 });
 
+const viewerMarker = document.querySelector<HTMLScriptElement>('script[data-excubitor-viewer]');
+const viewerBasename = viewerMarker?.dataset.prefix;
+if (viewerMarker) {
+  const normalizedViewerUrl = viewerBasename
+    ? new URL(viewerBasename, window.location.origin)
+    : null;
+  if (
+    !viewerBasename
+    || !viewerBasename.startsWith('/')
+    || !normalizedViewerUrl
+    || normalizedViewerUrl.origin !== window.location.origin
+    || normalizedViewerUrl.pathname !== viewerBasename
+    || normalizedViewerUrl.search
+    || normalizedViewerUrl.hash
+  ) {
+    throw new Error('Invalid Excubitor Viewer path prefix');
+  }
+}
+
 function RequireAuth({ children }: { children: React.ReactNode }): React.ReactElement {
   const token = getToken();
   if (!token) return <Navigate to="/login" replace />;
@@ -43,7 +62,7 @@ void ensureLocalToken().then(() => {
   root.render(
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
+        <BrowserRouter basename={viewerBasename}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<RequireAuth><App /></RequireAuth>}>
