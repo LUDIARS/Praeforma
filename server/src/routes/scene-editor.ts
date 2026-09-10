@@ -46,7 +46,7 @@ export function makeSceneEditorRouter(claudeBin: string): Hono {
     const parsed=sceneSaveSchema.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) throw AppError.badRequest('invalid_scene',parsed.error.flatten());
     const { expected_revision: expected, ...canvas }=parsed.data.canvas;
-    const document={ canvas:{ ...canvas, revision:expected+1 }, sources:parsed.data.sources };
+    const document={ canvas:{ ...canvas, revision:expected+1 }, sources:parsed.data.sources, ...(parsed.data.web ? {web:parsed.data.web} : {}) };
     await persistScene(c.req.param('lid')!,c.req.param('pid')!,document,expected);
     await recordAudit({ projectId:c.req.param('pid')!, actor:getIdentity(c), action:'scene.save', targetKind:'layout', targetId:c.req.param('lid')!, meta:{ revision:expected+1 } });
     return c.json({ document });

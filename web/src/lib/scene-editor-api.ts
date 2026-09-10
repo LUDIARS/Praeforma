@@ -6,7 +6,7 @@ export const sceneApi={
   get:(pid:string,lid:string)=>req<{ document:SceneDocument;name:string;canEdit:boolean }>(root(pid,lid)),
   save:(pid:string,lid:string,document:SceneDocument)=>{
     const { revision, ...canvas }=document.canvas;
-    return req<{document:SceneDocument}>(root(pid,lid),{method:'PUT',body:JSON.stringify({canvas:{...canvas,expected_revision:revision},sources:document.sources})});
+    return req<{document:SceneDocument}>(root(pid,lid),{method:'PUT',body:JSON.stringify({canvas:{...canvas,expected_revision:revision},sources:document.sources,web:document.web})});
   },
   analyze:(pid:string,lid:string,image:File,runtime:RuntimeSnapshot|null)=>{
     const body=new FormData(); body.set('image',image); if(runtime) body.set('runtime',JSON.stringify(runtime));

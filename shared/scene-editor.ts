@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { canvasSchema, type DesignCanvasDocument } from './design-canvas.ts';
+import { webSceneSchema, type WebScene } from './web-scene.ts';
 
 const id = z.string().trim().min(1).max(120);
 const size = z.number().finite().positive().max(100_000);
@@ -31,12 +32,13 @@ export const sceneSourceSchema = z.object({
   runtime: runtimeSnapshotSchema.nullable(), notes: z.array(z.string().max(1000)).max(50),
 }).strict();
 export type SceneSource = z.infer<typeof sceneSourceSchema>;
-export interface SceneDocument { canvas: DesignCanvasDocument; sources: SceneSource[] }
+export interface SceneDocument { canvas: DesignCanvasDocument; sources: SceneSource[]; web?: WebScene }
 export const sceneSaveSchema = z.object({
-  canvas: canvasSchema, sources: z.array(sceneSourceSchema).max(20),
+  canvas: canvasSchema, sources: z.array(sceneSourceSchema).max(20), web: webSceneSchema.optional(),
 }).strict().superRefine((value, ctx) => {
   const frames = new Set(value.canvas.frames.map(frame => frame.id));
   const sources = new Set(value.sources.map(source => source.id));
+  if (value.web?.variants.some(variant => !frames.has(variant.frameId))) ctx.addIssue({ code: 'custom', message: 'unknown_web_frame' });
   if (sources.size !== value.sources.length || value.sources.some(source => !frames.has(source.frameId))) {
     ctx.addIssue({ code: 'custom', message: 'invalid_source_reference' });
   }

@@ -33,7 +33,9 @@ test('PF-SCENE-5/6 scenes preserve saves, reject stale writes and isolate projec
     const app=new Hono();app.onError(e=>new Response(JSON.stringify({error:e.message}),{status:e instanceof AppError?e.status:500}));
     app.route('/projects/:pid/layouts/:lid/scene-editor',makeSceneEditorRouter('unused'));
     const route='/projects/p/layouts/scene/scene-editor';
-    const {revision,...canvas}=canvasFromRuntime(snapshot,'f');const body={canvas:{...canvas,expected_revision:revision},sources:[]};
+    const {revision,...canvas}=canvasFromRuntime(snapshot,'f');
+    const web={version:1,variants:[{frameId:'f',nodes:[{id:'button',parentId:null,tag:'button',text:'Save',classes:['button'],attributes:{}}]}],styles:[{className:'button',device:'mobile',declarations:{width:'100%'}}]};
+    const body={canvas:{...canvas,expected_revision:revision},sources:[],web};
     const save=(path:string,input:unknown)=>app.request(path,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(input)});
     assert.equal((await app.request(route)).status,200);
     assert.equal((await app.request('/projects/q/layouts/scene/scene-editor')).status,404);
@@ -41,7 +43,7 @@ test('PF-SCENE-5/6 scenes preserve saves, reject stale writes and isolate projec
     assert.equal((await save(route,body)).status,200);
     assert.equal((await save(route,body)).status,409);
     assert.equal((await save(route,{...body,canvas:{...body.canvas,expected_revision:1}})).status,200);
-    const saved=await (await app.request(route)).json() as {document:{canvas:{revision:number}}};assert.equal(saved.document.canvas.revision,2);
+    const saved=await (await app.request(route)).json() as {document:{canvas:{revision:number};web:unknown}};assert.equal(saved.document.canvas.revision,2);assert.deepEqual(saved.document.web,web);
     identify('reader');assert.equal((await app.request(route)).status,200);
     assert.equal((await save(route,body)).status,403);
     assert.equal((await app.request(`${route}/analyze`,{method:'POST'})).status,403);
