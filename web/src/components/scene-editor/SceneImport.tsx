@@ -3,6 +3,7 @@ import { canvasFromRuntime, runtimeSnapshotSchema, type RuntimeSnapshot, type Sc
 import type { DesignCanvasDocument } from '../../../../shared/design-canvas.ts';
 import type { ImageLayoutCandidate } from '../../lib/ux-design-api.ts';
 import { sceneApi } from '../../lib/scene-editor-api.ts';
+import { SceneDeviceSelect } from '../ux-design/FrameDeviceControls.tsx';
 
 interface Props { pid:string;lid:string;disabled:boolean;onApply:(canvas:DesignCanvasDocument,source:SceneSource)=>void }
 interface Proposal { image:string|null;runtime:RuntimeSnapshot|null;fingerprint:string|null;candidates:ImageLayoutCandidate[] }
@@ -14,6 +15,7 @@ function readImage(file:File):Promise<string> {
 }
 export function SceneImport({pid,lid,disabled,onApply}:Props):React.ReactElement {
   const [file,setFile]=React.useState<File|null>(null);const [runtimeText,setRuntimeText]=React.useState('');
+  const [device,setDevice]=React.useState<'unspecified'|'desktop'|'mobile'>('unspecified');
   const [proposal,setProposal]=React.useState<Proposal|null>(null);const [busy,setBusy]=React.useState(false);const [error,setError]=React.useState('');
   const prepare=async()=>{
     setBusy(true);setError('');setProposal(null);
@@ -35,7 +37,7 @@ export function SceneImport({pid,lid,disabled,onApply}:Props):React.ReactElement
     } catch(e) {setError(e instanceof Error?e.message:'解析できませんでした。設定・権限・資料を確認してください。');} finally {setBusy(false);}
   };
   return <section className="panel scene-import"><h3>キャプチャ・構造情報から作る</h3>
-    <fieldset disabled={disabled||busy}><label className="simple-field"><span>ゲームのキャプチャ（2MB以内）</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{setFile(e.target.files?.[0]??null);setProposal(null);}} /></label>
+    <fieldset disabled={disabled||busy}><SceneDeviceSelect value={device} onChange={setDevice} /><label className="simple-field"><span>ゲームのキャプチャ（2MB以内）</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{setFile(e.target.files?.[0]??null);setProposal(null);}} /></label>
     <label className="simple-field"><span>実行中のノード・オントロジー（JSON）</span><textarea rows={5} value={runtimeText} maxLength={600000} onChange={e=>{setRuntimeText(e.target.value);setProposal(null);}} /></label>
     <label className="simple-field"><span>構造情報ファイルを読み込む</span><input type="file" accept=".json,application/json" onChange={e=>{
       const selected=e.target.files?.[0];if(!selected)return;if(selected.size>600000){setError('構造情報は600KB以内で指定してください。');return;}
@@ -51,7 +53,7 @@ export function SceneImport({pid,lid,disabled,onApply}:Props):React.ReactElement
       <details><summary>取り込むパーツを確認</summary><ul>{candidate.elements.map(part=><li key={part.id}>{part.label}（{part.kind}）{part.dynamic?.source?` — 対応: ${part.dynamic.source}`:''}</li>)}</ul></details>
       <button disabled={disabled||busy} onClick={()=>{
         const frameId=crypto.randomUUID();const ids=new Map(candidate.elements.map((part,index)=>[part.id,`${frameId}-${index}`]));
-        onApply({revision:0,frames:[{...candidate.frame,id:frameId}],elements:candidate.elements.map(part=>({...part,id:ids.get(part.id)!,frame_id:frameId,follow:part.follow?{...part.follow,target_element_id:ids.get(part.follow.target_element_id)!}:null})),transitions:[]},
+        onApply({revision:0,frames:[{...candidate.frame,id:frameId,device}],elements:candidate.elements.map(part=>({...part,id:ids.get(part.id)!,frame_id:frameId,follow:part.follow?{...part.follow,target_element_id:ids.get(part.follow.target_element_id)!}:null})),transitions:[]},
           {id:crypto.randomUUID(),frameId,image:proposal.image,runtime:proposal.runtime,fingerprint:proposal.fingerprint,notes:candidate.notes});setProposal(null);
       }}>この候補を取り込む</button></article>)}</div>:null}
   </section>;

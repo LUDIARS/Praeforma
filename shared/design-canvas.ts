@@ -2,6 +2,7 @@ import { z } from 'zod';
 const finitePosition = z.number().finite().min(-100_000).max(100_000);
 const positiveSize = z.number().finite().positive().max(100_000);
 const frameSchema = z.object({
+  device: z.enum(['unspecified', 'desktop', 'mobile']).optional(),
   id: z.string().trim().min(1).max(120),
   name: z.string().trim().min(1).max(200),
   description: z.string().max(4000),

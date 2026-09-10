@@ -152,6 +152,7 @@ export interface VerificationEvidence {
 }
 
 export interface CanvasFrame {
+  device?: 'unspecified' | 'desktop' | 'mobile';
   id: string;
   name: string;
   description: string;

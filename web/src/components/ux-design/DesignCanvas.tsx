@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CanvasElement, CanvasFrame, UxCanvasDocument } from '../../lib/ux-design-api.ts';
+import { createDeviceFrame, deviceLabels, SceneDeviceInspector } from './FrameDeviceControls.tsx';
 
 interface Props {
   canvas: UxCanvasDocument;
@@ -92,7 +93,12 @@ export function DesignCanvas(props: Props): React.ReactElement {
   return (
     <section className={`ux-canvas-section ${props.isReadOnly ? 'locked' : ''}`} aria-label="画面と遷移の設計" aria-busy={props.isReadOnly}>
       <div className="ux-canvas-toolbar">
-        <button className="ghost" type="button" disabled={props.isReadOnly} onClick={() => {
+        {props.showLayers ? (['desktop', 'mobile'] as const).map(device => <button key={device} className="ghost" type="button" disabled={props.isReadOnly || canvas.frames.length >= 200} onClick={() => {
+          const frame = createDeviceFrame(device, crypto.randomUUID(), Math.max(0, ...canvas.frames.map(item => item.x + item.width)) + 80);
+          onChange({ ...canvas, frames: [...canvas.frames, frame] });
+          setSelected({ kind: 'frame', id: frame.id });
+        }}>＋ {deviceLabels[device]}画面</button>) : null}
+        <button className="ghost" type="button" disabled={props.isReadOnly || canvas.frames.length >= 200} onClick={() => {
           const frame = newFrame(canvas.frames.length);
           onChange({ ...canvas, frames: [...canvas.frames, frame] });
           setSelected({ kind: 'frame', id: frame.id });
@@ -111,7 +117,7 @@ export function DesignCanvas(props: Props): React.ReactElement {
 
       <fieldset className="ux-canvas-controls" disabled={props.isReadOnly}>
       {props.showLayers ? <aside className="ux-layer-list" aria-label="パーツ一覧">{canvas.frames.map(frame => <div key={frame.id}>
-        <button type="button" className="ghost" aria-pressed={selected?.kind === 'frame' && selected.id === frame.id} onClick={() => setSelected({kind:'frame',id:frame.id})}>{frame.name}</button>
+        <button type="button" className="ghost" aria-pressed={selected?.kind === 'frame' && selected.id === frame.id} onClick={() => setSelected({kind:'frame',id:frame.id})}>{frame.name} · {deviceLabels[frame.device ?? 'unspecified']}</button>
         {canvas.elements.filter(element => element.frame_id === frame.id).map(element => <button type="button" key={element.id} className="ghost ux-layer-element" aria-pressed={selected?.kind === 'element' && selected.id === element.id} onClick={() => setSelected({kind:'element',id:element.id})}>{element.label}</button>)}
       </div>)}</aside> : null}
       <div
@@ -166,7 +172,7 @@ export function DesignCanvas(props: Props): React.ReactElement {
                   setMove({ kind: 'frame', id: frame.id, startX: event.clientX, startY: event.clientY, originalX: frame.x, originalY: frame.y });
                 }}
               >
-                <strong>{frame.name}</strong><span>{frame.viewport.width} × {frame.viewport.height}</span>
+                <strong>{frame.name}{props.showLayers ? ` · ${deviceLabels[frame.device ?? 'unspecified']}` : ''}</strong><span>{frame.viewport.width} × {frame.viewport.height}</span>
               </header>
               <div className="ux-frame-actions">
                 {elementKinds.map((kind) => <button key={kind} type="button" onClick={(event) => { event.stopPropagation(); addElement(frame.id, kind); }}>{kind}</button>)}
@@ -219,6 +225,7 @@ export function DesignCanvas(props: Props): React.ReactElement {
         </aside>
       ) : null}
       {selectedFrame ? <aside className="ux-element-inspector foundation-form">
+        {props.showLayers ? <SceneDeviceInspector frame={selectedFrame} onChange={patch => onChange({ ...canvas, frames: canvas.frames.map(item => item.id === selectedFrame.id ? { ...item, ...patch } : item) })} /> : null}
         <label className="simple-field"><span>画面名</span><input value={selectedFrame.name} onChange={(event) => onChange({ ...canvas, frames: canvas.frames.map((item) => item.id === selectedFrame.id ? { ...item, name: event.target.value } : item) })} /></label>
         <label className="simple-field"><span>この画面の仕様</span><textarea rows={3} value={selectedFrame.description ?? ''} onChange={(event) => onChange({ ...canvas, frames: canvas.frames.map((item) => item.id === selectedFrame.id ? { ...item, description: event.target.value } : item) })} /></label>
         <div className="ux-number-fields"><label>幅<input type="number" min="240" value={selectedFrame.width} onChange={(event) => onChange({ ...canvas, frames: canvas.frames.map((item) => item.id === selectedFrame.id ? { ...item, width: Number(event.target.value) } : item) })} /></label><label>高さ<input type="number" min="320" value={selectedFrame.height} onChange={(event) => onChange({ ...canvas, frames: canvas.frames.map((item) => item.id === selectedFrame.id ? { ...item, height: Number(event.target.value) } : item) })} /></label></div>
