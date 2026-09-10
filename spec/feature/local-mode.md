@@ -10,6 +10,8 @@ Praeforma を **Postgres も Cernere も無しで** ローカル単体起動す�
 Pfは常に `127.0.0.1` で待ち受け、他サービスと同じ既存Cloudflare Tunnelから接続する。
 LAN直接公開とWindows受信許可追加は行わない。
 公開URLは `PRAEFORMA_PUBLIC_URL` にHTTPSの正確なOriginを設定する。
+Viewerなど別Originから利用する場合は、配備側の `PRAEFORMA_ALLOWED_ORIGINS` に
+追加許可するHTTPS Originをカンマ区切りで指定する。パス、wildcard、HTTP、空要素は許可しない。
 Tunnelのルート・DNS・既存アクセス制御はExの管理APIで確認して適用する。
 Tunnel開通まではExの画面リンクをloopbackのまま保持し、開通後に公開URLへ更新する。
 
@@ -23,7 +25,8 @@ Excubitor は本体フォルダで Web をビルドしてからローカルモ�
 認証を省略するローカルモードの HTTP リスナーは `127.0.0.1` に限定する。
 loopback 束縛は他ホストからの到達のみを塞ぐ。 browser は任意の web ページから
 `127.0.0.1` へ到達できるため、Originは同一ポートのloopback (`127.0.0.1` / `localhost` /
-`[::1]`) または設定済みHTTPS公開URLに限定する。それ以外のOrigin付きリクエストは403で拒否する。
+`[::1]`) 、設定済みHTTPS公開URL、または `PRAEFORMA_ALLOWED_ORIGINS` に完全一致する
+追加HTTPS Originに限定する。それ以外のOrigin付きリクエストは403で拒否する。
 CORSは応答の読み取りしか制限しないため、cross-site form POST のようにOriginが付かない
 状態変更要求も403で拒否する (GET / HEAD / OPTIONS 以外はOriginを必須とする)。
 起動・再起動の確認は Concordia の testing claim / release で調整する。

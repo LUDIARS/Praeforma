@@ -82,7 +82,7 @@ app.use('*', async (c, next) => {
   if (config.localMode) {
     const origin = c.req.header('origin');
     if (origin) {
-      if (!isAllowedLocalOrigin(origin, config.publicUrl, config.port)) {
+      if (!isAllowedLocalOrigin(origin, config.publicUrl, config.port, config.additionalAllowedOrigins)) {
         return c.json({ error: 'local_origin_rejected' }, 403);
       }
     } else if (requiresOriginHeader(c.req.method)) {
@@ -100,7 +100,7 @@ app.use('*', async (c, next) => {
 app.use(
   '*',
   cors({
-    origin: (origin) => (config.localMode ? (isAllowedLocalOrigin(origin, config.publicUrl, config.port) ? origin : null) : '*'),
+    origin: (origin) => (config.localMode ? (isAllowedLocalOrigin(origin, config.publicUrl, config.port, config.additionalAllowedOrigins) ? origin : null) : '*'),
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['content-type', 'authorization'],
   }),

@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isAllowedLocalOrigin, requiresOriginHeader } from '../local-access.ts';
+import {
+  isAllowedLocalOrigin,
+  parseAdditionalOrigins,
+  requiresOriginHeader,
+} from '../local-access.ts';
 
 const PUBLIC = 'https://pf.ai-run-do.com';
 const PORT = 8889;
@@ -30,6 +34,37 @@ test('local origin: 設定済み HTTPS 公開 Origin だけを許可する', () 
   // 別 subdomain / 別 host
   assert.equal(isAllowedLocalOrigin('https://evil.ai-run-do.com', PUBLIC, PORT), false);
   assert.equal(isAllowedLocalOrigin('https://pf.ai-run-do.com.evil.com', PUBLIC, PORT), false);
+});
+
+test('local origin: 配備設定の追加 HTTPS Origin だけを許可する', () => {
+  const additional = parseAdditionalOrigins(
+    ' https://web.ai-run-do.com,https://exiv.ai-run-do.com,https://web.ai-run-do.com ',
+  );
+  assert.deepEqual(additional, ['https://web.ai-run-do.com', 'https://exiv.ai-run-do.com']);
+  assert.equal(isAllowedLocalOrigin('https://web.ai-run-do.com', PUBLIC, PORT, additional), true);
+  assert.equal(isAllowedLocalOrigin('https://exiv.ai-run-do.com', PUBLIC, PORT, additional), true);
+  assert.equal(isAllowedLocalOrigin('https://evil.ai-run-do.com', PUBLIC, PORT, additional), false);
+  assert.equal(isAllowedLocalOrigin('https://web.ai-run-do.com.evil.com', PUBLIC, PORT, additional), false);
+});
+
+test('local origin: 未設定の追加 Origin は空の許可リストになる', () => {
+  assert.deepEqual(parseAdditionalOrigins(undefined), []);
+});
+
+test('local origin: 追加 Origin の HTTP・path・wildcard・空要素を拒否する', () => {
+  for (const value of [
+    '',
+    'https://web.ai-run-do.com,',
+    'http://web.ai-run-do.com',
+    'https://web.ai-run-do.com/viewer/',
+    'https://*.ai-run-do.com',
+  ]) {
+    assert.throws(
+      () => parseAdditionalOrigins(value),
+      /PRAEFORMA_ALLOWED_ORIGINS/,
+      value,
+    );
+  }
 });
 
 test('local origin: publicUrl が HTTP 既定値なら外部 Origin を一切許可しない', () => {

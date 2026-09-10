@@ -24,6 +24,7 @@ services:
     env:
       PRAEFORMA_LOCAL_MODE: "1"
       PRAEFORMA_PUBLIC_URL: https://pf.ai-run-do.com
+      PRAEFORMA_ALLOWED_ORIGINS: https://web.ai-run-do.com,https://exiv.ai-run-do.com
       PRAEFORMA_LOCAL_DB: ${ARS_ROOT}/Praeforma/.praeforma-local/praeforma.sqlite
     provides:
       PRAEFORMA_URL: http://127.0.0.1:${port}

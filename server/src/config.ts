@@ -1,10 +1,13 @@
 // 起動時 env 解決。 bootstrap が ensureEnv() を呼んだ後に評価される。
+import { parseAdditionalOrigins } from './lib/local-access.ts';
 
 export interface AppConfig {
   port: number;
   databaseUrl: string;
   cernereBaseUrl: string;
   publicUrl: string;
+  /** 配備側で指定する追加のHTTPS許可Origin。フロントはホスト名を持たない。 */
+  additionalAllowedOrigins: readonly string[];
   projectKey: string;
   /** 要件サジェスト用 LLM = claude CLI のバイナリ (LUDIARS 規約: API 不使用、 claude -p)。 */
   claudeBin: string;
@@ -37,6 +40,7 @@ export function loadConfig(): AppConfig {
       process.env.PRAEFORMA_PUBLIC_URL ??
       `http://localhost:${process.env.PRAEFORMA_PORT ?? 8889}`,
     projectKey: process.env.PRAEFORMA_PROJECT_KEY ?? 'praeforma',
+    additionalAllowedOrigins: parseAdditionalOrigins(process.env.PRAEFORMA_ALLOWED_ORIGINS),
     claudeBin: process.env.PRAEFORMA_CLAUDE_BIN ?? 'claude',
     anatomiaToken: process.env.PRAEFORMA_ANATOMIA_TOKEN ?? null,
     claudeModel: process.env.PRAEFORMA_CLAUDE_MODEL ?? null,
