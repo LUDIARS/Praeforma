@@ -2,6 +2,9 @@
 services:
   - code: praeforma
     name: Praeforma
+    viewer:
+      enabled: true
+      entry_path: /
     tier: personal
     project_code: praeforma
     component: backend
