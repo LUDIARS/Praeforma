@@ -5,6 +5,8 @@ import type { FragmentInput, SpecFragment, ImplementationState } from '../../../
 export const FRAGMENT_PAGE_SIZE = 30;
 
 export const fragmentApi = {
+  cleanupTodo: (pid: string) => req<{ pendingCount: number; canReconstruct: boolean }>(
+    `/api/projects/${encodeURIComponent(pid)}/spec-fragments/cleanup-todo`),
   list: (pid: string, offset: number) => req<{ items: SpecFragment[]; hasMore: boolean; canEdit: boolean }>(
     `/api/projects/${encodeURIComponent(pid)}/spec-fragments?limit=${FRAGMENT_PAGE_SIZE}&offset=${offset}`),
   create: (pid: string, input: FragmentInput) => req<{ fragment: SpecFragment; replayed: boolean }>(

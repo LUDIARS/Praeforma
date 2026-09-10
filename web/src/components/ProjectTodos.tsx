@@ -8,11 +8,13 @@ import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { uxDesignApi } from '../lib/ux-design-api.ts';
 import { DefinitionTodoList } from './ux-design/DefinitionTodoList.tsx';
+import { FragmentCleanupTodo } from './specs/FragmentCleanupTodo.tsx';
 
 export function ProjectTodos({ pid }: { pid: string }): React.ReactElement {
   const navigate = useNavigate();
   const scenarios = useQuery({ queryKey: ['ux-scenarios', pid], queryFn: () => uxDesignApi.listScenarios(pid) });
   return <>
+    <FragmentCleanupTodo pid={pid} />
     {scenarios.isError && <p role="alert">シナリオとの対応を取得できませんでした。
       <button type="button" disabled={scenarios.isFetching} onClick={() => { void scenarios.refetch(); }}>再取得</button>
     </p>}

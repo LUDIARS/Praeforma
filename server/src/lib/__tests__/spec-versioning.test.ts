@@ -9,7 +9,7 @@ test('PF-RECON-3 patch, minor and major reset the lower components',()=>{
   assert.equal(versionLabel(nextSpecVersion(base,'minor')),'2.4.0');
   assert.equal(versionLabel(nextSpecVersion(base,'major')),'3.0.0');
 });
-test('PF-RECON-1/4/5 preview, atomic confirmation, immutable logs, replay and permissions',async()=>{
+test('PF-RECON-1/4/5 and PF-FRAGMENT-TODO-2/3 preserve atomic history, pending counts and permissions',async()=>{
   const {initLocalDb,getDb,getLocalSqlite}=await import('../../db/connection.ts');
   const {projects,projectMembers}=await import('../../db/schema/project.ts');
   const {domains}=await import('../../db/schema/domain.ts');
@@ -30,16 +30,24 @@ test('PF-RECON-1/4/5 preview, atomic confirmation, immutable logs, replay and pe
     app.route('/projects/:pid/spec-versions',makeSpecVersionRouter('unused',async(_binary,material):Promise<ReconstructionPlan>=>({changes:[{specId:material.specs[0]?.id??null,domainId:'d',title:'Inventory',description:material.fragments.map(f=>f.content).join('\n'),fragmentIds:material.fragments.map(f=>f.id),rationale:'Integrate observed requirements'}],deferred:[]})));
     const post=(path:string,body?:unknown)=>app.request(path,{method:'POST',...(body?{headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{})});
     const history=async()=>await(await app.request('/projects/p/spec-versions')).json() as {version:string;head:{revision:number};logs:Array<{kind:string;payload:unknown}>};
+    const cleanup=async(pid='p')=>await(await app.request(`/projects/${pid}/spec-fragments/cleanup-todo`)).json() as {pendingCount:number;canReconstruct:boolean};
+    assert.deepEqual(await cleanup(),{pendingCount:0,canReconstruct:true});
     const fragment={content:'Open inventory',sourceEventId:'00000000-0000-4000-8000-000000000001'};
     assert.equal((await post('/projects/p/spec-fragments',fragment)).status,201);
     assert.equal((await history()).version,'0.0.1');
     assert.equal((await post('/projects/p/spec-fragments',fragment)).status,200);assert.equal((await history()).version,'0.0.1');
+    assert.equal((await cleanup()).pendingCount,1);
+    assert.equal((await cleanup('q')).pendingCount,0);
     let response=await post('/projects/p/spec-versions/reconstructions');assert.equal(response.status,201);
     let draft=await response.json() as {proposal:{id:string}};const firstId=draft.proposal.id;
     assert.equal((await history()).version,'0.0.1');
-    identify('reader');assert.equal((await post(`/projects/p/spec-versions/reconstructions/${firstId}/confirm`)).status,403);identify('author');
+    assert.equal((await cleanup()).pendingCount,1);
+    identify('reader');assert.deepEqual(await cleanup(),{pendingCount:1,canReconstruct:false});
+    assert.equal((await app.request('/projects/q/spec-fragments/cleanup-todo')).status,403);
+    assert.equal((await post(`/projects/p/spec-versions/reconstructions/${firstId}/confirm`)).status,403);identify('author');
     assert.equal((await post(`/projects/q/spec-versions/reconstructions/${firstId}/confirm`)).status,404);
     assert.equal((await post(`/projects/p/spec-versions/reconstructions/${firstId}/confirm`)).status,200);
+    assert.equal((await cleanup()).pendingCount,0);
     assert.equal((await history()).version,'0.1.0');assert.equal((await history()).logs.length,2);
     assert.equal((await post(`/projects/p/spec-versions/reconstructions/${firstId}/confirm`)).status,409);
     assert.equal((await versionRows('SELECT id FROM spec_fragments WHERE project_id=?',['p'])).length,1);
@@ -52,6 +60,7 @@ test('PF-RECON-1/4/5 preview, atomic confirmation, immutable logs, replay and pe
     assert.equal((await history()).version,'1.0.0');
     assert.equal((await post('/projects/p/spec-versions/releases',{expectedRevision:latest.head.revision,note:'Retry'})).status,409);
     assert.equal((await post(`/projects/p/spec-versions/reconstructions/${draft.proposal.id}/confirm`)).status,409);
+    assert.equal((await cleanup()).pendingCount,1);
     assert.equal(JSON.stringify((await history()).logs.slice(-2)),originalLog);
     identify('reader');assert.equal((await app.request('/projects/p/spec-versions')).status,200);assert.equal((await post('/projects/p/spec-versions/releases',{expectedRevision:4,note:'No'})).status,403);
   }finally{sqlite.close();}

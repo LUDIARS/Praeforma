@@ -11,6 +11,7 @@ import { requireRole } from '../middleware/require-role.ts';
 import { createFragmentSchema, fragmentImplementationSchema } from '../lib/spec-fragment-input.ts';
 import { parsePagination } from '../lib/pagination.ts';
 import { AppError } from '../lib/errors.ts';
+import { countPendingFragments } from '../lib/fragment-cleanup-todo.ts';
 
 const VIEW_ROLES: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer'];
 const EDIT_ROLES: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer'];
@@ -23,6 +24,11 @@ export function makeSpecFragmentRouter(): Hono {
       .where(and(eq(projects.id, context.req.param('pid')!), isNull(projects.deletedAt))).limit(1);
     if (!project) throw AppError.notFound('project_not_found');
     await next();
+  });
+  router.get('/cleanup-todo', async (context) => {
+    const pendingCount = await countPendingFragments(context.req.param('pid')!);
+    const role: ProjectRole = context.get('projectRole');
+    return context.json({ pendingCount, canReconstruct: role === 'owner' || role === 'planner' });
   });
   router.get('/', async (context) => {
     const page = parsePagination(context.req.query());
