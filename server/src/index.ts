@@ -16,6 +16,7 @@ import { makeSpecVersionRouter } from './routes/spec-versions.ts';
 import { makeDomainProposalRouter } from './routes/domain-proposals.ts';
 import { makeLlmChatRouter } from './routes/llm-chat.ts';
 import { noStoreResponses } from './middleware/no-store.ts';
+import { resolveServiceVersion } from './service-version.ts';
 import { cors } from 'hono/cors';
 import { serve, type ServerType } from '@hono/node-server';
 import { attachCollab } from './ws/collab.ts';
@@ -120,6 +121,9 @@ app.get('/api/health', (c) => {
   return c.json({
     ok: true,
     service: 'praeforma',
+    // AIFormat RULE_SRE.md §2。 走っているプロセスが名乗る版。 これが無いと
+    // 「ビルドしたが再起動していない」 を機械的に検出できない。
+    version: resolveServiceVersion(),
     port: config.port,
     db: s.ok ? (config.localMode ? 'sqlite' : 'connected') : 'down',
     db_error: s.error,
