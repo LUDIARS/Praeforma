@@ -26,7 +26,7 @@ import { requireRole } from '../middleware/require-role.ts';
 import { fetchDomainOrganization } from '../lib/anatomia-domain-organization.ts';
 import { fetchStudioGraph, type AnatomiaGraphOptions } from '../lib/anatomia-graph/client.ts';
 import { AppError } from '../lib/errors.ts';
-import { publishGeniusDecision, queryGenius, type GeniusOptions } from '../lib/genius-client.ts';
+import { isGeniusEnabled, publishGeniusDecision, queryGenius, type GeniusOptions } from '../lib/genius-client.ts';
 import { analyzeLayoutImage, type ImageLayoutCandidate } from '../lib/ux-image-analysis.ts';
 import {
   analyzeUxBoundaries,
@@ -261,7 +261,13 @@ export function makeUxDesignRouter(options: {
         useCaseTitles: useCases.map((item) => item.title),
         candidates: llm.candidates,
       });
-      const genius = await queryGenius(options.genius, { text: queryText, visibility: data.visibility });
+      // Genius はオプトイン。 未設定なら過去判断の再利用を飛ばして解析を続ける。
+      // カードが 0 件のときは assessCandidatesWithGenius が「再利用できる判断が無いので
+      // 人間が採否理由を記録する」 という human_question を立てるので、 設計フロー自体は
+      // 成立する。 補助が無いだけで作業を止めない。
+      const genius = isGeniusEnabled(options.genius)
+        ? await queryGenius(options.genius, { text: queryText, visibility: data.visibility })
+        : { cards: [], raw: { enabled: false } };
       const assessments = await assessCandidatesWithGenius(options.claudeBin, {
         candidates: llm.candidates,
         cards: genius.cards,
@@ -339,6 +345,8 @@ export function makeUxDesignRouter(options: {
     if (Object.entries(proposalAnalysis.useCaseRevisions)
       .some(([id, revision]) => decisionRevisions.get(id) !== revision)) throw AppError.conflict('ux_analysis_stale');
     const boundaries = asBoundarySnapshots(data, proposal);
+    // Genius への送出はオプトイン。 判断そのものは Genius の有無に関わらず確定する。
+    const geniusEnabled = isGeniusEnabled(options.genius);
     const allowedUseCases = new Set(proposalAnalysis.useCaseIds);
     if (new Set(boundaries.map((boundary) => boundary.name)).size !== boundaries.length
       || boundaries.some((boundary) => boundary.use_case_ids.some((id) => !allowedUseCases.has(id)))) {
@@ -359,33 +367,37 @@ export function makeUxDesignRouter(options: {
         rationale: data.rationale,
         resultBoundaries: boundaries,
         decidedBy: identity.userId,
-        geniusPublishStatus: 'publishing',
+        // 送出しないと決まっているなら publishing を経由しない。 経由すると、 一度も
+        // 送らなかった判断が failed か publishing で残り、 「送って落ちた」 と区別できない。
+        geniusPublishStatus: geniusEnabled ? 'publishing' : 'not_requested',
       });
     } catch (error) {
       if (isUniqueConflict(error)) throw AppError.conflict('ux_boundary_already_decided');
       throw error;
     }
     const analysis = proposalAnalysis;
-    try {
-      const published = await publishGeniusDecision(options.genius, {
-        visibility: analysis?.visibility === 'public' ? 'public' : 'sensitive',
-        situation: `Praeforma UXシナリオ「${scenario.name}」の境界候補「${proposal.name}」`,
-        judgment: JSON.stringify({ action: data.action, boundaries }),
-        rationale: data.rationale,
-        sourceRef: `praeforma://${pid}/ux-scenarios/${scenarioId}/decisions/${decisionId}`,
-      });
-      await getDb().update(uxBoundaryDecisions).set({ geniusPublishStatus: 'published', geniusCardId: published.id })
-        .where(eq(uxBoundaryDecisions.id, decisionId));
-    } catch (error) {
-      // 判断そのものは確定済み。 Genius 送出の失敗で 201 を取り消さず failed として残す。
-      // 状態書き込みまで失敗した場合は publishing のまま残るので log で追えるようにする。
+    if (geniusEnabled) {
       try {
-        await getDb().update(uxBoundaryDecisions).set({
-          geniusPublishStatus: 'failed',
-          geniusError: errorCode(error),
-        }).where(eq(uxBoundaryDecisions.id, decisionId));
-      } catch (e) {
-        console.error(`[ux-design] failed to mark decision ${decisionId} genius publish as failed: ${String(e)}`);
+        const published = await publishGeniusDecision(options.genius, {
+          visibility: analysis?.visibility === 'public' ? 'public' : 'sensitive',
+          situation: `Praeforma UXシナリオ「${scenario.name}」の境界候補「${proposal.name}」`,
+          judgment: JSON.stringify({ action: data.action, boundaries }),
+          rationale: data.rationale,
+          sourceRef: `praeforma://${pid}/ux-scenarios/${scenarioId}/decisions/${decisionId}`,
+        });
+        await getDb().update(uxBoundaryDecisions).set({ geniusPublishStatus: 'published', geniusCardId: published.id })
+          .where(eq(uxBoundaryDecisions.id, decisionId));
+      } catch (error) {
+        // 判断そのものは確定済み。 Genius 送出の失敗で 201 を取り消さず failed として残す。
+        // 状態書き込みまで失敗した場合は publishing のまま残るので log で追えるようにする。
+        try {
+          await getDb().update(uxBoundaryDecisions).set({
+            geniusPublishStatus: 'failed',
+            geniusError: errorCode(error),
+          }).where(eq(uxBoundaryDecisions.id, decisionId));
+        } catch (e) {
+          console.error(`[ux-design] failed to mark decision ${decisionId} genius publish as failed: ${String(e)}`);
+        }
       }
     }
     await recordAudit({ projectId: pid, actor: identity, action: 'ux_boundary.decide', targetKind: 'ux_boundary_proposal', targetId: proposalId, meta: { action: data.action, status: nextStatus } });

@@ -6,6 +6,18 @@ export interface GeniusOptions {
   baseUrl: string | null;
 }
 
+/**
+ * Genius 連携はオプトイン。 `PRAEFORMA_GENIUS_URL` を設定したときだけ有効になる。
+ *
+ * Genius は判断カードの蓄積先であって、 Praeforma の UX・コアドメイン設計が成立する
+ * ための必須依存ではない。 過去判断の再利用は「あれば効く」補助で、 境界の採否は常に
+ * 人間が行う (`spec/feature/ux-core-design.md`)。 未設定を失敗として扱うと、 補助が
+ * 無いだけで設計作業そのものが止まる。
+ */
+export function isGeniusEnabled(options: GeniusOptions): boolean {
+  return typeof options.baseUrl === 'string' && options.baseUrl.trim() !== '';
+}
+
 export interface GeniusCard {
   id: string;
   situation: string;
