@@ -16,6 +16,10 @@ interface Props {
   isReadOnly?: boolean;
   showLayers?: boolean;
   referenceImages?: Record<string, string>;
+  /** Hides this document's elements on the canvas; the parts list and inspector still show them. */
+  hideElements?: boolean;
+  /** Read-only content drawn above a frame's own elements, e.g. layered scenes. */
+  renderFrameOverlay?: (frame: CanvasFrame) => React.ReactNode;
 }
 
 type MoveTarget = { kind: 'frame' | 'element'; id: string; startX: number; startY: number; originalX: number; originalY: number };
@@ -177,7 +181,7 @@ export function DesignCanvas(props: Props): React.ReactElement {
               <div className="ux-frame-actions">
                 {elementKinds.map((kind) => <button key={kind} type="button" onClick={(event) => { event.stopPropagation(); addElement(frame.id, kind); }}>{kind}</button>)}
               </div>
-              {canvas.elements.filter((element) => element.frame_id === frame.id).map((element) => (
+              {props.hideElements ? null : canvas.elements.filter((element) => element.frame_id === frame.id).map((element) => (
                 <div
                   key={element.id}
                   className={`ux-element ${element.kind} ${selected?.kind === 'element' && selected.id === element.id ? 'selected' : ''}`}
@@ -205,6 +209,7 @@ export function DesignCanvas(props: Props): React.ReactElement {
                   />
                 </div>
               ))}
+              {props.renderFrameOverlay?.(frame)}
             </article>
           ))}
         </div>

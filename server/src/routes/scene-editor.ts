@@ -12,6 +12,7 @@ import { projects } from '../db/schema/project.ts';
 import { AppError } from '../lib/errors.ts';
 import { recordAudit } from '../lib/audit.ts';
 import { seedScene } from '../lib/scene-seed.ts';
+import { assertSceneLayerReferences } from '../lib/scene-layer-references.ts';
 import { analyzeLayoutImage } from '../lib/ux-image-analysis.ts';
 import { runtimeSnapshotSchema, sceneSaveSchema } from '../../../shared/scene-editor.ts';
 
@@ -46,7 +47,8 @@ export function makeSceneEditorRouter(claudeBin: string): Hono {
     const parsed=sceneSaveSchema.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) throw AppError.badRequest('invalid_scene',parsed.error.flatten());
     const { expected_revision: expected, ...canvas }=parsed.data.canvas;
-    const document={ canvas:{ ...canvas, revision:expected+1 }, sources:parsed.data.sources, ...(parsed.data.web ? {web:parsed.data.web} : {}) };
+    await assertSceneLayerReferences(c.req.param('pid')!,c.req.param('lid')!,parsed.data.layers??[]);
+    const document={ canvas:{ ...canvas, revision:expected+1 }, sources:parsed.data.sources, ...(parsed.data.web ? {web:parsed.data.web} : {}), ...(parsed.data.layers ? {layers:parsed.data.layers} : {}) };
     await persistScene(c.req.param('lid')!,c.req.param('pid')!,document,expected);
     await recordAudit({ projectId:c.req.param('pid')!, actor:getIdentity(c), action:'scene.save', targetKind:'layout', targetId:c.req.param('lid')!, meta:{ revision:expected+1 } });
     return c.json({ document });

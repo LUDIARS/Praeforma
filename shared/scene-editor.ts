@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { canvasSchema, type DesignCanvasDocument } from './design-canvas.ts';
 import { webSceneSchema, type WebScene } from './web-scene.ts';
+import { MAX_SCENE_LAYERS, sceneLayerIssues, sceneLayerSchema, type SceneLayer } from './scene-layers.ts';
 
 const id = z.string().trim().min(1).max(120);
 const size = z.number().finite().positive().max(100_000);
@@ -32,9 +33,10 @@ export const sceneSourceSchema = z.object({
   runtime: runtimeSnapshotSchema.nullable(), notes: z.array(z.string().max(1000)).max(50),
 }).strict();
 export type SceneSource = z.infer<typeof sceneSourceSchema>;
-export interface SceneDocument { canvas: DesignCanvasDocument; sources: SceneSource[]; web?: WebScene }
+export interface SceneDocument { canvas: DesignCanvasDocument; sources: SceneSource[]; web?: WebScene; layers?: SceneLayer[] }
 export const sceneSaveSchema = z.object({
   canvas: canvasSchema, sources: z.array(sceneSourceSchema).max(20), web: webSceneSchema.optional(),
+  layers: z.array(sceneLayerSchema).max(MAX_SCENE_LAYERS).optional(),
 }).strict().superRefine((value, ctx) => {
   const frames = new Set(value.canvas.frames.map(frame => frame.id));
   const sources = new Set(value.sources.map(source => source.id));
@@ -42,6 +44,7 @@ export const sceneSaveSchema = z.object({
   if (sources.size !== value.sources.length || value.sources.some(source => !frames.has(source.frameId))) {
     ctx.addIssue({ code: 'custom', message: 'invalid_source_reference' });
   }
+  for (const message of sceneLayerIssues(value.layers ?? [], frames)) ctx.addIssue({ code: 'custom', message });
 });
 
 /** Runtime coordinates are observations, not generated estimates. PF-SCENE-3. */

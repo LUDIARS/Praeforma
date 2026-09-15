@@ -17,3 +17,13 @@
 .ux-layer-list button[aria-pressed=true] { background:var(--accent); color:white; }
 .ux-layer-list .ux-layer-element { padding-left:20px; }
 @media(max-width:900px) { .scene-workspace .ux-canvas-controls { grid-template-columns:140px minmax(0,1fr); }.scene-workspace .ux-element-inspector { grid-column:1 / -1; grid-row:auto; }.scene-workspace .ux-canvas-viewport { height:60vh; } }
+.scene-frame-layers { position:absolute; inset:0; pointer-events:none; }
+.scene-frame-layer { position:absolute; inset:0; }
+.scene-frame-layers .scene-layer-element { opacity:.6; border-style:dashed; border-color:#5b6ee1; box-shadow:0 0 0 1px #ffffffaa; }
+.scene-layer-panel { display:grid; gap:12px; }
+.scene-layer-panel fieldset { border:0; padding:0; margin:0; display:grid; gap:8px; }
+.scene-layer-panel ol { margin:0; padding-left:20px; display:grid; gap:6px; }
+.scene-layer-panel li { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.scene-visibility { display:flex !important; flex-wrap:wrap; gap:8px 16px !important; }
+.scene-visibility legend, .scene-layer-composer legend { font-weight:600; margin-bottom:4px; }
+.scene-visibility .meta { flex-basis:100%; margin:0; }

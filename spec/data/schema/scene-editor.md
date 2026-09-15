@@ -2,6 +2,8 @@
 
 任意のpayload.webはversion=1、variants（frameIdとDOMノード配列）、styles（className・device・declarations）を持つ。ノードはid、parentId、tag、text、classes、attributes。各frame最大500ノード、最大深さ32、最大200 CSS規則。frameIdはcanvas.framesに存在し、同じframeへの重複定義は拒否する。CSS deviceはall/desktop/mobile。タグ・属性・CSSの許可範囲はshared/web-scene.tsを参照。旧文書はweb省略を許容する。JSON追加のためDB migration不要。
 
+任意のpayload.layersは重ねるシーンの配列（最大200件、1画面20件まで）。各要素はid、frameId（このシーンの画面）、layoutId（重ねるシーン）、layoutFrameId（そのシーンの画面）を持ち、配列順が下から上の重なり順。frameIdはcanvas.framesに存在し、同じ画面へ同じ参照を重複させない。layoutIdは同じプロジェクトのlayoutsに行がある（削除済みを含む）別シーンに限り、自シーンは拒否する。表示・非表示は保存しない。frame削除時は対応するlayersを保存対象から外す。旧文書はlayers省略を許容する。JSON追加のためDB migration不要。
+
 `scene_documents` は既存 layouts の画面設計を保存する。主キー layout_id、project_id、revision（1から）、payload（JSON）、updated_at。SQLite/PostgreSQL両対応。
 
 payload は canvas（既存UXキャンバスと同じframe/element/transition契約）と sources（画像の指紋・画像・実行時スナップショット・採用先frame）を持つ。旧layout_objectsを初期表示に変換し、旧配置は変更しない。旧配置は3D世界座標のため、canvas契約の範囲へ丸めてから初期表示する。

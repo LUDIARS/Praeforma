@@ -1,23 +1,30 @@
 import React from 'react';
 import { useMutation } from '@tanstack/react-query';
 import type { SceneDocument, SceneSource } from '../../../../shared/scene-editor.ts';
+import { layersForFrame, type SceneLayer } from '../../../../shared/scene-layers.ts';
 import { DesignCanvas } from '../ux-design/DesignCanvas.tsx';
 import { useCanvasHistory } from '../ux-design/useCanvasHistory.ts';
 import { sceneApi } from '../../lib/scene-editor-api.ts';
 import { SceneImport } from './SceneImport.tsx';
 import { WebSceneEditor } from './WebSceneEditor.tsx';
 import { emptyWebScene, useWebSceneHistory } from './useWebSceneHistory.ts';
+import { SceneFrameLayers } from './SceneFrameLayers.tsx';
+import { SceneLayerPanel } from './SceneLayerPanel.tsx';
+import { useSceneLayerSources } from './useSceneLayerSources.ts';
 
 /** server 側 bodyLimit (8MiB) と sources 上限 (20件) に余裕を見た取り込み上限。 */
 const MAX_REFERENCE_BYTES=6*1024*1024;
 const MAX_SOURCES=20;
 
-export function SceneWorkspace({pid,lid,initial,canEdit}:{pid:string;lid:string;initial:SceneDocument;canEdit:boolean}):React.ReactElement {
+export function SceneWorkspace({pid,lid,name,initial,canEdit}:{pid:string;lid:string;name:string;initial:SceneDocument;canEdit:boolean}):React.ReactElement {
   const history=useCanvasHistory(initial.canvas);const [sources,setSources]=React.useState<SceneSource[]>(initial.sources);
   const web=useWebSceneHistory(initial.web);
-  const [saved,setSaved]=React.useState(JSON.stringify({canvas:initial.canvas,sources:initial.sources,web:initial.web??emptyWebScene}));const [showImport,setShowImport]=React.useState(false);
+  // 重ねるシーンの構成は保存対象。 表示・非表示は見る人の切替なので保存・undo に含めない (PF-SCENE-8)。
+  const [layers,setLayers]=React.useState<SceneLayer[]>(initial.layers??[]);const [hiddenScenes,setHiddenScenes]=React.useState<ReadonlySet<string>>(new Set());
+  const layerSources=useSceneLayerSources(pid,layers);
+  const [saved,setSaved]=React.useState(JSON.stringify({canvas:initial.canvas,sources:initial.sources,web:initial.web??emptyWebScene,layers:initial.layers??[]}));const [showImport,setShowImport]=React.useState(false);
   const [showReferences,setShowReferences]=React.useState(true);const [importError,setImportError]=React.useState('');
-  const dirty=JSON.stringify({canvas:history.canvas,sources,web:web.value})!==saved;
+  const dirty=JSON.stringify({canvas:history.canvas,sources,web:web.value,layers})!==saved;
   React.useEffect(()=>{
     if(!dirty)return;
     const prevent=(event:BeforeUnloadEvent)=>event.preventDefault();
@@ -29,8 +36,9 @@ export function SceneWorkspace({pid,lid,initial,canEdit}:{pid:string;lid:string;
     window.addEventListener('beforeunload',prevent);document.addEventListener('click',navigate,true);
     return()=>{window.removeEventListener('beforeunload',prevent);document.removeEventListener('click',navigate,true);};
   },[dirty]);
-  const save=useMutation({mutationFn:()=>sceneApi.save(pid,lid,{canvas:history.canvas,sources:sources.filter(source=>history.canvas.frames.some(frame=>frame.id===source.frameId)),web:{...web.value,variants:web.value.variants.filter(variant=>history.canvas.frames.some(frame=>frame.id===variant.frameId))}}),
-    onSuccess:({document})=>{history.reset(document.canvas);setSources(document.sources);web.reset(document.web??emptyWebScene);setSaved(JSON.stringify({canvas:document.canvas,sources:document.sources,web:document.web??emptyWebScene}));}});
+  const hasFrame=(frameId:string)=>history.canvas.frames.some(frame=>frame.id===frameId);
+  const save=useMutation({mutationFn:()=>sceneApi.save(pid,lid,{canvas:history.canvas,sources:sources.filter(source=>hasFrame(source.frameId)),web:{...web.value,variants:web.value.variants.filter(variant=>hasFrame(variant.frameId))},layers:layers.filter(layer=>hasFrame(layer.frameId))}),
+    onSuccess:({document})=>{history.reset(document.canvas);setSources(document.sources);web.reset(document.web??emptyWebScene);setLayers(document.layers??[]);setSaved(JSON.stringify({canvas:document.canvas,sources:document.sources,web:document.web??emptyWebScene,layers:document.layers??[]}));}});
   return <div className="scene-workspace">
     <div className="scene-heading"><span>{dirty?'未保存の変更があります':history.canvas.revision===0?'既存の配置を表示しています。保存するとシーン設計として記録します。':'保存済みの画面を表示しています'}</span><label><input type="checkbox" checked={showReferences} onChange={e=>setShowReferences(e.target.checked)}/>元画像を重ねる</label><button type="button" className="ghost" disabled={!canEdit||save.isPending} onClick={()=>setShowImport(!showImport)}>キャプチャ・ノードを取り込む</button></div>
     {save.error?<p role="alert" className="err-text">保存できませんでした。権限・入力内容を確認してください。他の変更と競合した場合は、編集内容を控えてから開き直してください。</p>:null}
@@ -46,8 +54,10 @@ export function SceneWorkspace({pid,lid,initial,canEdit}:{pid:string;lid:string;
       history.replace({...history.canvas,frames:[...history.canvas.frames,...canvas.frames.map(frame=>({...frame,x:offset,y:70}))],elements:[...history.canvas.elements,...canvas.elements]});
       setSources(current=>[...current,source]);
     }}/>:null}
-    <DesignCanvas showLayers referenceImages={showReferences?Object.fromEntries(sources.filter(source=>source.image).map(source=>[source.frameId,source.image!])):undefined} canvas={history.canvas} onChange={history.replace} onPreview={history.preview} onCancelPreview={history.cancelPreview} onUndo={history.undo} onRedo={history.redo} canUndo={history.canUndo} canRedo={history.canRedo} onSave={()=>save.mutate()} isSaving={save.isPending} isReadOnly={!canEdit||save.isPending} />
-    <details className="panel"><summary>取り込んだ資料と対応するノード</summary>{sources.filter(source=>history.canvas.frames.some(frame=>frame.id===source.frameId)).map(source=><article key={source.id}>
+    <DesignCanvas showLayers referenceImages={showReferences?Object.fromEntries(sources.filter(source=>source.image).map(source=>[source.frameId,source.image!])):undefined} canvas={history.canvas} onChange={history.replace} onPreview={history.preview} onCancelPreview={history.cancelPreview} onUndo={history.undo} onRedo={history.redo} canUndo={history.canUndo} canRedo={history.canRedo} onSave={()=>save.mutate()} isSaving={save.isPending} isReadOnly={!canEdit||save.isPending}
+      hideElements={hiddenScenes.has(lid)} renderFrameOverlay={frame=><SceneFrameLayers base={frame} layers={layersForFrame(layers,frame.id)} sources={layerSources} hidden={hiddenScenes}/>} />
+    <SceneLayerPanel pid={pid} lid={lid} sceneName={name} canvas={history.canvas} layers={layers} sources={layerSources} hidden={hiddenScenes} disabled={!canEdit||save.isPending} onLayersChange={setLayers} onHiddenChange={setHiddenScenes} />
+    <details className="panel"><summary>取り込んだ資料と対応するノード</summary>{sources.filter(source=>hasFrame(source.frameId)).map(source=><article key={source.id}>
       <h3>{history.canvas.frames.find(frame=>frame.id===source.frameId)?.name}</h3>
       {source.image?<img className="scene-reference" src={source.image} alt="採用したキャプチャ"/>:null}<p className="meta">{source.fingerprint}</p>
       {source.runtime?<><p>{source.runtime.source} / {source.runtime.capturedAt}</p><ul>{source.runtime.nodes.map(node=><li key={node.id}>{node.label} — {node.id}{node.parentId?` / 親: ${node.parentId}`:''}{node.ontologyRef?` / 定義: ${node.ontologyRef}`:''}</li>)}</ul></>:null}

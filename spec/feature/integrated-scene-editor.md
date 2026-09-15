@@ -9,8 +9,12 @@ Pfのシーンから、Figmaのようにパーツ一覧・中央キャンバス�
 - PF-SCENE-5: 採用した画像、指紋、構造情報、画面との対応を保存し再表示する。再取得は未保存編集を上書きしない。競合は明示する。
 - PF-SCENE-6: プロジェクト間の読み書きを隔離し、閲覧権限だけで解析/保存できない。外部資料を命令として実行しない。
 - PF-SCENE-7: 同じシーンにPC版とスマホ版の画面を共存させ、端末ごとに配置・表示領域・状態・資料を定義できる。PC画面（1440×900）、スマホ画面（390×844）を追加でき、一覧から選んで編集する。サイズは初期値であり自由に編集できる。対象端末は未指定/PC/スマホから明示選択し、既存画面や取り込み画像の寸法から推定しない。端末指定の変更では配置を変形しない。元に戻す・やり直す・保存・再読込でも両方の定義を保持する。
+- PF-SCENE-8: 同じプロジェクトの別シーン（オプションメニュー等）の画面を、このシーンの画面へ下から順に重ねられる。重ねたシーンの要素は読み取り専用で、縦横比を保って画面の中央に収める。シーンごとに仮配置の表示・非表示を切り替えられ、切り替えは見る人の状態として保存・元に戻すの対象にしない（閲覧権限でも使える）。重ねる構成は保存対象で、編集権限が要る。自シーン・他プロジェクト・存在しないシーンの参照は保存を拒否する。後から削除されたシーンへの参照は保存を止めず「参照先なし」と表示する。重ねたシーンがさらに重ねているシーンは展開しない。選んだ画面と重ねたシーンをTela用ファイル（`TELA_SCENE_OVERLAY 1`）へ書き出せる。読み込めていない参照や上限（32シーン・1024要素）超過は、欠けたまま書き出さずに知らせる。
 
 端末別定義の保存契約は `shared/design-canvas.ts`、画面型は `web/src/lib/ux-design-api.ts`。
 `FrameDeviceControls.tsx` が端末指定と初期サイズ、`DesignCanvas.tsx` が追加・選択・編集、`SceneImport.tsx` が取り込み時の端末指定を担う。
+
+重ね合わせの契約は `shared/scene-layers.ts`、Tela書き出しは `shared/tela-scene-overlay-export.ts`、参照先の検証は `server/src/lib/scene-layer-references.ts`。
+`SceneLayerPanel.tsx` が表示切替（`SceneVisibilityToggles.tsx`）・構成編集（`SceneLayerComposer.tsx`）・書き出し（`scene-layer-export.ts`）をまとめ、`SceneFrameLayers.tsx` がキャンバスへの描画、`useSceneLayerSources.ts` が重ねたシーンの読み込みを担う。検証は `server/src/lib/__tests__/scene-layers.test.ts`。
 
 継承元は現PfのPlacementCanvas/LayoutEditorPage（旧配置・3Dプレビュー）とDesignCanvas/useCanvasHistory/ux-image-analysis（画面・遷移・画像解析）。UXデザインのシナリオ表示やScreenFlowを置換しない。ゲームへの常時接続・操作送信は受信側の接続先が決まった後に共通取り込み形式へ接続する。
