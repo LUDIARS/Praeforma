@@ -1,5 +1,6 @@
 import type { DesignCanvasDocument } from './design-canvas.ts';
 import { fitFrame } from './scene-layers.ts';
+import { telaCoordinate as coordinate, telaField as field } from './tela-record-format.ts';
 
 type Frame = DesignCanvasDocument['frames'][number];
 type Element = DesignCanvasDocument['elements'][number];
@@ -11,11 +12,6 @@ const MINIMUM_EXPORTED_SIZE = 0.01;
 
 export interface TelaOverlayScene { id: string; name: string; visible: boolean; frame: Frame; elements: readonly Element[] }
 
-/** Tela reads fields with std::quoted: backslash escapes quote and backslash, one record per LF line. */
-function field(value: string): string {
-  return `"${value.replace(/[\r\n\t]+/g, ' ').replace(/[\\"]/g, match => `\\${match}`)}"`;
-}
-const coordinate = (value: number): string => String(Math.round(value * 100) / 100);
 const size = (value: number): string => coordinate(Math.max(MINIMUM_EXPORTED_SIZE, value));
 
 /**

@@ -1,0 +1,20 @@
+# 仕様書可視化ビュー
+
+構造化仕様を一覧ではなく図で見る。仕様の全体量と偏り（どの状態・分類・優先度に寄っているか）を
+一目で掴み、その図をそのまま Tela のオーバーレイへ持ち出す。Tela 側の対応は Tela の
+SPEC-TL-SPEC-VIEW（`spec/feature/spec-view.md`）。
+
+- PF-SPEC-VIEW-1: 仕様タブの種類に「可視化」を足す。断片・体系・説明書と同じ並びで切り替え、`spec_kind=view` で開く。特定仕様への focus リンクは従来どおり体系の一覧を開く。
+- PF-SPEC-VIEW-2: 構造化仕様をカードとして描く。カードは仕様コード・状態・版・題名を表示し、状態/分類/優先度のいずれかの軸でグループへ分ける。軸は画面で切り替える。
+- PF-SPEC-VIEW-3: 配置は決定的にする。グループは軸ごとの固定順（状態なら下書き→レビュー中→確定→廃止）で縦に積み、カードはコード順に 4 列の格子へ流す。空のグループは描かない。軸の値が既定の並びに無い仕様は「その他」へ落とす。
+- PF-SPEC-VIEW-4: グループごとに表示・非表示を切り替えられる。切り替えは見る人の状態であり、仕様・版・保存内容を変更しない。閲覧権限でも使える。
+- PF-SPEC-VIEW-5: 表示中の図を Tela 用ファイル（`TELA_SPEC_VIEW 1`）へ書き出せる。その時点の軸と表示・非表示が初期表示になる。上限（32 グループ・256 カード）超過と仕様 0 件は、欠けたまま書き出さずに知らせる。
+- PF-SPEC-VIEW-6: 図の色と配置は Tela の描画と一致させる。Pf の画面と Tela のオーバーレイが同じ絵になることを可視化ビューの受け入れ条件とする。
+
+可視化の配置契約と配色は `shared/spec-view.ts`、Tela 書き出しは `shared/tela-spec-view-export.ts`、
+Tela のレコード書式（`std::quoted` の退避と座標の桁）は `shared/tela-record-format.ts`。
+`SpecWorkspace.tsx` が種類の切り替え、`SpecVisualizationView.tsx` が軸・表示切替・書き出し、
+`SpecViewCanvas.tsx` が図の描画を担う。検証は `server/src/lib/__tests__/spec-view.test.ts`。
+
+書き出しは Tela の契約テスト（`tests/spec_view_test.cpp`）と同じバイト列を固定値で突き合わせる。
+Pf が正本であり、Tela はファイルを読むだけで Pf へ書き戻さない。
