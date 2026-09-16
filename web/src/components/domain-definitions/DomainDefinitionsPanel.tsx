@@ -1,7 +1,9 @@
+// @spec PF-DR-4 ドメイン関係図
 import React from 'react';
 import { useSearchParams } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { domainDefinitionsApi } from '../../lib/domain-definitions-api.ts';
+import { api } from '../../lib/api.ts';
 import { DomainDefinitionEditor } from './DomainDefinitionEditor.tsx';
 import { DomainRegistration } from './DomainRegistration.tsx';
 import { DomainCards } from './DomainCards.tsx';
@@ -12,6 +14,7 @@ import { DomainRelationDiagram } from './DomainRelationDiagram.tsx';
 export function DomainDefinitionsPanel({ pid }: { pid: string }): React.ReactElement {
   const client = useQueryClient();
   const query = useQuery({ queryKey: ['domain-definitions', pid], queryFn: () => domainDefinitionsApi.read(pid) });
+  const projectQ = useQuery({ queryKey: ['project', pid], queryFn: () => api.getProject(pid) });
   const [selected, setSelected] = React.useState('');
   const [registration, setRegistration] = React.useState<'core' | 'business' | null>(null);
   const [search] = useSearchParams();
@@ -41,7 +44,7 @@ export function DomainDefinitionsPanel({ pid }: { pid: string }): React.ReactEle
     {query.isError && <p role="alert">定義を取得できませんでした。</p>}
     {notFound && <p role="alert">リンク先のドメイン「{notFound}」が見つかりません。</p>}
     {query.isSuccess && query.data.items.length === 0 && <p>ドメインは未登録です。上のメニューから登録してください。</p>}
-    {query.data && <DomainRelationDiagram domains={query.data.items} memberships={query.data.memberships ?? []} onEdit={item => { setRegistration(null); setSelected(item.id); }} />}
+    {query.data && <DomainRelationDiagram project={projectQ.data?.project.name ?? ''} domains={query.data.items} memberships={query.data.memberships ?? []} onEdit={item => { setRegistration(null); setSelected(item.id); }} />}
     {query.data && <DomainCards pid={pid} domains={query.data.items} memberships={query.data.memberships ?? []} sceneIds={query.data.scenes.map((scene) => scene.id)} focus={focus} onEdit={(item) => { setRegistration(null); setSelected(item.id); }} />}
   </>;
 }
