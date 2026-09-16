@@ -5,8 +5,9 @@
   background: #1a1e2a; border: 1px solid var(--border); border-radius: 10px;
 }
 .spec-view-group-name { font-size: 18px; font-weight: 600; }
-.spec-view-card-code { font-size: 13px; font-weight: 600; }
+/* Tela の既定テーマと同じ 16px / 24px にして、画面とオーバーレイの絵を揃える。 */
+.spec-view-card-code { font-size: 16px; font-weight: 600; }
 .spec-view-card-title {
-  font-size: 13px; line-height: 1.35; color: #f5f6fa;
+  font-size: 16px; line-height: 1.5; color: #f5f6fa;
   overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
 }

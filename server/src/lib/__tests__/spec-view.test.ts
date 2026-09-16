@@ -31,11 +31,11 @@ test('PF-SPEC-VIEW exports TELA_SPEC_VIEW 1 with escaped fields and rejects over
   const text = telaSpecView(specViewDocument('Tela', '0.0.3', specs, 'status'));
   assert.deepEqual(text.split('\n'), [
     'TELA_SPEC_VIEW 1',
-    'view "Tela" "0.0.3" 1136 332',
+    'view "Tela" "0.0.3" 1220 332',
     'group "draft" "下書き" 1',
     'group "approved" "確定" 1',
-    'card "draft" "TL-A" "Overlay \\"core\\"" "draft" 2 24 56 260 96',
-    'card "approved" "TL-B" "Bridge\\\\IPC" "approved" 1 24 212 260 96',
+    'card "draft" "TL-A" "Overlay \\"core\\"" "draft" 2 24 56 380 96',
+    'card "approved" "TL-B" "Bridge\\\\IPC" "approved" 1 24 212 380 96',
     '',
   ]);
   // 非表示は Tela 側の切り替えの初期値として 0 で出る。

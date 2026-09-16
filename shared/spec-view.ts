@@ -27,8 +27,10 @@ export interface SpecViewDocument {
   cards: readonly SpecViewCard[];
 }
 
-export const SPEC_VIEW_COLUMNS = 4;
-const CARD_WIDTH = 260, CARD_HEIGHT = 96;
+export const SPEC_VIEW_COLUMNS = 3;
+// 既定のカードは、既定の文字サイズ (16px) で今の題名が 1 行に収まる大きさにする。
+// Tela は図をビューポートへ収めるとき文字までは縮めないので、カードが狭いと題名が切れる。
+const CARD_WIDTH = 380, CARD_HEIGHT = 96;
 const GAP = 16, PADDING = 24, GROUP_HEADER = 32, GROUP_GAP = 28;
 
 /** 軸ごとの並び順。ここに無い値は「その他」へ落とす。 */
