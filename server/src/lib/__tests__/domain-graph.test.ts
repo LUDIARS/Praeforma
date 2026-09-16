@@ -33,6 +33,34 @@ test('PF-DR-4 lays domains out per classification and routes every relation', ()
   assert.deepEqual(onlyCore.groups.map(group => group.id), ['core']);
 });
 
+test('PF-DR-7 arranges the same relations on a circle without changing their direction', () => {
+  const circle = domainGraph('Praeforma', domains, memberships, 'circle');
+  // 分類ごとにまとめて円周へ並べるので、同じ分類が弧として隣り合う。
+  assert.deepEqual(circle.nodes.map(node => node.groupId), ['core', 'business', 'unclassified']);
+  assert.equal(circle.width, circle.height, 'a circle needs a square canvas');
+  const center = circle.width / 2;
+  const radius = (node: { x: number; y: number; width: number; height: number }): number =>
+    Math.hypot(node.x + node.width / 2 - center, node.y + node.height / 2 - center);
+  const radii = circle.nodes.map(radius);
+  for (const value of radii) assert.ok(Math.abs(value - radii[0]!) < 0.001, 'every node sits on the same circle');
+  // 先頭は真上。並びは登録順で決定的。
+  const top = circle.nodes[0]!;
+  assert.ok(Math.abs(top.x + top.width / 2 - center) < 0.001, 'the first node is at the top');
+  assert.ok(top.y < center, 'the first node is above the centre');
+  // 関係の本数・向き・実線破線は配置で変わらない。
+  assert.deepEqual(circle.edges.map(edge => [edge.from, edge.to, edge.dashed]),
+    domainGraph('Praeforma', domains, memberships).edges.map(edge => [edge.from, edge.to, edge.dashed]));
+  const edge = circle.edges[0]!;
+  assert.equal(edge.points.length, GRAPH_EDGE_SEGMENTS + 1);
+  // 経路はノードの外周から始まる。箱の下から線が出ない。
+  const from = circle.nodes.find(node => node.id === edge.from)!;
+  const begin = edge.points[0]!;
+  assert.ok(Math.abs(begin.x - (from.x + from.width / 2)) <= from.width / 2 + 0.001,
+    'the route starts within the node width');
+  assert.ok(Math.abs(begin.y - (from.y + from.height / 2)) <= from.height / 2 + 0.001,
+    'the route starts within the node height');
+});
+
 test('PF-DR-4 exports TELA_GRAPH 1 with escaped labels and rejects overflow', () => {
   const text = telaGraph(domainGraph('Praeforma', domains, memberships));
   const lines = text.split('\n');

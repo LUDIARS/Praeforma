@@ -2,7 +2,7 @@
 import React from 'react';
 import type { DefinedDomain } from '../../lib/domain-definitions-api.ts';
 import type { DomainMembership } from '../../../../shared/domain-relations.ts';
-import { domainGraph } from '../../../../shared/domain-graph.ts';
+import { domainGraph, GRAPH_LAYOUTS, type GraphLayout } from '../../../../shared/domain-graph.ts';
 import { telaGraph } from '../../../../shared/tela-graph-export.ts';
 import { downloadText } from '../../lib/download-text.ts';
 
@@ -11,10 +11,11 @@ export function DomainRelationDiagram({ project, domains, memberships, onEdit }:
 }): React.ReactElement {
   const [scale, setScale] = React.useState(1);
   const [hidden, setHidden] = React.useState<ReadonlySet<string>>(new Set());
+  const [layout, setLayout] = React.useState<GraphLayout>('columns');
   const [exportError, setExportError] = React.useState('');
   const arrow = React.useId().replace(/:/g, '');
   // 配置と経路は shared/domain-graph.ts が決める。Tela の描画と同じ絵にするための唯一の出どころ。
-  const graph = React.useMemo(() => domainGraph(project, domains, memberships), [project, domains, memberships]);
+  const graph = React.useMemo(() => domainGraph(project, domains, memberships, layout), [project, domains, memberships, layout]);
   const colors = new Map(graph.groups.map(group => [group.id, group.color]));
   const shown = new Set(graph.groups.filter(group => !hidden.has(group.id)).map(group => group.id));
   const placed = new Map(graph.nodes.map(node => [node.id, node]));
@@ -40,6 +41,10 @@ export function DomainRelationDiagram({ project, domains, memberships, onEdit }:
     <p>実線：コアからビジネスへの所属　破線：親から子への関係。各ボックスから定義を開けます。</p>
     <label>表示倍率 <input type="range" min="0.5" max="1.5" step="0.1" value={scale} onChange={event => setScale(Number(event.target.value))} /> {Math.round(scale * 100)}%</label>
     {!graph.nodes.length ? <p>ドメインを登録すると関係図が表示されます。</p> : <>
+      <div className="simple-actions" aria-label="配置">
+        {GRAPH_LAYOUTS.map(([id, label]) => <button key={id} type="button" className={layout === id ? 'primary' : 'ghost'}
+          aria-pressed={layout === id} onClick={() => setLayout(id)}>{label}</button>)}
+      </div>
       <div className="simple-actions" aria-label="分類の表示">
         {graph.groups.map(group => <button key={group.id} type="button" className={shown.has(group.id) ? 'primary' : 'ghost'}
           aria-pressed={shown.has(group.id)} onClick={() => toggle(group.id)}>
