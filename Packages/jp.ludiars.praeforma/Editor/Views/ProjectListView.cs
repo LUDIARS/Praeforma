@@ -15,6 +15,14 @@ namespace Ludiars.Praeforma.Editor.Views
         private ProjectListResponse _data;
         private string _error;
         private Vector2 _scroll;
+        private string _endpoint;
+        private int _revision;
+        private void SynchronizeEndpoint()
+        {
+            if (_endpoint == AuthStorage.BaseUrl) return;
+            _endpoint = AuthStorage.BaseUrl;
+            _data = null; _error = null; ++_revision;
+        }
 
         public ProjectListView(PraeformaWindow win)
         {
@@ -23,24 +31,29 @@ namespace Ludiars.Praeforma.Editor.Views
 
         public async Task Refresh()
         {
+            SynchronizeEndpoint();
+            var revision = ++_revision;
+            var endpoint = _endpoint;
             _error = null;
             try
             {
-                _data = await PraeformaApi.ListProjects();
+                var data = await PraeformaApi.ListProjects();
+                if (revision == _revision && endpoint == AuthStorage.BaseUrl) _data = data;
             }
             catch (PraeformaApi.ApiException ae)
             {
-                _error = $"HTTP {ae.Status} — {ae.Message}";
+                if (revision == _revision && endpoint == AuthStorage.BaseUrl) _error = $"HTTP {ae.Status} — {ae.Message}";
             }
             catch (System.Exception e)
             {
-                _error = e.Message;
+                if (revision == _revision && endpoint == AuthStorage.BaseUrl) _error = e.Message;
             }
         }
 
         public void OnGUI()
         {
-            if (!AuthStorage.HasToken)
+            SynchronizeEndpoint();
+            if (!AuthStorage.CanConnect)
             {
                 EditorGUILayout.HelpBox("Login タブで PASETO token を設定してください。", MessageType.Warning);
                 return;

@@ -16,7 +16,16 @@ namespace Ludiars.Praeforma.Editor
         public static string BaseUrl
         {
             get => EditorPrefs.GetString(KeyBaseUrl, "http://localhost:8889");
-            set => EditorPrefs.SetString(KeyBaseUrl, value ?? string.Empty);
+            set
+            {
+                var next = (value ?? string.Empty).TrimEnd('/');
+                if (BaseUrl.TrimEnd('/') != next)
+                {
+                    EditorPrefs.DeleteKey(KeyProjectId);
+                    EditorPrefs.DeleteKey(KeyLayoutId);
+                }
+                EditorPrefs.SetString(KeyBaseUrl, next);
+            }
         }
 
         public static string Token
@@ -38,9 +47,16 @@ namespace Ludiars.Praeforma.Editor
         }
 
         public static bool HasToken => !string.IsNullOrEmpty(Token);
+        public static bool LocalMode
+        {
+            get => EditorPrefs.GetBool("Praeforma.LocalMode", false);
+            set => EditorPrefs.SetBool("Praeforma.LocalMode", value);
+        }
+        public static bool CanConnect => LocalMode || HasToken;
 
         public static void Clear()
         {
+            LocalMode = false;
             EditorPrefs.DeleteKey(KeyToken);
             EditorPrefs.DeleteKey(KeyProjectId);
             EditorPrefs.DeleteKey(KeyLayoutId);

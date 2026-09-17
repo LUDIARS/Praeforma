@@ -27,7 +27,6 @@ namespace Ludiars.Praeforma.Editor
             }
         }
 
-        private static string BaseUrl => AuthStorage.BaseUrl.TrimEnd('/');
 
         // ── projects ────────────────────────────────────────────────────────
 
@@ -96,9 +95,11 @@ namespace Ludiars.Praeforma.Editor
 
         private static Task<T> Send<T>(string path, string method, object body)
         {
+            var settings = EditorEndpoint.Capture();
             var tcs = new TaskCompletionSource<T>();
-            var url = BaseUrl + path;
+            var url = settings.Url + path;
             var req = new UnityWebRequest(url, method);
+            req.timeout = 15;
             req.downloadHandler = new DownloadHandlerBuffer();
             if (body != null)
             {
@@ -108,8 +109,8 @@ namespace Ludiars.Praeforma.Editor
                 req.SetRequestHeader("Content-Type", "application/json");
             }
             req.SetRequestHeader("Accept", "application/json");
-            if (!string.IsNullOrEmpty(AuthStorage.Token))
-                req.SetRequestHeader("Authorization", "Bearer " + AuthStorage.Token);
+            if (!string.IsNullOrEmpty(settings.Token))
+                req.SetRequestHeader("Authorization", "Bearer " + settings.Token);
 
             var op = req.SendWebRequest();
             op.completed += _ =>
@@ -140,9 +141,11 @@ namespace Ludiars.Praeforma.Editor
 
         private static Task<string> SendRaw(string path, string method, object body)
         {
+            var settings = EditorEndpoint.Capture();
             var tcs = new TaskCompletionSource<string>();
-            var url = BaseUrl + path;
+            var url = settings.Url + path;
             var req = new UnityWebRequest(url, method);
+            req.timeout = 15;
             req.downloadHandler = new DownloadHandlerBuffer();
             if (body != null)
             {
@@ -151,8 +154,8 @@ namespace Ludiars.Praeforma.Editor
                 req.uploadHandler = new UploadHandlerRaw(bytes);
                 req.SetRequestHeader("Content-Type", "application/json");
             }
-            if (!string.IsNullOrEmpty(AuthStorage.Token))
-                req.SetRequestHeader("Authorization", "Bearer " + AuthStorage.Token);
+            if (!string.IsNullOrEmpty(settings.Token))
+                req.SetRequestHeader("Authorization", "Bearer " + settings.Token);
             var op = req.SendWebRequest();
             op.completed += _ =>
             {

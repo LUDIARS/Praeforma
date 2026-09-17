@@ -13,6 +13,7 @@ namespace Ludiars.Praeforma.Editor.Views
         private readonly PraeformaWindow _win;
         private string _baseUrl;
         private string _token;
+        private bool _local;
         private string _statusMessage = string.Empty;
         private MessageType _statusType = MessageType.None;
 
@@ -21,12 +22,14 @@ namespace Ludiars.Praeforma.Editor.Views
             _win = win;
             _baseUrl = AuthStorage.BaseUrl;
             _token = AuthStorage.Token;
+            _local = AuthStorage.LocalMode;
         }
 
         public void OnGUI()
         {
             EditorGUILayout.LabelField("Backend Settings", EditorStyles.boldLabel);
             _baseUrl = EditorGUILayout.TextField("Base URL", _baseUrl);
+            _local = EditorGUILayout.Toggle("Local loopback (no token)", _local);
             EditorGUILayout.LabelField("PASETO Token", EditorStyles.miniLabel);
             _token = EditorGUILayout.TextArea(_token, GUILayout.MinHeight(60));
 
@@ -37,6 +40,7 @@ namespace Ludiars.Praeforma.Editor.Views
                 {
                     AuthStorage.BaseUrl = _baseUrl?.Trim();
                     AuthStorage.Token = _token?.Trim();
+                    AuthStorage.LocalMode = _local;
                     _statusMessage = "Saved";
                     _statusType = MessageType.Info;
                 }
@@ -44,12 +48,14 @@ namespace Ludiars.Praeforma.Editor.Views
                 {
                     AuthStorage.BaseUrl = _baseUrl?.Trim();
                     AuthStorage.Token = _token?.Trim();
+                    AuthStorage.LocalMode = _local;
                     _ = _win.SafeRun(TestConnection);
                 }
                 if (GUILayout.Button("Clear"))
                 {
                     AuthStorage.Clear();
                     _token = string.Empty;
+                    _local = false;
                     _statusMessage = "Cleared";
                     _statusType = MessageType.Info;
                 }

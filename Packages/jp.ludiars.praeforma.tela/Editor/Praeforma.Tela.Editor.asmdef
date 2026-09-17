@@ -1,0 +1,6 @@
+{
+  "name": "Praeforma.Tela.Editor",
+  "rootNamespace": "Ludiars.Praeforma.Tela.Editor",
+  "references": ["Praeforma.Editor", "Tela.Editor"],
+  "includePlatforms": ["Editor"]
+}

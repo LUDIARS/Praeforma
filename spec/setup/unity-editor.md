@@ -3,11 +3,33 @@
 `Packages/jp.ludiars.praeforma/` の UPM パッケージ仕様書。
 mvp-plan Step 8 の前倒し対応 (= 2026-05-16 にユーザ指示で v0.1 着手)。
 
+## 2026-09-17: 仕様表示・指示・オーバレイ接続
+
+`Window > LUDIARS > Praeforma` に Specifications / Instructions / Overlay を追加。
+Login で接続先と token を保存し、Projects で対象を選ぶ。
+ローカル認証なしの Pf には Local loopback を明示選択する（ループバック限定）。
+Specifications は50件ずつ読み込む。Instructions は選択した Unity オブジェクトを
+任意で添えて Pf の仕様断片に保存する。保存は AI の起動や Unity 操作の実行ではない。
+失敗時は同じ要求IDで再送できる。下書きはウィンドウ閉鎖・domain reloadを越えて保持するが、
+Editor の完全終了を越える永続保存ではない。
+
+Overlay を使う場合のみ、Tela の `unity/com.ludiars.tela` と
+Pf の `Packages/jp.ludiars.praeforma.tela` も UPM のローカルパッケージとして追加する。
+両方の改修版が必要（Tela の `SceneOverlayConnection` 公開APIを利用）。
+Excubitor 経由で native overlay を起動し、Scene view を開き、Overlay タブから接続する。
+接続は起動済みオーバレイへの Scene 座標・選択の橋渡しであり、仕様断片を描画データへ
+自動変換・同期するものではない。Tela を入れなくても他のタブは使える。
+詳細契約: `spec/feature/unity-editor-instructions.md`。
+
+コンパイル確認は `scripts/compile-unity.ps1 -EditorData <Unity Editor/Data>`。
+Editor の起動やテスト実行は行わない。Unity Test Runner でのテスト実行には
+プロジェクトmanifestの `testables` に `jp.ludiars.praeforma` を追加する。
+
 ## スコープ
 
 ### v0.1 (実装済)
 
-- 4 タブ Editor Window (Window > LUDIARS > Praeforma)
+- 既存タブ Editor Window (Window > LUDIARS > Praeforma、追加タブは上記参照)
   - **Login**: backend URL + PASETO token、 接続テスト、 EditorPrefs 保存
   - **Projects**: project 一覧、 activate
   - **Feedback**: 選択中 `PraeformaPlaceholder` の FB 一覧 + 新規追加 + Scene focus
@@ -16,7 +38,7 @@ mvp-plan Step 8 の前倒し対応 (= 2026-05-16 にユーザ指示で v0.1 着�
   - `PraeformaPlaceholder` — shape (cube/sphere/plane/cylinder/sprite/image)
     + color (#RRGGBB)、 OnDrawGizmos で wire 表示
   - `FeedbackMarker` — Melpomene 互換 (球体 + 旗、 state 色分け、 critical 時赤リング)
-- UnityWebRequest 経由の REST 通信、 全リクエストに `Authorization: Bearer <PASETO>` 付与
+- UnityWebRequest 経由の REST 通信。認証モードでは `Authorization: Bearer <PASETO>` を付与し、明示したローカルモードではtokenを送らない。
 - `Application.OpenURL` で reference を OS ブラウザに開く (= 「難しければ link」 方針)
 
 ### v0.2 候補

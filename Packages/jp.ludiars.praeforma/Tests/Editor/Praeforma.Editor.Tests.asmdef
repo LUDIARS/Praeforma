@@ -1,0 +1,6 @@
+{
+  "name": "Praeforma.Editor.Tests",
+  "references": ["Praeforma.Editor"],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"]
+}

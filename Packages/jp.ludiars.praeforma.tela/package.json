@@ -1,0 +1,11 @@
+{
+  "name": "jp.ludiars.praeforma.tela",
+  "version": "0.1.0",
+  "displayName": "Praeforma Tela Adapter",
+  "description": "Optional connection from Praeforma's Editor window to the Tela Scene overlay bridge.",
+  "unity": "2022.3",
+  "dependencies": {
+    "jp.ludiars.praeforma": "0.1.0",
+    "com.ludiars.tela": "0.1.0"
+  }
+}

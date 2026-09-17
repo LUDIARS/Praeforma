@@ -7,6 +7,7 @@
 //   - References: 選択中 GameObject の domain に紐付く外部 doc リンク (link/webview/markdown)
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Ludiars.Praeforma.Editor.Views;
 using Ludiars.Praeforma.Models;
@@ -17,7 +18,12 @@ namespace Ludiars.Praeforma.Editor
 {
     public class PraeformaWindow : EditorWindow
     {
-        private enum Tab { Login, Projects, Feedback, References }
+        private enum Tab { Login, Projects, Specifications, Instructions, Overlay, Feedback, References }
+        private CancellationTokenSource lifetime;
+        internal CancellationToken Lifetime => lifetime.Token;
+        private SpecificationsView specifications;
+        private InstructionsView instructions;
+        private OverlayView overlay;
 
         private Tab _tab = Tab.Projects;
         private LoginView _login;
@@ -36,11 +42,21 @@ namespace Ludiars.Praeforma.Editor
 
         private void OnEnable()
         {
+            lifetime = new CancellationTokenSource();
+            specifications = new SpecificationsView(this);
+            instructions = new InstructionsView(this);
+            overlay = new OverlayView();
             _login = new LoginView(this);
             _projects = new ProjectListView(this);
             _feedback = new FeedbackView(this);
             _references = new ReferenceView(this);
-            if (!AuthStorage.HasToken) _tab = Tab.Login;
+            if (!AuthStorage.CanConnect) _tab = Tab.Login;
+        }
+
+        private void OnDisable()
+        {
+            lifetime?.Cancel();
+            lifetime?.Dispose();
         }
 
         private void OnGUI()
@@ -52,6 +68,9 @@ namespace Ludiars.Praeforma.Editor
             {
                 case Tab.Login:      _login.OnGUI(); break;
                 case Tab.Projects:   _projects.OnGUI(); break;
+                case Tab.Specifications: specifications.OnGUI(); break;
+                case Tab.Instructions: instructions.OnGUI(); break;
+                case Tab.Overlay: overlay.OnGUI(); break;
                 case Tab.Feedback:   _feedback.OnGUI(); break;
                 case Tab.References: _references.OnGUI(); break;
             }
@@ -74,9 +93,9 @@ namespace Ludiars.Praeforma.Editor
 
         private void DrawTabs()
         {
-            var labels = new[] { "Login", "Projects", "Feedback", "References" };
+            var labels = new[] { "Login", "Projects", "Specifications", "Instructions", "Overlay", "Feedback", "References" };
             var idx = (int)_tab;
-            var newIdx = GUILayout.Toolbar(idx, labels);
+            var newIdx = GUILayout.SelectionGrid(idx, labels, 3);
             if (newIdx != idx)
             {
                 _tab = (Tab)newIdx;
@@ -89,6 +108,7 @@ namespace Ludiars.Praeforma.Editor
             switch (_tab)
             {
                 case Tab.Projects:   _ = SafeRun(_projects.Refresh); break;
+                case Tab.Specifications: _ = SafeRun(specifications.Refresh); break;
                 case Tab.Feedback:   _ = SafeRun(_feedback.Refresh); break;
                 case Tab.References: _ = SafeRun(_references.Refresh); break;
             }
@@ -98,11 +118,12 @@ namespace Ludiars.Praeforma.Editor
         public async Task SafeRun(Func<Task> action)
         {
             try { await action(); }
+            catch (OperationCanceledException) { }
             catch (Exception e)
             {
                 Debug.LogError($"[Praeforma] {e.Message}");
             }
-            Repaint();
+            if (this) Repaint();
         }
 
         private static string Truncate(string s, int max)
