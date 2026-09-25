@@ -11,6 +11,7 @@ const PROJECT_TABS = [
   { id: 'specs', label: '仕様' },
   { id: 'data-design', label: 'データ設計' },
   { id: 'flow-diagram', label: '遷移図' },
+  { id: 'concept-sheets', label: '企画概要書' },
 ] as const;
 export type ProjectTab = typeof PROJECT_TABS[number]['id'];
 const VISIBLE_TAB_COUNT = 4;

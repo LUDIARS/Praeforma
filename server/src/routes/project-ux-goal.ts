@@ -4,6 +4,8 @@
 //   - get: viewer 以上 (プロジェクトメンバー)
 //   - put: owner / planner / designer
 // PF-GOAL-INV1 (プロジェクト単位で分離) / PF-GOAL-INV2 (版不一致は 409 で上書きしない)。
+// PF-GOAL-W2: ストーリー (カスタマージャーニー) と、かかわる感情の定義。
+// 旧クライアントはこの 2 つを送らないので、 省略時は保存済みの値を残す (空欄で消さない)。
 
 import { Hono } from 'hono';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -15,10 +17,13 @@ import { requireRole } from '../middleware/require-role.ts';
 import { AppError } from '../lib/errors.ts';
 import { recordAudit } from '../lib/audit.ts';
 
+const text = z.string().max(20_000);
 const inputSchema = z.object({
-  experience: z.string().max(20_000),
-  design: z.string().max(20_000),
-  goal: z.string().max(20_000),
+  experience: text,
+  design: text,
+  goal: text,
+  story: text.optional(),
+  emotions: text.optional(),
   expectedRevision: z.number().int().min(0).max(2_147_483_646),
 }).strict();
 
@@ -31,10 +36,12 @@ const fields = {
   experience: projects.uxExperience,
   design: projects.uxDesign,
   goal: projects.uxGoal,
+  story: projects.uxStory,
+  emotions: projects.uxEmotions,
   revision: projects.uxGoalRevision,
 };
 
-/** Project-wide intention, above scenario and domain design. PF-GOAL-INV1/2/3. */
+/** Project-wide intention, above scenario and domain design. PF-GOAL-INV1/2/3, PF-GOAL-W2. */
 export function makeProjectUxGoalRouter(): Hono {
   const router = new Hono();
   router.get('/', requireAuth, requireRole(VIEW_ROLES), async (c) => {
@@ -52,6 +59,8 @@ export function makeProjectUxGoalRouter(): Hono {
     const projectId = c.req.param('pid')!;
     const [definition] = await getDb().update(projects).set({
       uxExperience: data.experience, uxDesign: data.design, uxGoal: data.goal,
+      ...(data.story !== undefined ? { uxStory: data.story } : {}),
+      ...(data.emotions !== undefined ? { uxEmotions: data.emotions } : {}),
       uxGoalRevision: data.expectedRevision + 1, updatedAt: new Date(),
     }).where(and(eq(projects.id, projectId), isNull(projects.deletedAt),
       eq(projects.uxGoalRevision, data.expectedRevision))).returning(fields);

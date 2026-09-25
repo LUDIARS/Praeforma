@@ -1,6 +1,6 @@
 // プロジェクト最上位の UX/Goal 入力 (spec/feature/project-ux-goal.md)。
 // PF-GOAL-W1 (スマホで改行付き編集) / PF-GOAL-INV2 (保存失敗・競合で入力を消さない) /
-// PF-GOAL-INV3 (空欄を許し、 未定義を埋めない) を担当する。
+// PF-GOAL-INV3 (空欄を許し、 未定義を埋めない) / PF-GOAL-W2 (ストーリーと感情の定義) を担当する。
 
 import React from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +9,8 @@ import { getProjectUxGoal, saveProjectUxGoal, type ProjectUxGoal as Definition }
 
 const fields = [
   { key: 'experience', label: '目指す体験', hint: '誰が、どのような体験をできるようにしたいですか？' },
+  { key: 'story', label: 'ストーリー（カスタマージャーニー）', hint: '利用者が出会ってから使い続けるまでを、場面ごとに書きます（知る → 始める → 体験する → 続ける など）。各場面で何をして、何が起きますか？' },
+  { key: 'emotions', label: 'かかわる感情の定義', hint: '体験にかかわる感情を定義します。どの場面で、どんな感情が、何によって生まれますか？ 狙う感情と避けたい感情を分けて書けます。' },
   { key: 'design', label: '体験の設計', hint: 'その体験を、どのような流れや働きかけで実現しますか？' },
   { key: 'goal', label: 'ゴール（パフォーマンスを発揮している状態）', hint: '目指す体験が成立し、価値を発揮しているとき、何が起きていますか？' },
 ] as const;

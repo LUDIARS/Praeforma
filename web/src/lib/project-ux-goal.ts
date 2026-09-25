@@ -4,6 +4,10 @@ export interface ProjectUxGoal {
   experience: string;
   design: string;
   goal: string;
+  /** ストーリー (カスタマージャーニー)。 PF-GOAL-W2 */
+  story: string;
+  /** かかわる感情の定義。 PF-GOAL-W2 */
+  emotions: string;
   revision: number;
 }
 

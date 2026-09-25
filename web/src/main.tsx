@@ -11,6 +11,7 @@ import { StudioPage } from './pages/StudioPage.tsx';
 import { ScreenFlowPage } from './pages/ScreenFlowPage.tsx';
 import { UxCoreDesignPage } from './pages/UxCoreDesignPage.tsx';
 import { DataDesignPage } from './pages/DataDesignPage.tsx';
+import { ConceptSheetsIndexPage } from './pages/ConceptSheetsIndexPage.tsx';
 import { getToken, setToken } from './lib/api.ts';
 
 const queryClient = new QueryClient({
@@ -67,6 +68,7 @@ void ensureLocalToken().then(() => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<RequireAuth><App /></RequireAuth>}>
               <Route index element={<ProjectListPage />} />
+              <Route path="concept-sheets" element={<ConceptSheetsIndexPage />} />
               <Route path="projects/:pid" element={<ProjectShowPage />} />
               <Route path="projects/:pid/studio" element={<StudioPage />} />
               <Route path="projects/:pid/flow" element={<ScreenFlowPage />} />

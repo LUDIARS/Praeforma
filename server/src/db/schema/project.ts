@@ -16,6 +16,8 @@ const projectsPg = pgTable(
     uxExperience: text('ux_experience').notNull().default(''),
     uxDesign: text('ux_design').notNull().default(''),
     uxGoal: text('ux_goal').notNull().default(''),
+    uxStory: text('ux_story').notNull().default(''),
+    uxEmotions: text('ux_emotions').notNull().default(''),
     uxGoalRevision: integer('ux_goal_revision').notNull().default(0),
     orgId: text('org_id').notNull(),
     ownerUserId: text('owner_user_id').notNull(),

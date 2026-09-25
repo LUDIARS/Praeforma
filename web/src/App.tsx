@@ -23,6 +23,7 @@ export function App(): React.ReactElement {
           <Link to="/" style={{ color: 'inherit' }}>Praeforma</Link>
         </div>
         <div className="topbar-spacer" />
+        <Link to="/concept-sheets" className="ghost" style={{ color: 'inherit', marginRight: 12 }}>企画概要書</Link>
         <button type="button" className="ghost" disabled={!pid} title={pid ? 'AI相談' : 'プロジェクトを開いて相談してください'}
           aria-expanded={chatOpen && !!pid} aria-controls={chatOpen && pid ? 'pf-llm-window' : undefined}
           onClick={() => setChatOpen(open => !open)}>AI相談</button>

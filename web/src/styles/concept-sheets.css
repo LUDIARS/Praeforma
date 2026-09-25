@@ -1,0 +1,34 @@
+/* 企画概要書タブと一覧ページ (spec/feature/concept-sheet.md)。シート本体の見た目は shared/concept-sheet-html.ts が持つ。 */
+.concept-sheet-layout{display:grid;grid-template-columns:minmax(180px,260px) minmax(0,1fr);gap:20px}
+.concept-sheet-layout aside{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.concept-sheet-item{display:flex;flex-direction:column;gap:4px;text-align:left;white-space:normal;overflow-wrap:anywhere;padding:10px 12px}
+.concept-sheet-item strong{font-size:0.95rem;line-height:1.4}
+.concept-sheet-item span{color:var(--muted);font-size:0.85rem}
+.concept-sheet-item[aria-pressed=true]{outline:2px solid var(--accent)}
+.concept-sheet-main{min-width:0;display:flex;flex-direction:column;gap:12px}
+.concept-sheet-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.concept-sheet-hint{color:var(--muted);font-size:0.85rem}
+.concept-sheet-notice{margin:0;padding:10px 12px;border-radius:10px;background:#fff4e0;color:#8a5a00}
+.concept-sheet-badges{display:inline-flex;flex-wrap:wrap;gap:4px}
+.concept-sheet-badges .badge{font-size:0.75rem;padding:1px 8px;border-radius:99px;border:1px solid var(--border);color:var(--muted)}
+.concept-sheet-badges .badge.warn{border-color:#e0a400;color:#8a5a00}
+.concept-sheet-frame-box{width:100%;overflow:hidden;border-radius:12px;background:#e9e7ef}
+.concept-sheet-generator,.concept-sheet-editor{display:flex;flex-direction:column;gap:12px;max-width:760px}
+.concept-sheet-generator p{margin:0;line-height:1.7}
+.concept-sheet-visual-choice{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--border);border-radius:12px}
+.concept-sheet-visual-pick{display:flex;flex-direction:column;gap:8px}
+.concept-sheet-visual-pick img{max-width:320px;max-height:200px;object-fit:contain;border-radius:8px;border:1px solid var(--border)}
+.concept-sheet-field{display:flex;flex-direction:column;gap:5px}
+.concept-sheet-field span{display:flex;justify-content:space-between;gap:8px}
+.concept-sheet-field input,.concept-sheet-field textarea{width:100%;box-sizing:border-box;font-size:16px;line-height:1.6}
+.concept-sheet-count{color:var(--muted);font-size:0.8rem}
+.concept-sheet-count.over{color:var(--danger);font-weight:bold}
+.concept-sheet-list{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--border);border-radius:12px}
+.concept-sheet-pair{display:flex;flex-direction:column;gap:6px;padding-bottom:10px;border-bottom:1px dashed var(--border)}
+.concept-sheet-index{display:flex;flex-direction:column;gap:20px}
+.concept-sheet-index section{display:flex;flex-direction:column;gap:8px}
+.concept-sheet-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.concept-sheet-card{display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--panel);color:inherit;text-decoration:none}
+.concept-sheet-card strong{font-size:1rem;line-height:1.4}
+.concept-sheet-card span{color:var(--muted);font-size:0.85rem}
+@media(max-width:700px){.concept-sheet-layout{grid-template-columns:1fr}.concept-sheet-layout aside{max-height:240px;overflow:auto}}
