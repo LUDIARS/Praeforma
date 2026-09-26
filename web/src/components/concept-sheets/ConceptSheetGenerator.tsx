@@ -45,9 +45,9 @@ export function ConceptSheetGenerator({ pid, sheetId, expectedRevision, savedIma
   }
 
   return <section className="concept-sheet-generator" aria-label="企画概要書を作る">
-    <p>UX/ゴール（キャッチコピー・目指す体験・ストーリー・かかわる感情・体験の設計・ゴール）と画面の候補から、
+    <p>UX（目指す価値/コンセプト・ターゲットユーザー・カスタマージャーニー・企画の制約・詳細）と画面の候補から、
       デザインされた 1 枚の企画概要書を AI (Astra) が作ります。一番伝わる画面を AI が選び、紙面にシーン名を書きます。
-      キャッチコピーは UX/ゴールの文言をそのまま載せます（空なら AI が案を作り、UX/ゴールにも「AI案」として入れます）。
+      キャッチコピーは UX の「目指す価値/コンセプト」の文言をそのまま載せます（空なら AI が案を作り、UX にも「AI案」として入れます）。
       作成には数分〜十数分かかります。その間、ほかの画面を使えます。</p>
     <fieldset className="concept-sheet-visual-choice" disabled={busy}>
       <legend>画面の候補（現状のツール画面・ゲーム画面、{SCENE_IMAGES_MAX} 枚まで）</legend>

@@ -44,7 +44,7 @@ export function ConceptSheetPreview({ sheet }: { sheet: ConceptSheetRecord }): R
     <dl className="concept-sheet-facts">
       <dt>AI が選んだ画面</dt><dd>{scene.label}{scene.reason && <span className="concept-sheet-hint">（{scene.reason}）</span>}</dd>
       <dt>載せた項目</dt><dd>{sheet.design.sections.join(' / ')}</dd>
-      <dt>作成</dt><dd>UX/ゴール 第{sheet.source.uxGoalRevision}版・{sheet.source.model}・{sheet.updatedAt.slice(0, 10)}</dd>
+      <dt>作成</dt><dd>UX 第{sheet.source.uxGoalRevision}版・{sheet.source.model}・{sheet.updatedAt.slice(0, 10)}</dd>
       {sheet.source.instructions && <><dt>作り直しの指示</dt><dd>{sheet.source.instructions}</dd></>}
     </dl>
   </section>;

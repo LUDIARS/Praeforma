@@ -89,7 +89,8 @@ test('the writer asks Astra once more with the issues, then gives up', async () 
   const { makeConceptSheetWriter } = await import('../concept-sheet-writer.ts');
   const { decodeSceneImages } = await import('../concept-sheet-input.ts');
   const material = { projectName: 'ひかりの庭', catchcopy: { text: COPY, origin: 'human' as const },
-    ux: { experience: '光を集める', story: '', emotions: '', design: '', goal: '' }, cores: [], revision: 1, digest: 'd' };
+    ux: { target: '庭づくりが好きな人', experience: '光を集める', story: '', emotions: '', design: '', goal: '' },
+    cores: [], planningConstraints: [{ title: '1 回は 5 分で遊べる', detail: '' }], revision: 1, digest: 'd' };
   const images = decodeSceneImages([{ label: LABEL, dataUrl: PNG }]);
   const calls: AstraRequest[] = [];
   const replies = [output({ catchcopy: '別の文言' }), output()];

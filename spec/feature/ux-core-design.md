@@ -1,5 +1,8 @@
 # UX・コアドメイン設計
 
+画面上の名前は「シナリオ」（2026-09-26、[project-ux-goal.md](project-ux-goal.md) PF-GOAL-W4。旧名 UXデザイン）。
+インゲームの詳しい流れをシナリオごとに設計する。URL（/projects/:pid/ux-design）・API・データは変えていない。
+
 Praeforma は、画面仕様だけでなく、体験を成立させるコアドメインの責務と境界を設計する。
 画面・シーン・frame と domain の直接関連は作らない。境界候補は UX scenario と use case の
 意図、成功、失敗、中断復帰、業務ルールから生成する。

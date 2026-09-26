@@ -4,7 +4,10 @@ import '../styles/project-tabs.css';
 
 const PROJECT_TABS = [
   { id: 'overview', label: '概要' },
-  { id: 'ux-goal', label: 'UX/ゴール' },
+  { id: 'ux-goal', label: 'UX' },
+  // シナリオ (インゲームの詳しい流れ) は別ページ (/projects/:pid/ux-design)。選ぶとそのページへ移る。
+  { id: 'scenarios', label: 'シナリオ' },
+  { id: 'constraints', label: '制約' },
   { id: 'domains', label: 'ドメイン' },
   { id: 'objects', label: 'アクター' },
   { id: 'layouts', label: 'シーン' },

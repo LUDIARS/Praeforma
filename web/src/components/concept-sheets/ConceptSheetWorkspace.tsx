@@ -14,7 +14,7 @@ const POLL_MS = 10_000;
 export function ConceptSheetBadges({ item }: { item: Pick<ConceptSheetSummary, 'freshness'> }): React.ReactElement {
   return <span className="concept-sheet-badges">
     <span className="badge">Astra が作成</span>
-    {item.freshness === 'outdated' && <span className="badge warn">UX/ゴールが更新済み</span>}
+    {item.freshness === 'outdated' && <span className="badge warn">UXが更新済み</span>}
   </span>;
 }
 
@@ -115,7 +115,7 @@ export function ConceptSheetWorkspace({ pid, initialSheetId }: {
           onStarted={started} onCancel={() => setMode('view')} />}
         {sheet && mode === 'view' && <>
           {sheet.freshness === 'outdated' && <p className="concept-sheet-notice" role="status">
-            作成後に UX/ゴールが更新されています。「作り直す」で最新の内容から作れます。</p>}
+            作成後に UX（制約を含む）が更新されています。「作り直す」で最新の内容から作れます。</p>}
           <div className="concept-sheet-actions">
             <ConceptSheetBadges item={sheet} />
             {canEdit && <>

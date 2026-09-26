@@ -23,6 +23,8 @@ const projectsPg = pgTable(
     uxCatchcopy: text('ux_catchcopy').notNull().default(''),
     /** '' / 'human' / 'ai'。空欄を Astra が埋めたときだけ 'ai'。 */
     uxCatchcopyOrigin: text('ux_catchcopy_origin').$type<CatchcopyOrigin>().notNull().default(''),
+    /** ターゲットユーザー (PF-GOAL-W4)。 */
+    uxTarget: text('ux_target').notNull().default(''),
     uxGoalRevision: integer('ux_goal_revision').notNull().default(0),
     orgId: text('org_id').notNull(),
     ownerUserId: text('owner_user_id').notNull(),

@@ -12,6 +12,7 @@ import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import type { CatchcopyOrigin } from '../../../shared/catchcopy.ts';
 import { featureManualsSqlite, MANUAL_DDL } from './manual-sqlite.ts';
 import { conceptSheetsSqlite, CONCEPT_SHEET_DDL } from './concept-sheet-sqlite.ts';
+import { projectConstraintsSqlite, PROJECT_CONSTRAINT_DDL } from './project-constraint-sqlite.ts';
 import { sceneDocumentsSqlite, SCENE_DDL } from './scene-sqlite.ts';
 import type { DataDesign } from '../../../shared/data-design.ts';
 import type { ImplementationState } from '../../../shared/spec-fragments.ts';
@@ -30,6 +31,7 @@ export const projects = sqliteTable('projects', {
   uxEmotions: text('ux_emotions').notNull().default(''),
   uxCatchcopy: text('ux_catchcopy').notNull().default(''),
   uxCatchcopyOrigin: text('ux_catchcopy_origin').$type<CatchcopyOrigin>().notNull().default(''),
+  uxTarget: text('ux_target').notNull().default(''),
   uxGoalRevision: integer('ux_goal_revision').notNull().default(0),
   orgId: text('org_id').notNull(),
   ownerUserId: text('owner_user_id').notNull(),
@@ -454,6 +456,7 @@ export const sqliteTables = {
   sceneDocuments: sceneDocumentsSqlite,
   featureManuals: featureManualsSqlite,
   conceptSheets: conceptSheetsSqlite,
+  projectConstraints: projectConstraintsSqlite,
   projects, projectMembers, dataDesigns, specFragments, domains, objects, objectAttrs, assets, objectAssets,
   layouts, layoutObjects, specs, specTargets, specAcceptance,
   codeGraphNodes, codeGraphEdges, codeGraphRuns, auditLog,
@@ -474,6 +477,7 @@ export const SQLITE_ALTERS: string[] = [
   `ALTER TABLE projects ADD COLUMN ux_emotions TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE projects ADD COLUMN ux_catchcopy TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE projects ADD COLUMN ux_catchcopy_origin TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE projects ADD COLUMN ux_target TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE domains ADD COLUMN definition_kind TEXT`,
   `ALTER TABLE domains ADD COLUMN definition_value TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE domains ADD COLUMN definition_scene_ids TEXT NOT NULL DEFAULT '[]'`,
@@ -486,6 +490,7 @@ export const SQLITE_DDL: string[] = [
   `CREATE TABLE IF NOT EXISTS llm_chats (project_id TEXT NOT NULL REFERENCES projects(id), user_id TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 0, data TEXT, PRIMARY KEY(project_id,user_id))`,
   ...MANUAL_DDL,
   ...CONCEPT_SHEET_DDL,
+  ...PROJECT_CONSTRAINT_DDL,
   ...SCENE_DDL,
   `CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, org_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, platforms TEXT NOT NULL DEFAULT '["web"]', default_layout_id TEXT, anatomia_repo TEXT, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,
   `CREATE TABLE IF NOT EXISTS data_designs (project_id TEXT PRIMARY KEY REFERENCES projects(id), definition TEXT NOT NULL, revision INTEGER NOT NULL CHECK (revision > 0), updated_by TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`,

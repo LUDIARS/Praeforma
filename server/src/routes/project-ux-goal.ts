@@ -8,6 +8,7 @@
 // 旧クライアントはこの 2 つを送らないので、 省略時は保存済みの値を残す (空欄で消さない)。
 // PF-GOAL-W3: キャッチコピー。人の文言を正本にし、文言が変わったら origin を human にする (shared/catchcopy.ts)。
 // 省略時は保存済みの文言と origin を残す。
+// PF-GOAL-W4: キャッチコピーは「目指す価値/コンセプト」として 1 行で書く (改行を受け付けない)。ターゲットユーザーを足す。
 
 import { Hono } from 'hono';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -21,13 +22,16 @@ import { recordAudit } from '../lib/audit.ts';
 import { CATCHCOPY_MAX, nextCatchcopyOrigin, type CatchcopyOrigin } from '../../../shared/catchcopy.ts';
 
 const text = z.string().max(20_000);
+/** 改行を含まない (前後の空白は trim 済み)。 */
+const SINGLE_LINE = /^[^\r\n]*$/;
 const inputSchema = z.object({
   experience: text,
   design: text,
   goal: text,
   story: text.optional(),
   emotions: text.optional(),
-  catchcopy: z.string().trim().max(CATCHCOPY_MAX).optional(),
+  catchcopy: z.string().trim().max(CATCHCOPY_MAX).regex(SINGLE_LINE, 'catchcopy_single_line').optional(),
+  target: text.optional(),
   expectedRevision: z.number().int().min(0).max(2_147_483_646),
 }).strict();
 
@@ -44,6 +48,7 @@ const fields = {
   emotions: projects.uxEmotions,
   catchcopy: projects.uxCatchcopy,
   catchcopyOrigin: projects.uxCatchcopyOrigin,
+  target: projects.uxTarget,
   revision: projects.uxGoalRevision,
 };
 
@@ -68,6 +73,7 @@ export function makeProjectUxGoalRouter(): Hono {
       uxExperience: data.experience, uxDesign: data.design, uxGoal: data.goal,
       ...(data.story !== undefined ? { uxStory: data.story } : {}),
       ...(data.emotions !== undefined ? { uxEmotions: data.emotions } : {}),
+      ...(data.target !== undefined ? { uxTarget: data.target } : {}),
       ...catchcopy,
       uxGoalRevision: data.expectedRevision + 1, updatedAt: new Date(),
     }).where(and(eq(projects.id, projectId), isNull(projects.deletedAt),

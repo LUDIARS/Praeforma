@@ -13,6 +13,8 @@ export interface ProjectUxGoal {
   catchcopy: string;
   /** サーバが決める。 '' / 'human' / 'ai' (AI案)。送らない。 */
   catchcopyOrigin: CatchcopyOrigin;
+  /** ターゲットユーザー。 PF-GOAL-W4 */
+  target: string;
   revision: number;
 }
 

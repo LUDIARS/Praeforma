@@ -51,6 +51,7 @@ import { makeWidgetRouter } from './routes/widgets.ts';
 import { makeUxDesignRouter } from './routes/ux-design.ts';
 import { makeManualRouter } from './routes/manuals.ts';
 import { makeConceptSheetRouter } from './routes/concept-sheets.ts';
+import { makeProjectConstraintRouter } from './routes/project-constraints.ts';
 import { makeConceptSheetWriter } from './lib/concept-sheet-writer.ts';
 import { resolveCodexBin, runAstra } from './lib/astra-cli.ts';
 import { setClaudeModel } from './lib/llm.ts';
@@ -161,6 +162,7 @@ app.route('/api/projects/:pid/manuals', makeManualRouter(config.claudeBin));
 // 企画概要書は Astra (Codex CLI) で設計する。CLI が無ければ生成時に 503 (別モデルへ切り替えない)。
 const codexBin = resolveCodexBin();
 app.route('/api/projects/:pid/concept-sheets', makeConceptSheetRouter(makeConceptSheetWriter((request) => runAstra(codexBin, request))));
+app.route('/api/projects/:pid/constraints', makeProjectConstraintRouter());
 app.route('/api/projects/:pid/assets', makeAssetRouter(config.publicUrl));
 // 以下は SQLite サブセット外のテーブルを使うため、 ローカルモードでは載せない
 if (!config.localMode) {

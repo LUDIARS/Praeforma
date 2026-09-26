@@ -23,10 +23,10 @@ export const conceptSheetApi = {
 };
 
 const MESSAGES: Record<string, string> = {
-  concept_sheet_ux_empty: 'UX/ゴールがまだ空です。「目指す体験」「体験の設計」「ゴール」のどれかを書いてから作ってください。',
-  concept_sheet_insufficient_ux: 'UX/ゴールの内容だけでは、体験の核を言い切れませんでした。UX/ゴールを書き足してから作り直してください。',
+  concept_sheet_ux_empty: 'UX がまだ空です。「目指す価値/コンセプト」「ターゲットユーザー」「カスタマージャーニー」などを書いてから作ってください。',
+  concept_sheet_insufficient_ux: 'UX の内容だけでは、体験の核を言い切れませんでした。UX を書き足してから作り直してください。',
   concept_sheet_quality_check_failed: 'できた紙面が決まり（キャッチコピーをそのまま載せる・シーン名を書く・安全な HTML）を満たしませんでした。もう一度作ってください。',
-  concept_sheet_source_changed: '作っている間に UX/ゴール（キャッチコピーを含む）が更新されました。最新の内容で作り直してください。',
+  concept_sheet_source_changed: '作っている間に UX（キャッチコピー・制約を含む）が更新されました。最新の内容で作り直してください。',
   concept_sheet_generation_busy: '別の企画概要書を作成中です。終わってからやり直してください。',
   invalid_scene_image: '画面の画像は PNG / JPEG / WebP を選んでください。',
   scene_image_too_large: '画面の画像が大きすぎます。1 枚 4MB 以下にしてください。',

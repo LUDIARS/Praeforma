@@ -233,7 +233,7 @@ export function UxCoreDesignPage(): React.ReactElement {
 
   return (
     <div className="ux-design-page">
-      <header className="ux-page-header"><div><Link to={`/projects/${pid}`}>← {projectName}</Link><h1>UXデザイン</h1><p>シナリオを選んで、体験を設計します。</p></div>{workspaceQ.data?.workspace.scenario.sourceProjectKey ? <span className="ux-project-chip">Source: {workspaceQ.data.workspace.scenario.sourceProjectKey}</span> : null}</header>
+      <header className="ux-page-header"><div><Link to={`/projects/${pid}`}>← {projectName}</Link><h1>シナリオ</h1><p>インゲームの詳しい流れを、シナリオごとに設計します。</p></div>{workspaceQ.data?.workspace.scenario.sourceProjectKey ? <span className="ux-project-chip">Source: {workspaceQ.data.workspace.scenario.sourceProjectKey}</span> : null}</header>
       <div className="ux-design-shell">
         <section className="ux-scenario-selector">
           <div className="ux-section-heading"><label className="simple-field" htmlFor="ux-scenario-select"><span>シナリオ</span>

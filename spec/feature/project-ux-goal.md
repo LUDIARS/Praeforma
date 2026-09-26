@@ -15,6 +15,14 @@
   文言が変わる保存は human（空にしたら空）、文言が変わらない保存は origin を保つ（他の欄だけ直しても AI案 は AI案 のまま）。
   画面は ai のとき「AI案」と表示する。PF-GOAL-INV3 の例外として、この欄だけは neco 指示により空欄を AI が埋める
   （空で、かつ生成を始めたときの版のままの行だけ。人の文言は上書きしない）。
+- PF-GOAL-W4: 2026-09-26 neco 指示「UXはふわっとわーどなので『目指す価値/コンセプト』としてこれをキャッチコピーとする。
+  キャッチコピーのように一文で無ければならない。ターゲットユーザー・カスタマージャーニー(遊び方/使われ方)を定義。
+  インゲームの詳しいフローはいまのUXデザインを『シナリオ』として設定する。『制約』をタブに追加し、企画的な制約はUXを縛るものとしてUXページに表示する」。
+  タブ名を「UX」にし、並びを 目指す価値/コンセプト（= キャッチコピー、PF-GOAL-W3）→ ターゲットユーザー → カスタマージャーニー（遊び方/使われ方、
+  既存の story 欄）→ この UX を縛る制約（企画の制約を読み取り専用、[project-constraints.md](project-constraints.md) PF-CON-3）→
+  詳細（折りたたみ: 目指す体験・かかわる感情の定義・体験の設計・ゴール。既存の文章は消さない）にする。
+  「一文」は **改行なし・80 字まで** で判定し、句点の数では縛らない。インゲームの詳しい流れは「シナリオ」（旧 UXデザイン、
+  [ux-core-design.md](ux-core-design.md)）で扱い、タブからそのページへ移る。
 - PF-GOAL-INV1: プロジェクトごとに保存し、別プロジェクトの文章を変更しない。
 - PF-GOAL-INV2: 保存失敗や競合で入力を消さず、古い版で他者の更新を上書きしない。
 - PF-GOAL-INV3: 空欄を許し、未定義をAIが埋めたり、保存を人間承認・達成済みと扱ったりしない。
@@ -22,14 +30,16 @@
 所有境界は既存 spec-authoring（保存）と web-editor（入力）。既存シナリオと独立し、
 資料全文を自動転載しない。ユーザーが明示した内容や出典付き要約を登録できる。
 
-GET /api/projects/:pid/ux-goal は experience / design / goal / story / emotions / catchcopy / catchcopyOrigin / revision を返す。
+GET /api/projects/:pid/ux-goal は experience / design / goal / story / emotions / catchcopy / catchcopyOrigin / target / revision を返す。
 PUT は experience / design / goal（各最大20000文字）と expectedRevision を必須とし、版不一致は409。
 story / emotions（各最大20000文字）は任意。省略した場合は保存済みの値を残す（旧クライアントが送らなくても消さない）。
-catchcopy（最大80文字、前後の空白は除く）も任意で、省略時は文言と origin を残す。origin はサーバが決め、クライアントは送らない。
+catchcopy（最大80文字、前後の空白は除く、改行不可）も任意で、省略時は文言と origin を残す。origin はサーバが決め、クライアントは送らない。
+target（最大20000文字）も任意で、省略時は保存済みの値を残す。
 閲覧はプロジェクトメンバー、更新はowner/planner/designer。保存時は版を1増やす。
 Postgresはmigration 007、SQLiteは起動時の追加列で既存プロジェクトを空欄・版0へ移行する。
 story / emotions は Postgres migration 017（projects.ux_story / ux_emotions）と SQLite の起動時追加列で、既存プロジェクトは空欄になる。
 catchcopy は Postgres migration 019（projects.ux_catchcopy / ux_catchcopy_origin）と SQLite の起動時追加列で、既存プロジェクトは空欄・origin 空になる。
+target は Postgres migration 020（projects.ux_target）と SQLite の起動時追加列で、既存プロジェクトは空欄になる。
 変更は追加のみ。UIを戻しても文章を削除しない。
 
 検証観点: 三欄の再取得、改行保持、プロジェクト分離、権限、同一版での二重保存拒否、

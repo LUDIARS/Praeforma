@@ -1,10 +1,11 @@
 import React from 'react';
-import { Link, useParams, useSearchParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api.ts';
 import { DomainDefinitionsPanel } from '../components/domain-definitions/DomainDefinitionsPanel.tsx';
 import { useFocusEntity } from '../lib/deeplink.ts';
 import { ProjectUxGoal } from '../components/ProjectUxGoal.tsx';
+import { ProjectConstraints } from '../components/ProjectConstraints.tsx';
 import { ProjectTabs, parseProjectTab } from '../components/ProjectTabs.tsx';
 import { ActorRegistration } from '../components/registration/ActorRegistration.tsx';
 import { SceneRegistration } from '../components/registration/SceneRegistration.tsx';
@@ -19,6 +20,7 @@ import { ConceptSheetWorkspace } from '../components/concept-sheets/ConceptSheet
 export function ProjectShowPage(): React.ReactElement {
   const { pid } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   // Thaleia ディープリンク `?tab=&focus=` を消費する (発行側契約は lib/deeplink.ts 参照)。
   // 選択の正本はURL。タブ追加・直接URL・戻る/進むを同じ定義で処理する。
   const tab = parseProjectTab(searchParams.get('tab'));
@@ -68,7 +70,7 @@ export function ProjectShowPage(): React.ReactElement {
           <h2 style={{ margin: 0 }}>{p.name}</h2>
           <div style={{ flex: 1 }} />
           <Link to={`/projects/${pid}/ux-design`} className="primary" style={{ textDecoration: 'none' }}>
-            UXデザイン
+            シナリオ
           </Link>
           <Link to={`/projects/${pid}/flow`} className="ghost">ScreenFlow →</Link>
         </div>
@@ -85,6 +87,8 @@ export function ProjectShowPage(): React.ReactElement {
       )}
 
       <ProjectTabs key={`tabs:${pid}`} pid={pid} tab={tab} onChange={(next) => {
+        // シナリオは別ページ。タブからそのまま移る (PF-GOAL-W4)。
+        if (next === 'scenarios') { void navigate(`/projects/${pid}/ux-design`); return; }
         setSearchParams((current) => {
           const params = new URLSearchParams(current);
           params.set('tab', next);
@@ -94,6 +98,12 @@ export function ProjectShowPage(): React.ReactElement {
       }} />
 
       {tab === 'ux-goal' && <ProjectUxGoal key={`ux-goal:${pid}`} pid={pid} />}
+      {tab === 'constraints' && <ProjectConstraints key={`constraints:${pid}`} pid={pid} />}
+      {tab === 'scenarios' && <section className="panel">
+        <h3>シナリオ</h3>
+        <p>インゲームの詳しい流れは、シナリオのページで設計します。</p>
+        <Link to={`/projects/${pid}/ux-design`} className="primary" style={{ textDecoration: 'none' }}>シナリオを開く</Link>
+      </section>}
       {tab === 'data-design' && <DataDesignPanel key={`data-design:${pid}`} pid={pid} />}
       {tab === 'concept-sheets' && <section key={`concept-sheets:${pid}`} className="panel">
         <ConceptSheetWorkspace pid={pid} initialSheetId={searchParams.get('sheet')} />
