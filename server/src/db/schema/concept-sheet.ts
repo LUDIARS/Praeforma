@@ -1,14 +1,16 @@
 import { pgTable, text, jsonb, integer, timestamp, index } from 'drizzle-orm/pg-core';
-import type { ConceptSheetDocument, ConceptSheetKeyVisual, ConceptSheetSource, ConceptSheetStatus } from '../../../../shared/concept-sheet.ts';
+import type { ConceptSheetDesign, ConceptSheetImage, ConceptSheetSource } from '../../../../shared/concept-sheet.ts';
 import { projects } from './project.ts';
 import { LOCAL_MODE } from '../mode.ts';
 import { conceptSheetsSqlite } from '../concept-sheet-sqlite.ts';
-/** 1 行 = 企画概要書 1 枚。キービジュアルは生成に使った画像をそのまま持つ (PF-CS-2)。 */
+/**
+ * 1 行 = 企画概要書 1 枚。Astra が設計した紙面と、生成に使った画面の候補をそのまま持つ (PF-CS-2 / PF-CS-3)。
+ * 2026-09-26 に文面 (document) + キービジュアルの形から、この形へ替えた。旧形式の行は読まない (spec/schema/concept-sheets.md)。
+ */
 export interface ConceptSheetPayload {
-  document: ConceptSheetDocument;
-  keyVisual: ConceptSheetKeyVisual | null;
+  design: ConceptSheetDesign;
+  images: ConceptSheetImage[];
   source: ConceptSheetSource;
-  status: ConceptSheetStatus;
 }
 const conceptSheetsPg = pgTable('concept_sheets', {
   id: text('id').primaryKey(), projectId: text('project_id').notNull().references(() => projects.id),

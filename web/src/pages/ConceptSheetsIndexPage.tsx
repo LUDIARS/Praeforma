@@ -25,7 +25,7 @@ export function ConceptSheetsIndexPage(): React.ReactElement {
   const groups = (query.data ?? []).filter((g) => g.items.length > 0 || g.error);
   return <div className="panel concept-sheet-index">
     <h2>企画概要書の一覧</h2>
-    <p style={{ color: 'var(--muted)', margin: 0 }}>各プロジェクトの UX/ゴールとキービジュアルから作った 1 枚の企画概要書です。新しく作るときは、プロジェクトの「企画概要書」タブを開きます。</p>
+    <p style={{ color: 'var(--muted)', margin: 0 }}>各プロジェクトの UX/ゴールと画面から、Astra がデザインした 1 枚の企画概要書です。新しく作るときは、プロジェクトの「企画概要書」タブを開きます。</p>
     {query.isPending && <p role="status">読み込み中…</p>}
     {query.isError && <p role="alert">一覧を取得できませんでした。</p>}
     {query.isSuccess && groups.length === 0 && <p>まだ企画概要書はありません。</p>}
@@ -36,6 +36,8 @@ export function ConceptSheetsIndexPage(): React.ReactElement {
         {items.map((item) => <Link key={item.id} className="concept-sheet-card"
           to={`/projects/${project.id}?tab=concept-sheets&sheet=${encodeURIComponent(item.id)}`}>
           <strong>{item.catchcopy}</strong><span>{item.title}</span>
+          <span className="concept-sheet-concept">{item.concept}</span>
+          <span>現在の画面：{item.sceneLabel}</span>
           <ConceptSheetBadges item={item} /><span>{item.updatedAt.slice(0, 10)}</span>
         </Link>)}
       </div>

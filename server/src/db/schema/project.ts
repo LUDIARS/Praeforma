@@ -5,6 +5,7 @@
 
 import { integer, jsonb, pgTable, text, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
 import { LOCAL_MODE } from '../mode.ts';
+import type { CatchcopyOrigin } from '../../../../shared/catchcopy.ts';
 import { projects as projectsSqlite, projectMembers as projectMembersSqlite } from '../sqlite-schema.ts';
 
 const projectsPg = pgTable(
@@ -18,6 +19,10 @@ const projectsPg = pgTable(
     uxGoal: text('ux_goal').notNull().default(''),
     uxStory: text('ux_story').notNull().default(''),
     uxEmotions: text('ux_emotions').notNull().default(''),
+    /** 人が考えたキャッチコピー。企画概要書はこれをそのまま採用する (PF-GOAL-W3)。 */
+    uxCatchcopy: text('ux_catchcopy').notNull().default(''),
+    /** '' / 'human' / 'ai'。空欄を Astra が埋めたときだけ 'ai'。 */
+    uxCatchcopyOrigin: text('ux_catchcopy_origin').$type<CatchcopyOrigin>().notNull().default(''),
     uxGoalRevision: integer('ux_goal_revision').notNull().default(0),
     orgId: text('org_id').notNull(),
     ownerUserId: text('owner_user_id').notNull(),

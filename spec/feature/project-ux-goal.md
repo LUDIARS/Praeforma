@@ -9,6 +9,12 @@
   ストーリー（カスタマージャーニー）は、利用者が出会ってから使い続けるまでを場面ごとに書く欄。
   かかわる感情の定義は、どの場面でどんな感情が何によって生まれるか（狙う感情・避けたい感情）を書く欄。
   画面の並びは 目指す体験 → ストーリー → かかわる感情の定義 → 体験の設計 → ゴール。どちらも空欄を許す。
+- PF-GOAL-W3: 2026-09-26 neco 指示「キャッチコピーは既にある（人間が考えたほうが精度が高い）ので Pf に追加。それを採用する。無いなら埋める」。
+  キャッチコピー（80 字まで、1 行）を UX/ゴールの先頭に置く。人が考えた文言が正本で、企画概要書はそれを 1 字も変えずに載せる
+  （[concept-sheet.md](concept-sheet.md) PF-CS-4）。origin で出所を持つ: 空 / human（人が保存）/ ai（空欄を企画概要書の生成で Astra が埋めた）。
+  文言が変わる保存は human（空にしたら空）、文言が変わらない保存は origin を保つ（他の欄だけ直しても AI案 は AI案 のまま）。
+  画面は ai のとき「AI案」と表示する。PF-GOAL-INV3 の例外として、この欄だけは neco 指示により空欄を AI が埋める
+  （空で、かつ生成を始めたときの版のままの行だけ。人の文言は上書きしない）。
 - PF-GOAL-INV1: プロジェクトごとに保存し、別プロジェクトの文章を変更しない。
 - PF-GOAL-INV2: 保存失敗や競合で入力を消さず、古い版で他者の更新を上書きしない。
 - PF-GOAL-INV3: 空欄を許し、未定義をAIが埋めたり、保存を人間承認・達成済みと扱ったりしない。
@@ -16,12 +22,14 @@
 所有境界は既存 spec-authoring（保存）と web-editor（入力）。既存シナリオと独立し、
 資料全文を自動転載しない。ユーザーが明示した内容や出典付き要約を登録できる。
 
-GET /api/projects/:pid/ux-goal は experience / design / goal / story / emotions / revision を返す。
+GET /api/projects/:pid/ux-goal は experience / design / goal / story / emotions / catchcopy / catchcopyOrigin / revision を返す。
 PUT は experience / design / goal（各最大20000文字）と expectedRevision を必須とし、版不一致は409。
 story / emotions（各最大20000文字）は任意。省略した場合は保存済みの値を残す（旧クライアントが送らなくても消さない）。
+catchcopy（最大80文字、前後の空白は除く）も任意で、省略時は文言と origin を残す。origin はサーバが決め、クライアントは送らない。
 閲覧はプロジェクトメンバー、更新はowner/planner/designer。保存時は版を1増やす。
 Postgresはmigration 007、SQLiteは起動時の追加列で既存プロジェクトを空欄・版0へ移行する。
 story / emotions は Postgres migration 017（projects.ux_story / ux_emotions）と SQLite の起動時追加列で、既存プロジェクトは空欄になる。
+catchcopy は Postgres migration 019（projects.ux_catchcopy / ux_catchcopy_origin）と SQLite の起動時追加列で、既存プロジェクトは空欄・origin 空になる。
 変更は追加のみ。UIを戻しても文章を削除しない。
 
 検証観点: 三欄の再取得、改行保持、プロジェクト分離、権限、同一版での二重保存拒否、

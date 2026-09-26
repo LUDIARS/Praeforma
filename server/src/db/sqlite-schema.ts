@@ -9,6 +9,7 @@ import { SPEC_VERSION_DDL } from './spec-version-sqlite.ts';
 // 永続化対象外 (objects/assets 等も含めた最小集合)。 認証/個人データは持たない。
 
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import type { CatchcopyOrigin } from '../../../shared/catchcopy.ts';
 import { featureManualsSqlite, MANUAL_DDL } from './manual-sqlite.ts';
 import { conceptSheetsSqlite, CONCEPT_SHEET_DDL } from './concept-sheet-sqlite.ts';
 import { sceneDocumentsSqlite, SCENE_DDL } from './scene-sqlite.ts';
@@ -27,6 +28,8 @@ export const projects = sqliteTable('projects', {
   uxGoal: text('ux_goal').notNull().default(''),
   uxStory: text('ux_story').notNull().default(''),
   uxEmotions: text('ux_emotions').notNull().default(''),
+  uxCatchcopy: text('ux_catchcopy').notNull().default(''),
+  uxCatchcopyOrigin: text('ux_catchcopy_origin').$type<CatchcopyOrigin>().notNull().default(''),
   uxGoalRevision: integer('ux_goal_revision').notNull().default(0),
   orgId: text('org_id').notNull(),
   ownerUserId: text('owner_user_id').notNull(),
@@ -469,6 +472,8 @@ export const SQLITE_ALTERS: string[] = [
   `ALTER TABLE projects ADD COLUMN ux_goal_revision INTEGER NOT NULL DEFAULT 0`,
   `ALTER TABLE projects ADD COLUMN ux_story TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE projects ADD COLUMN ux_emotions TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE projects ADD COLUMN ux_catchcopy TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE projects ADD COLUMN ux_catchcopy_origin TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE domains ADD COLUMN definition_kind TEXT`,
   `ALTER TABLE domains ADD COLUMN definition_value TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE domains ADD COLUMN definition_scene_ids TEXT NOT NULL DEFAULT '[]'`,

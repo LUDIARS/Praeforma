@@ -1,11 +1,13 @@
 // プロジェクト最上位の UX/Goal 入力 (spec/feature/project-ux-goal.md)。
 // PF-GOAL-W1 (スマホで改行付き編集) / PF-GOAL-INV2 (保存失敗・競合で入力を消さない) /
-// PF-GOAL-INV3 (空欄を許し、 未定義を埋めない) / PF-GOAL-W2 (ストーリーと感情の定義) を担当する。
+// PF-GOAL-INV3 (空欄を許し、 未定義を埋めない) / PF-GOAL-W2 (ストーリーと感情の定義) /
+// PF-GOAL-W3 (キャッチコピー。人の文言が正本、 AI が空欄を埋めたものは「AI案」と表示) を担当する。
 
 import React from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ApiError } from '../lib/api.ts';
 import { getProjectUxGoal, saveProjectUxGoal, type ProjectUxGoal as Definition } from '../lib/project-ux-goal.ts';
+import { CATCHCOPY_MAX } from '../../../shared/catchcopy.ts';
 
 const fields = [
   { key: 'experience', label: '目指す体験', hint: '誰が、どのような体験をできるようにしたいですか？' },
@@ -39,7 +41,9 @@ function GoalEditor({ pid, initial }: { pid: string; initial: Definition }): Rea
   const [error, setError] = React.useState<string | null>(null);
   const [conflict, setConflict] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
-  const dirty = fields.some(({ key }) => draft[key] !== baseline[key]);
+  const dirty = draft.catchcopy !== baseline.catchcopy || fields.some(({ key }) => draft[key] !== baseline[key]);
+  // 文言を書き換えた時点で人の文言になる (保存時にサーバも同じ判定をする)。
+  const shownOrigin = draft.catchcopy === baseline.catchcopy ? baseline.catchcopyOrigin : draft.catchcopy ? 'human' : '';
 
   React.useEffect(() => {
     if (!dirty) return;
@@ -86,6 +90,19 @@ function GoalEditor({ pid, initial }: { pid: string; initial: Definition }): Rea
   return <form className="panel" onSubmit={(event) => { void save(event); }}>
     <h3>UX/Goal</h3>
     <p>プロジェクトで一番大きく目指すこと。ここからシナリオやコアドメインを考えます。</p>
+    <label htmlFor="ux-goal-catchcopy" style={{ display: 'block', marginBottom: 20 }}>
+      <strong>キャッチコピー</strong>
+      {shownOrigin === 'ai' && <span style={{ marginLeft: 8, fontSize: '0.8rem', padding: '1px 8px', borderRadius: 99,
+        border: '1px solid #e0a400', color: '#8a5a00' }}>AI案</span>}
+      <span id="ux-goal-catchcopy-hint" style={{ display: 'block', color: 'var(--muted)', margin: '6px 0' }}>
+        企画を一言で伝える文言です。企画概要書はこの文言をそのまま載せます（{CATCHCOPY_MAX} 字まで）。
+        空のときは企画概要書を作るときに AI が案を入れ、「AI案」と表示します。書き換えると人の文言になります。
+      </span>
+      <input id="ux-goal-catchcopy" type="text" aria-describedby="ux-goal-catchcopy-hint"
+        maxLength={CATCHCOPY_MAX} value={draft.catchcopy} disabled={saving}
+        onChange={(event) => { setDraft({ ...draft, catchcopy: event.target.value }); setSaved(false); }}
+        style={{ boxSizing: 'border-box', width: '100%', fontSize: 18, padding: '8px 10px' }} />
+    </label>
     {fields.map(({ key, label, hint }) => <label key={key} htmlFor={`ux-goal-${key}`}
       style={{ display: 'block', marginBottom: 20 }}>
       <strong>{label}</strong>
