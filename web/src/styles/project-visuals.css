@@ -1,0 +1,28 @@
+/* ビジュアルタブと、企画概要書の候補の選択 (spec/feature/project-visuals.md)。 */
+.project-visuals{display:flex;flex-direction:column;gap:12px}
+.project-visuals h4{margin:8px 0}
+.project-visual-hint{color:var(--muted);font-size:0.85rem;margin:0;line-height:1.6}
+.project-visual-error{color:var(--danger);margin:0}
+.project-visual-register summary{cursor:pointer;font-weight:600}
+.project-visual-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.project-visual-card{display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--border);border-radius:12px;min-width:0}
+.project-visual-thumb{display:flex;align-items:center;justify-content:center;width:100%;height:140px;object-fit:contain;background:#f4f3f7;border-radius:8px;color:var(--muted);font-size:0.8rem}
+.project-visual-label{overflow-wrap:anywhere;line-height:1.4}
+.project-visual-note{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted);font-size:0.85rem}
+.project-visual-badges{display:flex;flex-wrap:wrap;gap:4px}
+.project-visual-badges .badge{font-size:0.75rem;padding:1px 8px;border-radius:99px;border:1px solid var(--border);color:var(--muted)}
+.project-visual-badges .badge.featured{border-color:#e0a400;color:#8a5a00}
+.project-visual-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.project-visual-upload,.project-visual-edit,.project-visual-fields{display:flex;flex-direction:column;gap:8px;max-width:560px}
+.project-visual-upload{padding:8px 0}
+.project-visual-fields label{display:flex;flex-direction:column;gap:4px;font-size:0.9rem}
+.project-visual-fields input[type=text],.project-visual-fields textarea,.project-visual-fields select{box-sizing:border-box;width:100%;font-size:16px;line-height:1.5}
+.project-visual-fields .project-visual-check{flex-direction:row;align-items:flex-start;gap:6px}
+.project-visual-upload .project-visual-thumb{max-width:320px}
+/* 企画概要書の作成画面: ビジュアルから候補を選ぶ */
+.concept-sheet-candidates{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.concept-sheet-candidates li{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--border);border-radius:10px;min-width:0}
+.concept-sheet-candidates li[aria-selected=true]{outline:2px solid var(--accent)}
+.concept-sheet-candidates label{display:flex;gap:6px;align-items:flex-start;font-size:0.85rem;overflow-wrap:anywhere}
+.concept-sheet-candidates .project-visual-thumb{height:110px}
+.concept-sheet-candidate-order{font-weight:bold;color:var(--accent)}

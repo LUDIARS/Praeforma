@@ -1,10 +1,12 @@
-// 企画概要書 1 枚の表示と出力 (spec/feature/concept-sheet.md PF-CS-5)。
+// 企画概要書 1 枚 (表示中の版) の表示と出力 (spec/feature/concept-sheet.md PF-CS-5 / PF-CS-10)。
+// 印刷・HTML 保存は、切り替えて見ている版で行う。
 // 表示・印刷 (PDF 保存)・HTML 保存は、同じ仕上げ済み HTML (shared/concept-sheet-html.ts) を使う。
 // iframe は script を許さない。印刷のダイアログだけを許す (allow-modals)。紙面には CSP も入っている。
 import React from 'react';
 import { finalizeConceptSheetHtml } from '../../../../shared/concept-sheet-html.ts';
 import type { ConceptSheetRecord } from '../../../../shared/concept-sheet.ts';
 import { downloadText } from '../../lib/download-text.ts';
+import { VERSION_KIND_LABELS } from './ConceptSheetVersionBar.tsx';
 
 /** A4 横 (297mm × 210mm) に上下の余白を足した、 iframe 内の大きさ (CSS px)。 */
 const SHEET_WIDTH = 1160;
@@ -27,7 +29,7 @@ export function ConceptSheetPreview({ sheet }: { sheet: ConceptSheetRecord }): R
   }, []);
 
   const print = (): void => { frame.current?.contentWindow?.print(); };
-  const save = (): void => downloadText(`${sheet.design.title}-企画概要書.html`, html, 'text/html;charset=utf-8');
+  const save = (): void => downloadText(`${sheet.design.title}-企画概要書-rv${sheet.rv}.html`, html, 'text/html;charset=utf-8');
   const { scene } = sheet.design;
 
   return <section className="concept-sheet-preview" aria-label="企画概要書のプレビュー">
@@ -44,7 +46,8 @@ export function ConceptSheetPreview({ sheet }: { sheet: ConceptSheetRecord }): R
     <dl className="concept-sheet-facts">
       <dt>AI が選んだ画面</dt><dd>{scene.label}{scene.reason && <span className="concept-sheet-hint">（{scene.reason}）</span>}</dd>
       <dt>載せた項目</dt><dd>{sheet.design.sections.join(' / ')}</dd>
-      <dt>作成</dt><dd>UX 第{sheet.source.uxGoalRevision}版・{sheet.source.model}・{sheet.updatedAt.slice(0, 10)}</dd>
+      <dt>版</dt><dd>rv{sheet.rv}（{VERSION_KIND_LABELS[sheet.kind]}・{sheet.createdAt.slice(0, 10)}）</dd>
+      <dt>作成</dt><dd>UX 第{sheet.source.uxGoalRevision}版・{sheet.source.model}</dd>
       {sheet.source.instructions && <><dt>作り直しの指示</dt><dd>{sheet.source.instructions}</dd></>}
     </dl>
   </section>;

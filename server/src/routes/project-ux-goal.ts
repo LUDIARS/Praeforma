@@ -9,6 +9,7 @@
 // PF-GOAL-W3: キャッチコピー。人の文言を正本にし、文言が変わったら origin を human にする (shared/catchcopy.ts)。
 // 省略時は保存済みの文言と origin を残す。
 // PF-GOAL-W4: キャッチコピーは「目指す価値/コンセプト」として 1 行で書く (改行を受け付けない)。ターゲットユーザーを足す。
+// 保存できたら企画概要書の自動更新へ知らせる (spec/feature/concept-sheet.md PF-CS-11)。
 
 import { Hono } from 'hono';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -19,6 +20,7 @@ import { requireAuth, getIdentity } from '../middleware/require-auth.ts';
 import { requireRole } from '../middleware/require-role.ts';
 import { AppError } from '../lib/errors.ts';
 import { recordAudit } from '../lib/audit.ts';
+import { ignoreMaterialChange, type MaterialChangeListener } from '../lib/concept-sheet-auto-update.ts';
 import { CATCHCOPY_MAX, nextCatchcopyOrigin, type CatchcopyOrigin } from '../../../shared/catchcopy.ts';
 
 const text = z.string().max(20_000);
@@ -53,7 +55,7 @@ const fields = {
 };
 
 /** Project-wide intention, above scenario and domain design. PF-GOAL-INV1/2/3, PF-GOAL-W2. */
-export function makeProjectUxGoalRouter(): Hono {
+export function makeProjectUxGoalRouter(onChange: MaterialChangeListener = ignoreMaterialChange): Hono {
   const router = new Hono();
   router.get('/', requireAuth, requireRole(VIEW_ROLES), async (c) => {
     if (!getDbState().ok) throw AppError.internal('db_unavailable');
@@ -87,6 +89,7 @@ export function makeProjectUxGoalRouter(): Hono {
     }
     await recordAudit({ projectId, actor: getIdentity(c), action: 'project.ux_goal.update',
       targetKind: 'project', targetId: projectId, meta: { revision: definition.revision } });
+    onChange(projectId);
     return c.json({ definition });
   });
   return router;

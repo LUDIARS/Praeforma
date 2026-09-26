@@ -4,6 +4,7 @@
 //   - 一覧: プロジェクトメンバー全員
 //   - 作成・更新・削除: owner / planner / designer (UX を編集できる人と同じ)
 // PF-CON-1 (1 件ずつ・種類・見出し・説明) / PF-CON-2 (版一致で更新・削除、409) / PF-CON-4 (プロジェクトの分離)。
+// 作成・更新・削除は企画概要書の自動更新へ知らせる (企画の制約は材料。spec/feature/concept-sheet.md PF-CS-11)。
 import { Hono } from 'hono';
 import { and, asc, eq, isNull, count } from 'drizzle-orm';
 import { ulid } from 'ulid';
@@ -15,6 +16,7 @@ import { requireAuth, getIdentity } from '../middleware/require-auth.ts';
 import { requireRole } from '../middleware/require-role.ts';
 import { AppError } from '../lib/errors.ts';
 import { recordAudit } from '../lib/audit.ts';
+import { ignoreMaterialChange, type MaterialChangeListener } from '../lib/concept-sheet-auto-update.ts';
 import { CONSTRAINT_KINDS, CONSTRAINT_LIMITS as L, type ProjectConstraint } from '../../../shared/project-constraint.ts';
 
 const VIEW: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer'];
@@ -36,7 +38,7 @@ const toConstraint = (r: Row): ProjectConstraint => ({
 });
 const KIND_ORDER = new Map(CONSTRAINT_KINDS.map((k, i) => [k, i]));
 
-export function makeProjectConstraintRouter(): Hono {
+export function makeProjectConstraintRouter(onChange: MaterialChangeListener = ignoreMaterialChange): Hono {
   const router = new Hono();
   router.use('*', requireAuth, requireRole(VIEW));
   router.use('*', async (c, next) => {
@@ -66,6 +68,7 @@ export function makeProjectConstraintRouter(): Hono {
     }).returning();
     await recordAudit({ projectId: pid, actor: identity, action: 'project_constraint.create', targetKind: 'project_constraint',
       targetId: row!.id, meta: { kind: row!.kind } });
+    onChange(pid);
     return c.json({ constraint: toConstraint(row!) }, 201);
   });
 
@@ -81,6 +84,7 @@ export function makeProjectConstraintRouter(): Hono {
     if (!row) throw await missingOrConflict(pid, id);
     await recordAudit({ projectId: pid, actor: getIdentity(c), action: 'project_constraint.update', targetKind: 'project_constraint',
       targetId: id, meta: { revision: row.revision, kind: row.kind } });
+    onChange(pid);
     return c.json({ constraint: toConstraint(row) });
   });
 
@@ -94,6 +98,7 @@ export function makeProjectConstraintRouter(): Hono {
     if (deleted.length !== 1) throw await missingOrConflict(pid, id);
     await recordAudit({ projectId: pid, actor: getIdentity(c), action: 'project_constraint.delete', targetKind: 'project_constraint',
       targetId: id, meta: { revision: expected } });
+    onChange(pid);
     return c.json({ deleted: true });
   });
   return router;

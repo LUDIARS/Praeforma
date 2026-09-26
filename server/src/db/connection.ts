@@ -36,7 +36,7 @@ export async function initLocalDb(dbPath: string): Promise<DbState> {
     mkdirSync(dirname(dbPath), { recursive: true });
     const Database = (await import('better-sqlite3')).default;
     const { drizzle: drizzleSqlite } = await import('drizzle-orm/better-sqlite3');
-    const { sqliteTables, SQLITE_DDL, SQLITE_ALTERS } = await import('./sqlite-schema.ts');
+    const { sqliteTables, SQLITE_DDL, SQLITE_ALTERS, SQLITE_BACKFILLS } = await import('./sqlite-schema.ts');
     const sqlite = new Database(dbPath);
     localSqlite = sqlite as unknown as LocalSqliteDatabase;
     sqlite.pragma('journal_mode = WAL');
@@ -49,6 +49,8 @@ export async function initLocalDb(dbPath: string): Promise<DbState> {
         if (!/duplicate column/i.test(String(e))) throw e;
       }
     }
+    // 追加した列・表へ既存の行を写す (冪等。例: 企画概要書の rv1、migration 021 と同じ)。
+    for (const backfill of SQLITE_BACKFILLS) sqlite.exec(backfill);
     db = drizzleSqlite(sqlite, { schema: sqliteTables }) as unknown as NodePgDatabase<typeof schema>;
     connectError = null;
     console.log(`[db] local sqlite ready: ${dbPath}`);

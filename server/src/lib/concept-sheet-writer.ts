@@ -10,12 +10,19 @@ import { checkConceptSheetOutput } from './concept-sheet-design-check.ts';
 import { AppError } from './errors.ts';
 import type { ConceptSheetMaterial } from './concept-sheet-sources.ts';
 import type { DecodedSceneImage } from './concept-sheet-input.ts';
+import type { VisualKind } from '../../../shared/project-visual.ts';
+
+/** 画面の候補の種類・メモ・一押し (images と同じ順)。Astra が主役を選ぶ手がかりにする。 */
+export interface SceneCandidateMeta { kind: VisualKind; note: string; featured: boolean }
 
 export interface ConceptSheetWriterInput {
   material: ConceptSheetMaterial;
   images: DecodedSceneImage[];
+  candidates: SceneCandidateMeta[];
   instructions: string;
   previous: ConceptSheetDesign | null;
+  /** manual: 人の作成・作り直し / auto: UX・仕様・ビジュアルの変化を受けた自動更新 (PF-CS-11)。 */
+  mode: 'manual' | 'auto';
 }
 export interface ConceptSheetWriterResult { design: ConceptSheetDesign; skillDigest: string; model: string }
 export type ConceptSheetWriter = (input: ConceptSheetWriterInput) => Promise<ConceptSheetWriterResult>;
@@ -34,13 +41,16 @@ export async function loadConceptSheetSkill(): Promise<{ text: string; digest: s
 }
 
 export function makeConceptSheetWriter(run: AstraRunner): ConceptSheetWriter {
-  return async ({ material, images, instructions, previous }) => {
+  return async ({ material, images, candidates, instructions, previous, mode }) => {
     const skill = await loadConceptSheetSkill();
+    // 候補の種類・メモは画像と同じ順で 1 対 1。ずれていたら主役の選び方を誤るので呼ばない。
+    if (candidates.length !== images.length) throw AppError.internal('concept_sheet_candidates_mismatch');
     const imageLabels = images.map((i) => i.image.label);
+    const scenes = images.map((i, index) => ({ label: i.image.label, ...candidates[index]! }));
     const files = images.map((i) => ({ bytes: i.bytes, ext: EXT[i.image.mimeType] }));
     let repair: { issues: string[]; html: string } | null = null;
     for (const attempt of ATTEMPTS) {
-      const prompt = buildConceptSheetPrompt({ skill: skill.text, material, imageLabels, instructions, previous, repair });
+      const prompt = buildConceptSheetPrompt({ skill: skill.text, material, scenes, instructions, previous, mode, repair });
       const raw = await run({ prompt, images: files, outputSchema: CONCEPT_SHEET_OUTPUT_SCHEMA, ...attempt });
       const checked = checkConceptSheetOutput(raw, { imageLabels, catchcopy: material.catchcopy.text });
       if (checked.kind === 'ok') return { design: checked.design, skillDigest: skill.digest, model: ASTRA_MODEL };

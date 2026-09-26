@@ -1,24 +1,26 @@
-// 企画概要書 API の入力検証 (spec/feature/concept-sheet.md PF-CS-2)。
+// 企画概要書 API の入力検証 (spec/feature/concept-sheet.md PF-CS-2 / PF-CS-12) と、画像 (data URL) の確認。
+// 画像の確認はビジュアル素材の登録 (spec/feature/project-visuals.md) も使う。
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import {
-  INSTRUCTIONS_MAX, SCENE_IMAGE_MAX_BYTES, SCENE_IMAGE_TYPES, SCENE_IMAGES_MAX, SCENE_IMAGES_TOTAL_MAX_BYTES, SCENE_LABEL_MAX,
+  INSTRUCTIONS_MAX, SCENE_IMAGE_MAX_BYTES, SCENE_IMAGE_TYPES, SCENE_IMAGES_MAX, SCENE_IMAGES_TOTAL_MAX_BYTES,
   type ConceptSheetImage, type SceneImageType,
 } from '../../../shared/concept-sheet.ts';
 import { AppError } from './errors.ts';
 
 const revision = z.number().int().min(0).max(2_147_483_646);
 const DATA_URL = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+=*)$/;
-const sceneImage = z.object({
-  label: z.string().trim().min(1).max(SCENE_LABEL_MAX),
-  dataUrl: z.string().max(Math.ceil(SCENE_IMAGE_MAX_BYTES * 4 / 3) + 64),
-}).strict();
+/** 1 枚の上限 (4MB) の画像を data URL にした長さ。base64 は約 4/3 倍。 */
+export const DATA_URL_MAX_LENGTH = Math.ceil(SCENE_IMAGE_MAX_BYTES * 4 / 3) + 64;
 
-/** images: 画面の候補 (1〜6 枚) / 'keep' = 保存済みの候補を使い続ける。instructions: 作り直しの指示 (任意)。 */
+/**
+ * visualIds: 候補にするビジュアル (1〜6 枚、選んだ順) / 'keep' = 前回の版の候補を使い続ける (作り直しのみ)。
+ * instructions: 作り直しの指示 (任意)。
+ */
 export const conceptSheetGenerationSchema = z.object({
   id: z.string().uuid(),
   expectedRevision: revision,
-  images: z.union([z.literal('keep'), z.array(sceneImage).min(1).max(SCENE_IMAGES_MAX)]),
+  visualIds: z.union([z.literal('keep'), z.array(z.string().min(1).max(64)).min(1).max(SCENE_IMAGES_MAX)]),
   instructions: z.string().trim().max(INSTRUCTIONS_MAX).default(''),
 }).strict();
 

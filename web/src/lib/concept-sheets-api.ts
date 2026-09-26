@@ -1,25 +1,31 @@
 // 企画概要書 API の呼び出しと、失敗の言い換え (spec/feature/concept-sheet.md)。
 import { req, type ApiError } from './api.ts';
-import type { ConceptSheetRecord, ConceptSheetSummary } from '../../../shared/concept-sheet.ts';
+import type {
+  ConceptSheetGenerationStatus, ConceptSheetRecord, ConceptSheetSummary, ConceptSheetVersionSummary,
+} from '../../../shared/concept-sheet.ts';
+
+export type { ConceptSheetJob } from '../../../shared/concept-sheet.ts';
 
 const base = (pid: string): string => `/api/projects/${encodeURIComponent(pid)}/concept-sheets`;
+const sheetPath = (pid: string, id: string): string => `${base(pid)}/${encodeURIComponent(id)}`;
 
 export interface ConceptSheetList { canEdit: boolean; hasMore: boolean; items: ConceptSheetSummary[] }
-export type ConceptSheetJob =
-  | { sheetId: string; state: 'running'; startedAt: string }
-  | { sheetId: string; state: 'failed'; startedAt: string; finishedAt: string; error: string };
-export interface SceneImageInput { label: string; dataUrl: string }
+export interface ConceptSheetView { sheet: ConceptSheetRecord; versions: ConceptSheetVersionSummary[]; canEdit: boolean }
 
 export const conceptSheetApi = {
   list: (pid: string, offset = 0): Promise<ConceptSheetList> => req(`${base(pid)}?limit=100&offset=${offset}`),
-  get: (pid: string, id: string): Promise<{ sheet: ConceptSheetRecord; canEdit: boolean }> =>
-    req(`${base(pid)}/${encodeURIComponent(id)}`),
-  /** 受け付けだけを返す (202)。できあがりは generation() で待つ。images: 新しい候補 / 'keep' = 保存済みの候補。 */
-  generate: (pid: string, input: { id: string; expectedRevision: number; images: SceneImageInput[] | 'keep'; instructions: string }):
+  /** 最新版と版の一覧。 */
+  get: (pid: string, id: string): Promise<ConceptSheetView> => req(sheetPath(pid, id)),
+  /** 版 rv の紙面 (切り替えて見る・印刷する・保存する)。 */
+  getVersion: (pid: string, id: string, rv: number): Promise<ConceptSheetView> => req(`${sheetPath(pid, id)}/versions/${rv}`),
+  /** 受け付けだけを返す (202)。できあがりは generation() で待つ。visualIds: 候補のビジュアル / 'keep' = 前回の版の候補。 */
+  generate: (pid: string, input: { id: string; expectedRevision: number; visualIds: string[] | 'keep'; instructions: string }):
     Promise<{ id: string; state: 'running' }> => req(`${base(pid)}/generate`, { method: 'POST', body: JSON.stringify(input) }),
-  generation: (pid: string): Promise<{ job: ConceptSheetJob | null }> => req(`${base(pid)}/generation`),
+  generation: (pid: string): Promise<ConceptSheetGenerationStatus> => req(`${base(pid)}/generation`),
+  setAutoUpdate: (pid: string, id: string, enabled: boolean): Promise<{ autoUpdate: boolean }> =>
+    req(`${sheetPath(pid, id)}/auto-update`, { method: 'PUT', body: JSON.stringify({ enabled }) }),
   remove: (pid: string, id: string, expectedRevision: number): Promise<{ deleted: boolean }> =>
-    req(`${base(pid)}/${encodeURIComponent(id)}?expectedRevision=${expectedRevision}`, { method: 'DELETE' }),
+    req(`${sheetPath(pid, id)}?expectedRevision=${expectedRevision}`, { method: 'DELETE' }),
 };
 
 const MESSAGES: Record<string, string> = {
@@ -27,15 +33,19 @@ const MESSAGES: Record<string, string> = {
   concept_sheet_insufficient_ux: 'UX の内容だけでは、体験の核を言い切れませんでした。UX を書き足してから作り直してください。',
   concept_sheet_quality_check_failed: 'できた紙面が決まり（キャッチコピーをそのまま載せる・シーン名を書く・安全な HTML）を満たしませんでした。もう一度作ってください。',
   concept_sheet_source_changed: '作っている間に UX（キャッチコピー・制約を含む）が更新されました。最新の内容で作り直してください。',
-  concept_sheet_generation_busy: '別の企画概要書を作成中です。終わってからやり直してください。',
+  concept_sheet_generation_busy: '別の企画概要書を作成中です（自動更新を含む）。終わってからやり直してください。',
+  concept_sheet_visuals_required: '候補にできるビジュアルがありません。「ビジュアル」タブで画像を登録してください。',
+  concept_sheet_visual_removed: '作っている間に、候補のビジュアルが削除されました。候補を選び直して作り直してください。',
+  invalid_visual_selection: '選んだビジュアルが見つかりません。一覧を読み直して選び直してください。',
+  visual_limit_reached: 'ビジュアルは 1 プロジェクト 30 枚までです。使わないものを削除してから登録してください。',
   invalid_scene_image: '画面の画像は PNG / JPEG / WebP を選んでください。',
   scene_image_too_large: '画面の画像が大きすぎます。1 枚 4MB 以下にしてください。',
-  scene_images_too_large: '画面の画像が大きすぎます。合計 16MB 以下にしてください。',
-  scene_images_required: '画面の画像を 1 枚以上選んでください。',
+  scene_images_too_large: '候補の画像が大きすぎます。合計 16MB 以下になるよう、候補を減らしてください。',
+  scene_images_required: '候補のビジュアルを 1 枚以上選んでください。',
   astra_unavailable: '企画概要書をデザインする AI (Astra) を呼び出せませんでした。サーバの Codex CLI の導入とログインを確認してください。',
-  astra_failed: '企画概要書をデザインする AI (Astra) が途中で止まりました。時間をおいてやり直してください。',
+  astra_failed: '企画概要書をデザインする AI (Astra) が途中で止まりました（ログインが切れている場合もあります）。時間をおいてやり直してください。',
   astra_no_output: '企画概要書をデザインする AI (Astra) から結果が返りませんでした。時間をおいてやり直してください。',
-  astra_timeout: '企画概要書のデザインが時間内に終わりませんでした。画面の枚数を減らすか、時間をおいてやり直してください。',
+  astra_timeout: '企画概要書のデザインが時間内に終わりませんでした。候補の枚数を減らすか、時間をおいてやり直してください。',
   concept_sheet_revision_conflict: '別の変更が保存されています。最新の内容を開き直してください。',
 };
 

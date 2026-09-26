@@ -1,6 +1,7 @@
 // /api/projects/:pid/specs — specs + targets + acceptance、 楽観ロック付き。
 //
 // 編集は spec.version を CAS。 prev_version 不一致は 409 Conflict + 最新 version を body に。
+// 作成・更新・削除は企画概要書の自動更新へ知らせる (見出し・分類・状態は材料。spec/feature/concept-sheet.md PF-CS-11)。
 
 import { Hono } from 'hono';
 import { and, asc, desc, eq, isNull } from 'drizzle-orm';
@@ -15,6 +16,7 @@ import { AppError } from '../lib/errors.ts';
 import { parsePagination } from '../lib/pagination.ts';
 import { recordAudit } from '../lib/audit.ts';
 import { requireProjectDomains } from '../lib/project-domain-validation.ts';
+import { ignoreMaterialChange, type MaterialChangeListener } from '../lib/concept-sheet-auto-update.ts';
 
 const ALL_ROLES: readonly ProjectRole[] = [
   'owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer',
@@ -70,7 +72,7 @@ const acceptanceReplaceSchema = z.object({
   items: z.array(acceptanceItemSchema),
 });
 
-export function makeSpecRouter(): Hono {
+export function makeSpecRouter(onChange: MaterialChangeListener = ignoreMaterialChange): Hono {
   const r = new Hono();
 
   r.get('/', requireAuth, requireRole(ALL_ROLES), async (c) => {
@@ -175,6 +177,7 @@ export function makeSpecRouter(): Hono {
       targetId: sid,
       meta: { code: parsed.data.code, title: parsed.data.title },
     });
+    onChange(pid);
     const [row] = await getDb().select().from(specs).where(eq(specs.id, sid)).limit(1);
     return c.json({ spec: row }, 201);
   });
@@ -220,6 +223,7 @@ export function makeSpecRouter(): Hono {
       targetId: sid,
       meta: { from_version: before.version, to_version: before.version + 1 },
     });
+    onChange(pid);
     const [row] = await getDb().select().from(specs).where(scope).limit(1);
     return c.json({ spec: row });
   });
@@ -239,6 +243,7 @@ export function makeSpecRouter(): Hono {
       targetKind: 'spec',
       targetId: sid,
     });
+    onChange(pid);
     return c.json({ ok: true });
   });
 

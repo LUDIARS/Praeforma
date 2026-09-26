@@ -1,4 +1,4 @@
-// 全プロジェクトの企画概要書の一覧 (spec/feature/concept-sheet.md PF-CS-8)。
+// 全プロジェクトの企画概要書の一覧 (spec/feature/concept-sheet.md PF-CS-8)。各シートは最新版を出す (PF-CS-10)。
 // 見られるプロジェクトごとに一覧 API を呼び、カードから各プロジェクトの 1 枚を開く。
 import React from 'react';
 import { Link } from 'react-router';
@@ -25,7 +25,7 @@ export function ConceptSheetsIndexPage(): React.ReactElement {
   const groups = (query.data ?? []).filter((g) => g.items.length > 0 || g.error);
   return <div className="panel concept-sheet-index">
     <h2>企画概要書の一覧</h2>
-    <p style={{ color: 'var(--muted)', margin: 0 }}>各プロジェクトの UX と画面から、Astra がデザインした 1 枚の企画概要書です。新しく作るときは、プロジェクトの「企画概要書」タブを開きます。</p>
+    <p style={{ color: 'var(--muted)', margin: 0 }}>各プロジェクトの UX と画面から、Astra がデザインした 1 枚の企画概要書の最新版です。過去の版や新しく作るときは、プロジェクトの「企画概要書」タブを開きます。</p>
     {query.isPending && <p role="status">読み込み中…</p>}
     {query.isError && <p role="alert">一覧を取得できませんでした。</p>}
     {query.isSuccess && groups.length === 0 && <p>まだ企画概要書はありません。</p>}

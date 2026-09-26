@@ -41,6 +41,7 @@ story / emotions は Postgres migration 017（projects.ux_story / ux_emotions）
 catchcopy は Postgres migration 019（projects.ux_catchcopy / ux_catchcopy_origin）と SQLite の起動時追加列で、既存プロジェクトは空欄・origin 空になる。
 target は Postgres migration 020（projects.ux_target）と SQLite の起動時追加列で、既存プロジェクトは空欄になる。
 変更は追加のみ。UIを戻しても文章を削除しない。
+保存できたら企画概要書の自動更新へ知らせる（最後の変更から 10 分後に、古くなった企画概要書を作り直す、[concept-sheet.md](concept-sheet.md) PF-CS-11）。
 
 検証観点: 三欄の再取得、改行保持、プロジェクト分離、権限、同一版での二重保存拒否、
 保存失敗後の入力保持、狭い画面、タブ往復。テスト・起動は明示許可時のみ実行する。

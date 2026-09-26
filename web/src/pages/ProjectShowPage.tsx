@@ -16,6 +16,7 @@ import { FlowDiagram } from '../components/flow/FlowDiagram.tsx';
 import { ProjectTodos } from '../components/ProjectTodos.tsx';
 import { SpecWorkspace } from '../components/specs/SpecWorkspace.tsx';
 import { ConceptSheetWorkspace } from '../components/concept-sheets/ConceptSheetWorkspace.tsx';
+import { ProjectVisuals } from '../components/visuals/ProjectVisuals.tsx';
 
 export function ProjectShowPage(): React.ReactElement {
   const { pid } = useParams();
@@ -105,6 +106,7 @@ export function ProjectShowPage(): React.ReactElement {
         <Link to={`/projects/${pid}/ux-design`} className="primary" style={{ textDecoration: 'none' }}>シナリオを開く</Link>
       </section>}
       {tab === 'data-design' && <DataDesignPanel key={`data-design:${pid}`} pid={pid} />}
+      {tab === 'visuals' && <ProjectVisuals key={`visuals:${pid}`} pid={pid} />}
       {tab === 'concept-sheets' && <section key={`concept-sheets:${pid}`} className="panel">
         <ConceptSheetWorkspace pid={pid} initialSheetId={searchParams.get('sheet')} />
       </section>}

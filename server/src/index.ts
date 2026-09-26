@@ -52,7 +52,12 @@ import { makeUxDesignRouter } from './routes/ux-design.ts';
 import { makeManualRouter } from './routes/manuals.ts';
 import { makeConceptSheetRouter } from './routes/concept-sheets.ts';
 import { makeProjectConstraintRouter } from './routes/project-constraints.ts';
+import { makeProjectVisualRouter } from './routes/project-visuals.ts';
 import { makeConceptSheetWriter } from './lib/concept-sheet-writer.ts';
+import { ConceptSheetJobs } from './lib/concept-sheet-jobs.ts';
+import { ConceptSheetAutoUpdater } from './lib/concept-sheet-auto-update.ts';
+import { findOutdatedAutoSheets, findProjectsWithOutdatedAutoSheets } from './lib/concept-sheet-auto-targets.ts';
+import { makeAutoRegenerate } from './lib/concept-sheet-generation.ts';
 import { resolveCodexBin, runAstra } from './lib/astra-cli.ts';
 import { setClaudeModel } from './lib/llm.ts';
 
@@ -148,21 +153,31 @@ app.get('/api/auth/me', requireAuth, (c) => {
 // Step 2: core 5 CRUD + Step 1.5 で追加した references / feedback
 // Step 7: acceptance / Step 10: assets / Step 13: reference content
 // Studio 最小サブセット (ローカル SQLite でも動く範囲)
+// 企画概要書は Astra (Codex CLI) で設計する。CLI が無ければ生成時に 503 (別モデルへ切り替えない)。
+// UX・制約・仕様・ビジュアルが変わったら、最後の変更から 10 分後に自動更新する (PF-CS-11)。人の作り直しと同じ枠で走る。
+const codexBin = resolveCodexBin();
+const conceptSheetWriter = makeConceptSheetWriter((request) => runAstra(codexBin, request));
+const conceptSheetJobs = new ConceptSheetJobs();
+const conceptSheetAutoUpdater = new ConceptSheetAutoUpdater({
+  jobs: conceptSheetJobs, findTargets: findOutdatedAutoSheets, findOutdatedProjects: findProjectsWithOutdatedAutoSheets,
+  regenerate: makeAutoRegenerate(conceptSheetWriter),
+});
+const onMaterialChange = conceptSheetAutoUpdater.notifyChange;
+
 app.route('/api/projects', makeProjectRouter());
-app.route('/api/projects/:pid/ux-goal', makeProjectUxGoalRouter());
+app.route('/api/projects/:pid/ux-goal', makeProjectUxGoalRouter(onMaterialChange));
 app.route('/api/projects/:pid/data-design', makeDataDesignRouter());
 app.route('/api/projects/:pid/domains', makeDomainRouter());
 app.route('/api/projects/:pid/objects', makeObjectRouter());
 app.route('/api/projects/:pid/layouts', makeLayoutRouter());
 app.route('/api/projects/:pid/layouts/:lid/scene-editor', makeSceneEditorRouter(config.claudeBin));
-app.route('/api/projects/:pid/specs', makeSpecRouter());
+app.route('/api/projects/:pid/specs', makeSpecRouter(onMaterialChange));
 app.route('/api/projects/:pid/spec-fragments', makeSpecFragmentRouter());
 app.route('/api/projects/:pid/spec-versions', makeSpecVersionRouter(config.claudeBin));
 app.route('/api/projects/:pid/manuals', makeManualRouter(config.claudeBin));
-// 企画概要書は Astra (Codex CLI) で設計する。CLI が無ければ生成時に 503 (別モデルへ切り替えない)。
-const codexBin = resolveCodexBin();
-app.route('/api/projects/:pid/concept-sheets', makeConceptSheetRouter(makeConceptSheetWriter((request) => runAstra(codexBin, request))));
-app.route('/api/projects/:pid/constraints', makeProjectConstraintRouter());
+app.route('/api/projects/:pid/concept-sheets', makeConceptSheetRouter(conceptSheetWriter, conceptSheetJobs, conceptSheetAutoUpdater));
+app.route('/api/projects/:pid/constraints', makeProjectConstraintRouter(onMaterialChange));
+app.route('/api/projects/:pid/visuals', makeProjectVisualRouter(onMaterialChange));
 app.route('/api/projects/:pid/assets', makeAssetRouter(config.publicUrl));
 // 以下は SQLite サブセット外のテーブルを使うため、 ローカルモードでは載せない
 if (!config.localMode) {
@@ -239,6 +254,13 @@ const httpServer: ServerType = serve({ fetch: app.fetch, port: config.port, ...(
   if (!config.localMode) console.log(`[praeforma] cernere: ${config.cernereBaseUrl}`);
   if (config.localMode) console.log(`[praeforma] open http://localhost:${info.port}/`);
 });
+// 自動更新の予約はメモリだけに持つ。起動時に、自動更新 ON で古くなったシートを持つプロジェクトを予約し直す。
+// サーバを閉じたら予約を解除する (タイマーは unref 済みで、終了を引き留めない)。
+httpServer.on('close', () => conceptSheetAutoUpdater.stop());
+if (dbState.ok) {
+  conceptSheetAutoUpdater.rescheduleOutdated()
+    .catch((e) => console.warn(`[concept-sheet] auto-update reschedule failed: ${String(e)}`));
+}
 // WS collab は非サブセットのテーブルを使うのでローカルでは起動しない
 if (!config.localMode) {
   attachCollab(httpServer as unknown as import('node:http').Server);

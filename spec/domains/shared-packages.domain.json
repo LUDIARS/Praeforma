@@ -8,7 +8,9 @@
     "spec/data/schema/feature-manual.md",
     "spec/feature/integrated-scene-editor.md",
     "spec/data/schema/scene-editor.md",
-    "spec/feature/domain-relations.md"
+    "spec/feature/domain-relations.md",
+    "spec/feature/concept-sheet.md",
+    "spec/feature/project-visuals.md"
   ],
   "presetRules": [],
   "templateRules": [],

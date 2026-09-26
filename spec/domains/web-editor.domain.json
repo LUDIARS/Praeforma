@@ -10,7 +10,9 @@
     "spec/feature/deferred-planning.md",
     "spec/feature/feature-manual.md",
     "spec/feature/integrated-scene-editor.md",
-    "spec/feature/domain-relations.md"
+    "spec/feature/domain-relations.md",
+    "spec/feature/concept-sheet.md",
+    "spec/feature/project-visuals.md"
   ],
   "presetRules": [],
   "templateRules": [],

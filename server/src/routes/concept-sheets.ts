@@ -1,92 +1,66 @@
 // /api/projects/:pid/concept-sheets — 企画概要書 (ペライチのコンセプトシート)。spec/feature/concept-sheet.md。
 //
 // role:
-//   - 閲覧 (一覧・1 枚・生成の状態): プロジェクトメンバー全員
-//   - 生成・削除: owner / planner / designer (UX/ゴールを編集できる人と同じ)
-// PF-CS-1 (UX/ゴールと画面の候補から Astra が設計) / PF-CS-2 (画面の候補) / PF-CS-6 (版の競合) /
-// PF-CS-7 (鮮度) / PF-CS-9 (生成は裏で走らせ、状態を問い合わせる)。
+//   - 閲覧 (一覧・1 枚・版・生成の状態): プロジェクトメンバー全員
+//   - 生成・自動更新の ON/OFF・削除: owner / planner / designer (UX/ゴールを編集できる人と同じ)
+// PF-CS-1 (UX/ゴールと画面の候補から Astra が設計) / PF-CS-6 (版の競合) / PF-CS-7 (鮮度) / PF-CS-9 (生成は裏で走らせる) /
+// PF-CS-10 (版 rv を残し、切り替えて見る) / PF-CS-11 (自動更新) / PF-CS-12 (候補はビジュアルから選ぶ)。
 // キャッチコピーは UX/ゴールの文言を固定で載せ、空なら Astra の案で UX/ゴールも埋める (PF-GOAL-W3)。
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
-import { and, eq, isNull, desc } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
+import { z } from 'zod';
 import { getDb } from '../db/connection.ts';
 import { projects, type ProjectRole } from '../db/schema/project.ts';
-import { conceptSheets, type ConceptSheetPayload } from '../db/schema/concept-sheet.ts';
-import { persistConceptSheet, deleteConceptSheet } from '../db/concept-sheet-persistence.ts';
-import { fillEmptyCatchcopy } from '../db/project-catchcopy-persistence.ts';
+import { deleteConceptSheet, setConceptSheetAutoUpdate } from '../db/concept-sheet-persistence.ts';
+import { findSheetRow, isCurrentFormat, listSheetRows, listVersionSummaries } from '../db/concept-sheet-reads.ts';
 import { requireAuth, getIdentity } from '../middleware/require-auth.ts';
 import { requireRole } from '../middleware/require-role.ts';
-import { conceptSheetGenerationSchema, decodeSceneImages, imagesDigest, type DecodedSceneImage } from '../lib/concept-sheet-input.ts';
-import { readConceptSheetMaterial, assertMaterialPresent, conceptSheetFreshness, type ConceptSheetMaterial } from '../lib/concept-sheet-sources.ts';
+import { conceptSheetGenerationSchema } from '../lib/concept-sheet-input.ts';
+import { readConceptSheetMaterial, assertMaterialPresent } from '../lib/concept-sheet-sources.ts';
+import { readFreshnessBasis, freshnessOf } from '../lib/concept-sheet-freshness.ts';
+import { readConceptSheetRecord } from '../lib/concept-sheet-records.ts';
+import { resolveSelectedVisuals } from '../lib/concept-sheet-candidates.ts';
+import { planFromLatest, runConceptSheetGeneration, type GenerationPlan } from '../lib/concept-sheet-generation.ts';
 import type { ConceptSheetWriter } from '../lib/concept-sheet-writer.ts';
 import { ConceptSheetJobs } from '../lib/concept-sheet-jobs.ts';
+import { ignoreMaterialChange, type MaterialChangeListener } from '../lib/concept-sheet-auto-update.ts';
 import { AppError } from '../lib/errors.ts';
 import { recordAudit } from '../lib/audit.ts';
 import { parsePagination } from '../lib/pagination.ts';
-import { SCENE_IMAGES_TOTAL_MAX_BYTES, type ConceptSheetRecord, type ConceptSheetSummary } from '../../../shared/concept-sheet.ts';
+import type { ConceptSheetGenerationStatus, ConceptSheetSummary } from '../../../shared/concept-sheet.ts';
 
 const VIEW: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer'];
 const EDIT: readonly ProjectRole[] = ['owner', 'planner', 'designer'];
-/** data URL は画像の実体の約 4/3 倍。JSON の包みと指示文の分を足す。 */
-const GENERATION_BODY_LIMIT = Math.ceil(SCENE_IMAGES_TOTAL_MAX_BYTES * 4 / 3) + 64 * 1024;
+/** 生成の要求は候補の id と指示だけ (画像はビジュアルとして先に登録する)。 */
+const GENERATION_BODY_LIMIT = 64 * 1024;
+const autoUpdateSchema = z.object({ enabled: z.boolean() }).strict();
 
-type Row = typeof conceptSheets.$inferSelect;
-/** 2026-09-26 より前の形 (design を持たない) の行は読まない (spec/schema/concept-sheets.md)。 */
-const isCurrentFormat = (row: Row): boolean => typeof row.payload?.design?.html === 'string';
-
-async function findSheet(projectId: string, id: string): Promise<Row | undefined> {
-  const [row] = await getDb().select().from(conceptSheets)
-    .where(and(eq(conceptSheets.projectId, projectId), eq(conceptSheets.id, id))).limit(1);
-  return row && isCurrentFormat(row) ? row : undefined;
+/** 自動更新の予約の見え方と、ON にしたときの予約 (ConceptSheetAutoUpdater が満たす)。 */
+export interface ConceptSheetAutoUpdateHandle {
+  scheduledAt(projectId: string): string | null;
+  notifyChange: MaterialChangeListener;
 }
-async function toRecord(row: Row): Promise<ConceptSheetRecord> {
-  return {
-    id: row.id, projectId: row.projectId, revision: row.revision, updatedAt: row.updatedAt.toISOString(),
-    design: row.payload.design, images: row.payload.images, source: row.payload.source,
-    freshness: await conceptSheetFreshness(row.projectId, row.payload.source),
-  };
-}
+const NO_AUTO_UPDATE: ConceptSheetAutoUpdateHandle = { scheduledAt: () => null, notifyChange: ignoreMaterialChange };
 
-/** 'keep' は保存済みの候補を使い続ける。保存済みも入力と同じ確認を通す。 */
-function resolveImages(requested: 'keep' | Array<{ label: string; dataUrl: string }>, before: Row | undefined): DecodedSceneImage[] {
-  if (requested !== 'keep') return decodeSceneImages(requested);
-  if (!before) throw AppError.badRequest('scene_images_required');
-  return decodeSceneImages(before.payload.images.map((i) => ({ label: i.label, dataUrl: i.dataUrl })));
-}
-
-interface GenerationTask {
-  projectId: string; sheetId: string; expectedRevision: number; images: DecodedSceneImage[];
-  material: ConceptSheetMaterial; instructions: string; previous: Row | undefined;
-  writer: ConceptSheetWriter; actor: ReturnType<typeof getIdentity>;
-}
-
-/** 裏で走る 1 回の生成。材料が途中で変わったら保存しない。 */
-async function generate(t: GenerationTask): Promise<void> {
-  const generated = await t.writer({ material: t.material, images: t.images, instructions: t.instructions,
-    previous: t.previous?.payload.design ?? null });
-  let current = await readConceptSheetMaterial(t.projectId);
-  if (current.digest !== t.material.digest) throw AppError.conflict('concept_sheet_source_changed');
-  const filled = !t.material.catchcopy.text;
-  if (filled) {
-    // 空欄だけを AI案 で埋める。人が生成中に書いていたら、その文言を優先してこのシートは保存しない。
-    if (!await fillEmptyCatchcopy(t.projectId, generated.design.catchcopy, t.material.revision)) {
-      throw AppError.conflict('concept_sheet_source_changed');
-    }
-    current = await readConceptSheetMaterial(t.projectId);
+/** 人の作成・作り直しの計画。'keep' は前回の版の候補、それ以外は選んだビジュアル。 */
+async function planManual(pid: string, input: z.infer<typeof conceptSheetGenerationSchema>,
+  actor: ReturnType<typeof getIdentity>): Promise<GenerationPlan> {
+  const before = await findSheetRow(pid, input.id);
+  if ((before?.revision ?? 0) !== input.expectedRevision) throw AppError.conflict('concept_sheet_revision_conflict');
+  if (input.visualIds === 'keep') {
+    if (!before) throw AppError.badRequest('scene_images_required');
+    return planFromLatest(pid, input.id, { kind: 'regenerate', instructions: input.instructions, actor, expectedRevision: input.expectedRevision });
   }
-  const images = t.images.map((i) => i.image);
-  const payload: ConceptSheetPayload = {
-    design: generated.design, images,
-    source: { uxGoalRevision: current.revision, uxDigest: current.digest, imagesDigest: imagesDigest(images),
-      skillDigest: generated.skillDigest, model: generated.model, instructions: t.instructions },
-  };
-  await persistConceptSheet(t.sheetId, t.projectId, payload, t.expectedRevision);
-  await recordAudit({ projectId: t.projectId, actor: t.actor, action: 'concept_sheet.generate', targetKind: 'concept_sheet',
-    targetId: t.sheetId, meta: { revision: t.expectedRevision + 1, uxGoalRevision: current.revision, images: images.length,
-      model: generated.model, catchcopyFilled: filled } });
+  const material = await readConceptSheetMaterial(pid);
+  assertMaterialPresent(material);
+  const candidates = await resolveSelectedVisuals(pid, input.visualIds);
+  return { projectId: pid, sheetId: input.id, expectedRevision: input.expectedRevision, kind: before ? 'regenerate' : 'create',
+    candidates, material, instructions: input.instructions, previous: before?.payload.design ?? null, actor };
 }
 
-export function makeConceptSheetRouter(writer: ConceptSheetWriter, jobs: ConceptSheetJobs = new ConceptSheetJobs()): Hono {
+export function makeConceptSheetRouter(writer: ConceptSheetWriter, jobs: ConceptSheetJobs = new ConceptSheetJobs(),
+  autoUpdate: ConceptSheetAutoUpdateHandle = NO_AUTO_UPDATE): Hono {
   const router = new Hono();
   router.use('*', requireAuth, requireRole(VIEW));
   router.use('*', async (c, next) => {
@@ -100,48 +74,73 @@ export function makeConceptSheetRouter(writer: ConceptSheetWriter, jobs: Concept
     const page = parsePagination(c.req.query());
     if (!Number.isInteger(page.limit) || !Number.isInteger(page.offset)) throw AppError.badRequest('invalid_page');
     const pid = c.req.param('pid')!;
-    const rows = (await getDb().select().from(conceptSheets).where(eq(conceptSheets.projectId, pid))
-      .orderBy(desc(conceptSheets.updatedAt), conceptSheets.id).limit(page.limit + 1).offset(page.offset));
-    // 一覧には画像と紙面を含めない (1 枚で数 MB になりうるため)。鮮度は UX/ゴールを 1 回だけ読んで比べる。
-    const current = (await readConceptSheetMaterial(pid)).digest;
-    const items: ConceptSheetSummary[] = rows.slice(0, page.limit).filter(isCurrentFormat).map((r) => ({
+    const rows = await listSheetRows(pid, page.limit, page.offset);
+    const current = rows.slice(0, page.limit).filter(isCurrentFormat);
+    // 一覧は最新版を出し、画像と紙面を含めない (1 枚で数 MB になりうるため)。鮮度は材料を 1 回だけ読んで比べる。
+    const basis = await readFreshnessBasis(pid, current.flatMap((r) => r.payload.visualRefs ?? []));
+    const items: ConceptSheetSummary[] = current.map((r) => ({
       id: r.id, title: r.payload.design.title, catchcopy: r.payload.design.catchcopy, concept: r.payload.design.concept,
-      sceneLabel: r.payload.design.scene.label, updatedAt: r.updatedAt.toISOString(),
-      freshness: r.payload.source.uxDigest === current ? 'current' : 'outdated',
+      sceneLabel: r.payload.design.scene.label, updatedAt: r.updatedAt.toISOString(), rv: r.latestRv, autoUpdate: r.autoUpdate,
+      freshness: freshnessOf(r.payload.source, r.payload.visualRefs ?? [], basis),
     }));
     return c.json({ canEdit: EDIT.includes(c.get('projectRole')), hasMore: rows.length > page.limit, items });
   });
 
   // '/:id' より前に置く (generation を id として読ませない)。
-  router.get('/generation', (c) => c.json({ job: jobs.get(c.req.param('pid')!) }));
+  router.get('/generation', (c) => {
+    const pid = c.req.param('pid')!;
+    const status: ConceptSheetGenerationStatus = { job: jobs.get(pid), autoUpdate: { scheduledAt: autoUpdate.scheduledAt(pid) } };
+    return c.json(status);
+  });
 
   router.get('/:id', async (c) => {
-    const row = await findSheet(c.req.param('pid')!, c.req.param('id'));
-    if (!row) throw AppError.notFound('concept_sheet_not_found');
-    return c.json({ sheet: await toRecord(row), canEdit: EDIT.includes(c.get('projectRole')) });
+    const head = await findSheetRow(c.req.param('pid')!, c.req.param('id'));
+    if (!head) throw AppError.notFound('concept_sheet_not_found');
+    const sheet = await readConceptSheetRecord(head, head.latestRv);
+    if (!sheet) throw AppError.notFound('concept_sheet_not_found');
+    return c.json({ sheet, versions: await listVersionSummaries(head.id), canEdit: EDIT.includes(c.get('projectRole')) });
+  });
+
+  router.get('/:id/versions/:rv', async (c) => {
+    const rv = Number(c.req.param('rv'));
+    if (!Number.isInteger(rv) || rv < 1) throw AppError.badRequest('invalid_rv');
+    const head = await findSheetRow(c.req.param('pid')!, c.req.param('id'));
+    if (!head) throw AppError.notFound('concept_sheet_not_found');
+    const sheet = await readConceptSheetRecord(head, rv);
+    if (!sheet) throw AppError.notFound('concept_sheet_version_not_found');
+    return c.json({ sheet, versions: await listVersionSummaries(head.id), canEdit: EDIT.includes(c.get('projectRole')) });
   });
 
   router.post('/generate', requireRole(EDIT), bodyLimit({
-    maxSize: GENERATION_BODY_LIMIT, onError: () => { throw new AppError('scene_images_too_large', 413); },
+    maxSize: GENERATION_BODY_LIMIT, onError: () => { throw AppError.badRequest('invalid_concept_sheet_request'); },
   }), async (c) => {
     const parsed = conceptSheetGenerationSchema.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) throw AppError.badRequest('invalid_concept_sheet_request');
-    const input = parsed.data; const pid = c.req.param('pid')!;
-    const before = await findSheet(pid, input.id);
-    if ((before?.revision ?? 0) !== input.expectedRevision) throw AppError.conflict('concept_sheet_revision_conflict');
-    const images = resolveImages(input.images, before);
-    const material = await readConceptSheetMaterial(pid);
-    assertMaterialPresent(material);
-    jobs.start(pid, input.id, () => generate({ projectId: pid, sheetId: input.id, expectedRevision: input.expectedRevision,
-      images, material, instructions: input.instructions, previous: before, writer, actor: getIdentity(c) }));
-    return c.json({ id: input.id, state: 'running' }, 202);
+    const pid = c.req.param('pid')!;
+    const plan = await planManual(pid, parsed.data, getIdentity(c));
+    // 待たない: 結果は生成の状態に残り、画面は GET /generation で受け取る (start は reject しない)。
+    void jobs.start(pid, plan.sheetId, () => runConceptSheetGeneration(plan, writer), 'manual');
+    return c.json({ id: plan.sheetId, state: 'running' }, 202);
+  });
+
+  router.put('/:id/auto-update', requireRole(EDIT), async (c) => {
+    const parsed = autoUpdateSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) throw AppError.badRequest('invalid_auto_update');
+    const pid = c.req.param('pid')!; const id = c.req.param('id');
+    if (!await findSheetRow(pid, id)) throw AppError.notFound('concept_sheet_not_found');
+    await setConceptSheetAutoUpdate(id, pid, parsed.data.enabled);
+    await recordAudit({ projectId: pid, actor: getIdentity(c), action: 'concept_sheet.auto_update_setting', targetKind: 'concept_sheet',
+      targetId: id, meta: { enabled: parsed.data.enabled } });
+    // ON にしたら、古くなっていれば静かな時間の後に作り直す (古くなければ予約が走っても何もしない)。
+    if (parsed.data.enabled) autoUpdate.notifyChange(pid);
+    return c.json({ autoUpdate: parsed.data.enabled });
   });
 
   router.delete('/:id', requireRole(EDIT), async (c) => {
     const expected = Number(c.req.query('expectedRevision'));
     if (!Number.isInteger(expected) || expected < 1) throw AppError.badRequest('expected_revision_required');
     const pid = c.req.param('pid')!; const id = c.req.param('id');
-    if (!await findSheet(pid, id)) throw AppError.notFound('concept_sheet_not_found');
+    if (!await findSheetRow(pid, id)) throw AppError.notFound('concept_sheet_not_found');
     await deleteConceptSheet(id, pid, expected);
     await recordAudit({ projectId: pid, actor: getIdentity(c), action: 'concept_sheet.delete', targetKind: 'concept_sheet',
       targetId: id, meta: { revision: expected } });

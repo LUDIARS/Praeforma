@@ -18,5 +18,6 @@ export * from './data-design.ts';
 export * from './spec-fragment.ts';
 export * from './feature-manual.ts';
 export * from './concept-sheet.ts';
+export * from './project-visual.ts';
 export * from './project-constraint.ts';
 export * from './scene-editor.ts';

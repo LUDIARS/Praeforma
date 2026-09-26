@@ -11,7 +11,10 @@ import { SPEC_VERSION_DDL } from './spec-version-sqlite.ts';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import type { CatchcopyOrigin } from '../../../shared/catchcopy.ts';
 import { featureManualsSqlite, MANUAL_DDL } from './manual-sqlite.ts';
-import { conceptSheetsSqlite, CONCEPT_SHEET_DDL } from './concept-sheet-sqlite.ts';
+import {
+  conceptSheetsSqlite, conceptSheetVersionsSqlite, CONCEPT_SHEET_DDL, CONCEPT_SHEET_ALTERS, CONCEPT_SHEET_BACKFILLS,
+} from './concept-sheet-sqlite.ts';
+import { projectVisualsSqlite, PROJECT_VISUAL_DDL } from './project-visual-sqlite.ts';
 import { projectConstraintsSqlite, PROJECT_CONSTRAINT_DDL } from './project-constraint-sqlite.ts';
 import { sceneDocumentsSqlite, SCENE_DDL } from './scene-sqlite.ts';
 import type { DataDesign } from '../../../shared/data-design.ts';
@@ -456,6 +459,8 @@ export const sqliteTables = {
   sceneDocuments: sceneDocumentsSqlite,
   featureManuals: featureManualsSqlite,
   conceptSheets: conceptSheetsSqlite,
+  conceptSheetVersions: conceptSheetVersionsSqlite,
+  projectVisuals: projectVisualsSqlite,
   projectConstraints: projectConstraintsSqlite,
   projects, projectMembers, dataDesigns, specFragments, domains, objects, objectAttrs, assets, objectAssets,
   layouts, layoutObjects, specs, specTargets, specAcceptance,
@@ -484,12 +489,19 @@ export const SQLITE_ALTERS: string[] = [
   `ALTER TABLE domains ADD COLUMN definition_revision INTEGER NOT NULL DEFAULT 0`,
   `ALTER TABLE domains ADD COLUMN anatomia_domain TEXT`,
   `ALTER TABLE projects ADD COLUMN anatomia_repo TEXT`,
+  ...CONCEPT_SHEET_ALTERS,
+];
+
+/** 列の追加の後に流す、冪等なデータの写し (Postgres の migration の INSERT ... SELECT に当たるもの)。 */
+export const SQLITE_BACKFILLS: string[] = [
+  ...CONCEPT_SHEET_BACKFILLS,
 ];
 
 export const SQLITE_DDL: string[] = [
   `CREATE TABLE IF NOT EXISTS llm_chats (project_id TEXT NOT NULL REFERENCES projects(id), user_id TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 0, data TEXT, PRIMARY KEY(project_id,user_id))`,
   ...MANUAL_DDL,
   ...CONCEPT_SHEET_DDL,
+  ...PROJECT_VISUAL_DDL,
   ...PROJECT_CONSTRAINT_DDL,
   ...SCENE_DDL,
   `CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, org_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, platforms TEXT NOT NULL DEFAULT '["web"]', default_layout_id TEXT, anatomia_repo TEXT, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,

@@ -1,77 +1,73 @@
-// 企画概要書を Astra に作らせる (spec/feature/concept-sheet.md PF-CS-1 / PF-CS-2 / PF-CS-9)。
-// 画面の候補 (現状のツール UI・ゲーム画面) を 1〜6 枚選び、名前を付ける。Astra が一番いいシーンを選んで紙面に明記する。
-// 作り直しでは、保存済みの候補を使い続けられ、指示を添えられる。生成は裏で走るので、受け付けたらすぐ閉じる。
+// 企画概要書を Astra に作らせる (spec/feature/concept-sheet.md PF-CS-1 / PF-CS-9 / PF-CS-12)。
+// 画面の候補は登録したビジュアルから 1〜6 枚選ぶ (既定: キービジュアル → 一押し → コンセプトアート)。
+// Astra が一番いいシーンを選んで紙面に明記する。作り直しでは前回の候補を使い続けられ、指示を添えられる。
+// 生成は裏で走るので、受け付けたらすぐ閉じる。
 import React from 'react';
-import { SCENE_IMAGES_MAX, SCENE_LABEL_MAX, INSTRUCTIONS_MAX, type ConceptSheetImage } from '../../../../shared/concept-sheet.ts';
-import { conceptSheetApi, conceptSheetError, type SceneImageInput } from '../../lib/concept-sheets-api.ts';
-import { readSceneImage } from '../../lib/read-scene-image.ts';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { INSTRUCTIONS_MAX, SCENE_IMAGES_MAX } from '../../../../shared/concept-sheet.ts';
+import { defaultCandidateVisualIds, type ProjectVisual } from '../../../../shared/project-visual.ts';
+import { conceptSheetApi, conceptSheetError } from '../../lib/concept-sheets-api.ts';
+import { visualApi } from '../../lib/project-visuals-api.ts';
+import { ConceptSheetCandidatePicker } from './ConceptSheetCandidatePicker.tsx';
 
-/** ファイル名から拡張子を外して、名前の初期値にする。 */
-const labelOf = (file: File): string => file.name.replace(/\.[^.]+$/, '').slice(0, SCENE_LABEL_MAX);
-
-export function ConceptSheetGenerator({ pid, sheetId, expectedRevision, savedImages, onStarted, onCancel }: {
-  pid: string; sheetId: string; expectedRevision: number; savedImages: ConceptSheetImage[];
+export function ConceptSheetGenerator({ pid, sheetId, expectedRevision, previousVisualIds, previousLabels, onStarted, onCancel }: {
+  pid: string; sheetId: string; expectedRevision: number;
+  /** 前回の版が使ったビジュアル (選び直すときの初期値)。 */
+  previousVisualIds: string[];
+  /** 前回の候補の名前 (「前回の候補を使う」の説明)。作成のときは空。 */
+  previousLabels: string[];
   onStarted: (id: string) => void; onCancel?: () => void;
 }): React.ReactElement {
-  const [keep, setKeep] = React.useState(savedImages.length > 0);
-  const [images, setImages] = React.useState<SceneImageInput[]>([]);
+  const queryClient = useQueryClient();
+  const visualsQ = useQuery({ queryKey: ['project-visuals', pid], queryFn: () => visualApi.list(pid) });
+  const [keep, setKeep] = React.useState(previousLabels.length > 0);
+  const [selected, setSelected] = React.useState<string[] | null>(null);
   const [instructions, setInstructions] = React.useState('');
   const [message, setMessage] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
 
-  async function add(files: FileList | null): Promise<void> {
-    if (!files) return;
-    const room = SCENE_IMAGES_MAX - images.length;
-    const picked = [...files].slice(0, Math.max(0, room));
-    const results = await Promise.all(picked.map(async (file) => ({ file, result: await readSceneImage(file) })));
-    const errors = results.flatMap(({ result }) => (result.ok ? [] : [result.message]));
-    const added = results.flatMap(({ file, result }) => (result.ok ? [{ label: labelOf(file), dataUrl: result.dataUrl }] : []));
-    setImages((current) => [...current, ...added]);
-    if (files.length > picked.length) errors.push(`画面は ${SCENE_IMAGES_MAX} 枚までです。`);
-    setMessage(errors.length ? errors.join(' ') : null);
+  // 一覧が届いたら 1 回だけ初期の候補を決める: 前回の候補で残っているもの、無ければ既定。
+  const visuals = visualsQ.data?.items;
+  React.useEffect(() => {
+    if (!visuals || selected !== null) return;
+    const ids = new Set(visuals.map((v) => v.id));
+    const kept = previousVisualIds.filter((id) => ids.has(id));
+    setSelected(kept.length > 0 ? kept : defaultCandidateVisualIds(visuals));
+  }, [visuals, selected, previousVisualIds]);
+
+  async function created(visual: ProjectVisual): Promise<void> {
+    await queryClient.invalidateQueries({ queryKey: ['project-visuals', pid] });
+    setSelected((current) => (current && current.length < SCENE_IMAGES_MAX ? [...current, visual.id] : current));
   }
 
   async function generate(): Promise<void> {
-    if (!keep && images.length === 0) { setMessage('画面の画像を 1 枚以上選んでください。'); return; }
-    if (!keep && images.some((i) => !i.label.trim())) { setMessage('すべての画面に名前を付けてください。'); return; }
+    const ids = selected ?? [];
+    if (!keep && ids.length === 0) { setMessage('候補のビジュアルを 1 枚以上選んでください。'); return; }
     setBusy(true); setMessage(null);
     try {
-      const result = await conceptSheetApi.generate(pid, {
-        id: sheetId, expectedRevision, images: keep ? 'keep' : images.map((i) => ({ ...i, label: i.label.trim() })), instructions,
-      });
+      const result = await conceptSheetApi.generate(pid, { id: sheetId, expectedRevision, visualIds: keep ? 'keep' : ids, instructions });
       onStarted(result.id);
     } catch (error) { setMessage(conceptSheetError(error)); }
     finally { setBusy(false); }
   }
 
   return <section className="concept-sheet-generator" aria-label="企画概要書を作る">
-    <p>UX（目指す価値/コンセプト・ターゲットユーザー・カスタマージャーニー・企画の制約・詳細）と画面の候補から、
-      デザインされた 1 枚の企画概要書を AI (Astra) が作ります。一番伝わる画面を AI が選び、紙面にシーン名を書きます。
+    <p>UX（目指す価値/コンセプト・ターゲットユーザー・カスタマージャーニー・企画の制約・詳細）・仕様の見出しと、
+      ビジュアルから選んだ候補で、デザインされた 1 枚の企画概要書を AI (Astra) が作ります。一番伝わる画面を AI が選び、紙面にシーン名を書きます。
       キャッチコピーは UX の「目指す価値/コンセプト」の文言をそのまま載せます（空なら AI が案を作り、UX にも「AI案」として入れます）。
       作成には数分〜十数分かかります。その間、ほかの画面を使えます。</p>
     <fieldset className="concept-sheet-visual-choice" disabled={busy}>
-      <legend>画面の候補（現状のツール画面・ゲーム画面、{SCENE_IMAGES_MAX} 枚まで）</legend>
-      {savedImages.length > 0 && <>
+      <legend>画面の候補（ビジュアルから {SCENE_IMAGES_MAX} 枚まで）</legend>
+      {previousLabels.length > 0 && <>
         <label><input type="radio" name="scene-images" checked={keep} onChange={() => setKeep(true)} />
-          前回の候補を使う（{savedImages.map((i) => i.label).join('、')}）</label>
-        <label><input type="radio" name="scene-images" checked={!keep} onChange={() => setKeep(false)} /> 選び直す</label>
+          前回の候補を使う（{previousLabels.join('、')}）</label>
+        <label><input type="radio" name="scene-images" checked={!keep} onChange={() => setKeep(false)} /> ビジュアルから選び直す</label>
       </>}
-      {!keep && <div className="concept-sheet-visual-pick">
-        <input type="file" multiple accept="image/png,image/jpeg,image/webp" disabled={images.length >= SCENE_IMAGES_MAX}
-          onChange={(e) => { void add(e.target.files); e.target.value = ''; }} />
-        <ul className="concept-sheet-scenes">
-          {images.map((image, index) => <li key={image.dataUrl.slice(-48) + index}>
-            <img src={image.dataUrl} alt={`候補 ${index + 1}`} />
-            <label>画面の名前
-              <input type="text" value={image.label} maxLength={SCENE_LABEL_MAX}
-                onChange={(e) => setImages(images.map((it, i) => (i === index ? { ...it, label: e.target.value } : it)))} />
-            </label>
-            <button type="button" onClick={() => setImages(images.filter((_, i) => i !== index))}>外す</button>
-          </li>)}
-        </ul>
-        <span className="concept-sheet-hint">PNG / JPEG / WebP、1 枚 4MB・合計 16MB まで。名前は紙面に「現在の画面：名前」として載ります。
-          実画面でない図（配置図など）は、名前にそう書いてください。</span>
-      </div>}
+      {!keep && (visualsQ.isPending ? <p role="status">ビジュアルを読み込み中…</p>
+        : !visualsQ.data ? <p role="alert">ビジュアルを取得できませんでした。
+          <button type="button" onClick={() => { void visualsQ.refetch(); }}>再取得</button></p>
+          : <ConceptSheetCandidatePicker pid={pid} visuals={visualsQ.data.items} max={visualsQ.data.max} selected={selected ?? []}
+            onChange={setSelected} onCreated={created} disabled={busy} />)}
     </fieldset>
     {expectedRevision > 0 && <label className="concept-sheet-instructions">作り直しの指示（任意）
       <textarea rows={3} maxLength={INSTRUCTIONS_MAX} value={instructions} disabled={busy}
@@ -81,7 +77,7 @@ export function ConceptSheetGenerator({ pid, sheetId, expectedRevision, savedIma
     {message && <p role="alert">{message}</p>}
     <div className="concept-sheet-actions">
       <button className="primary" type="button" disabled={busy} onClick={() => { void generate(); }}>
-        {busy ? '受け付け中…' : expectedRevision === 0 ? '企画概要書を作る' : '作り直す'}
+        {busy ? '受け付け中…' : expectedRevision === 0 ? '企画概要書を作る' : '作り直す（新しい版になります）'}
       </button>
       {onCancel && <button type="button" disabled={busy} onClick={onCancel}>やめる</button>}
     </div>
