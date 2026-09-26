@@ -46,7 +46,7 @@ npm run local      # = build:web + server を LOCAL_MODE で起動 (port 8889)
 | 永続化 | Postgres (`pg`) | **SQLite** (`better-sqlite3`)。 起動時に DDL を流す |
 | スキーマ | `pgTable` (全テーブル) | Studio 最小サブセット 15 テーブルを `sqliteTable` で並行定義 (`db/sqlite-schema.ts`)。 各 schema ファイルが `LOCAL_MODE` 時に sqlite 版を pg 型へキャストして再エクスポート → **ルートは無改変** |
 | 認証 | Cernere PASETO V4 | **バイパス**: 固定の匿名ローカルユーザ (`local-reviewer` / owner) を注入。 個人データ無し |
-| ルート | 全部 | サブセット (projects/domains/objects/layouts/specs/assets/studio)。 references/feedback/acceptance/WS collab は非搭載 |
+| ルート | 全部 | サブセット (projects/domains/objects/layouts/specs/assets/studio)。 references/feedback/acceptance (runs 系)/WS collab は非搭載。 acceptance/summary は run 0 件として載せる ([acceptance-summary.md](./acceptance-summary.md)) |
 | フロント | Cernere popup login | `/api/health` が `localMode` を返したら token を自動セット → ログイン省略 |
 
 `PRAEFORMA_LOCAL_MODE` 未設定なら **完全に従来通り** (Postgres + Cernere)。 本番パスは不変。

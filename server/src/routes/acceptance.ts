@@ -7,6 +7,8 @@
 //   - assertion: expression (JS 式) を server で evaluate せず、 client / runtime
 //     probe が評価した結果を POST する (= probe-driven design、 server は集計のみ)
 //   - event: スキーマ受信のみ、 評価ロジックは Step 12
+//   - summary: 受入状態の読み取り専用要約 (spec/feature/acceptance-summary.md)。
+//     runs 系と違いローカルモードでも載せるため、 別の router (makeAcceptanceSummaryRouter)。
 
 import { Hono } from 'hono';
 import { and, desc, eq } from 'drizzle-orm';
@@ -22,6 +24,12 @@ import { parsePagination } from '../lib/pagination.ts';
 import { recordAudit } from '../lib/audit.ts';
 import { appendEvent, clearEvents, evalPattern, getEvents, type BufferedEvent } from '../lib/event-buffer.ts';
 import { specAcceptance } from '../db/schema/spec.ts';
+import {
+  readAcceptanceResultStatuses,
+  readAcceptanceRuns,
+  readSpecVersionHead,
+} from '../db/acceptance-summary-reads.ts';
+import { pickLatestRun, summarizeAcceptance } from '../lib/acceptance-summary.ts';
 
 const ALL_ROLES: readonly ProjectRole[] = [
   'owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer',
@@ -271,6 +279,23 @@ export function makeAcceptanceRouter(): Hono {
       .limit(1);
     if (!row) throw AppError.notFound();
     return c.json({ run: row });
+  });
+
+  return r;
+}
+
+// @spec PF-ACC-SUM-1 経路と権限
+/** GET /summary — 受入状態の要約 (PF-ACC-SUM-1/2)。 I/O のみ、 集計は lib/acceptance-summary.ts。 */
+export function makeAcceptanceSummaryRouter(): Hono {
+  const r = new Hono();
+
+  r.get('/summary', requireAuth, requireRole(ALL_ROLES), async (c) => {
+    if (!getDbState().ok) throw AppError.internal('db_unavailable');
+    const pid = c.req.param('pid')!;
+    const [runs, specVersionHead] = await Promise.all([readAcceptanceRuns(pid), readSpecVersionHead(pid)]);
+    const latest = pickLatestRun(runs);
+    const latestResults = latest ? await readAcceptanceResultStatuses(latest.id) : [];
+    return c.json(summarizeAcceptance({ projectId: pid, runs, latestResults, specVersionHead }));
   });
 
   return r;

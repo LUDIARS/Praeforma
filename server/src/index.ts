@@ -39,7 +39,7 @@ import { makeObjectRouter } from './routes/objects.ts';
 import { makeLayoutRouter } from './routes/layouts.ts';
 import { makeSceneEditorRouter } from './routes/scene-editor.ts';
 import { makeSpecRouter } from './routes/specs.ts';
-import { makeAcceptanceRouter } from './routes/acceptance.ts';
+import { makeAcceptanceRouter, makeAcceptanceSummaryRouter } from './routes/acceptance.ts';
 import { makeAssetRouter } from './routes/assets.ts';
 import { makeStudioRouter } from './routes/studio.ts';
 import { makeTransitionRouter } from './routes/transitions.ts';
@@ -179,6 +179,8 @@ app.route('/api/projects/:pid/concept-sheets', makeConceptSheetRouter(conceptShe
 app.route('/api/projects/:pid/constraints', makeProjectConstraintRouter(onMaterialChange));
 app.route('/api/projects/:pid/visuals', makeProjectVisualRouter(onMaterialChange));
 app.route('/api/projects/:pid/assets', makeAssetRouter(config.publicUrl));
+// 受入状態の要約はローカルモードでも載せる (run 0 件として返す、 spec/feature/acceptance-summary.md)
+app.route('/api/projects/:pid/acceptance', makeAcceptanceSummaryRouter());
 // 以下は SQLite サブセット外のテーブルを使うため、 ローカルモードでは載せない
 if (!config.localMode) {
   app.route('/api/projects/:pid/references', makeReferenceRouter());
