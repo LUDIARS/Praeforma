@@ -2,32 +2,44 @@ import React from 'react';
 import type { DesignCanvasDocument } from '../../../../shared/design-canvas.ts';
 import { webSceneSchema, webTags, type WebNode, type WebScene } from '../../../../shared/web-scene.ts';
 import { sourceDiff, webCss, webMarkup } from '../../../../shared/web-scene-export.ts';
+import { deviceForViewport, readOffset } from '../../../../shared/web-scene-placement.ts';
+import { groupMove, individualMove, placeGroup, type WebMoveResult } from '../../../../shared/web-scene-move.ts';
 import { importMarkup } from './web-dom-import.ts';
 import { WebDomPreview } from './WebDomPreview.tsx';
 import { WebDomInspector } from './WebDomInspector.tsx';
 import { WebCssEditor } from './WebCssEditor.tsx';
+import { WebMoveModeControl, type WebPreviewMode } from './WebMoveModeControl.tsx';
+import { WebNodePlacement } from './WebNodePlacement.tsx';
+import { WebUiEditBar, type WebSceneSaveControl } from './WebUiEditBar.tsx';
+import { moveErrorMessage, moveStatusMessage, placementDeviceLabel } from './web-move-messages.ts';
 import { deviceLabels } from '../ux-design/FrameDeviceControls.tsx';
 
 interface Props {
   canvas: DesignCanvasDocument; value: WebScene; onChange: (value: WebScene) => void; disabled: boolean;
   onUndo: () => void; onRedo: () => void; canUndo: boolean; canRedo: boolean;
+  /** Phone-width full-screen editing (PF-WEB-9); PC layout ignores it. */
+  isEditing: boolean; onOpenEditing: () => void; onCloseEditing: () => void; save: WebSceneSaveControl;
 }
 
-export function WebSceneEditor({ canvas, value, onChange, disabled, onUndo, onRedo, canUndo, canRedo }: Props): React.ReactElement {
+export function WebSceneEditor({ canvas, value, onChange, disabled, onUndo, onRedo, canUndo, canRedo, isEditing, onOpenEditing, onCloseEditing, save }: Props): React.ReactElement {
   const baseline = React.useRef(value);
   const [frameId, setFrameId] = React.useState(canvas.frames[0]?.id ?? '');
   const [selected, setSelected] = React.useState(''); const [tag, setTag] = React.useState<WebNode['tag']>('button');
   const [markup, setMarkup] = React.useState(''); const [error, setError] = React.useState('');
+  const [mode, setMode] = React.useState<WebPreviewMode>('select'); const [status, setStatus] = React.useState('');
   const frame = canvas.frames.find(item => item.id === frameId) ?? canvas.frames[0];
   const variant = value.variants.find(item => item.frameId === frame?.id);
   const nodes = variant?.nodes ?? [];
   const tree = (parentId: string | null): WebNode[] => nodes.filter(item => item.parentId === parentId).flatMap(item => [item, ...tree(item.id)]);
   const node = nodes.find(item => item.id === selected);
-  const apply = (next: WebScene): void => {
-    if (disabled) return;
+  // Moves write the rule whose media query matches this preview's width (PF-WEB-7).
+  const device = deviceForViewport(frame?.viewport.width ?? 0);
+  const apply = (next: WebScene): boolean => {
+    if (disabled) return false;
+    setStatus('');
     const parsed = webSceneSchema.safeParse(next);
-    if (!parsed.success) { setError('DOMの親子関係・タグ・文言・CSS・件数上限を確認してください。input/br/hrには文言や子要素を設定できません。'); return; }
-    setError(''); onChange(parsed.data);
+    if (!parsed.success) { setError('DOMの親子関係・タグ・文言・CSS・件数上限を確認してください。input/br/hrには文言や子要素を設定できません。'); return false; }
+    setError(''); onChange(parsed.data); return true;
   };
   const replaceNodes = (next: WebNode[]): void => {
     if (!frame) return;
@@ -44,11 +56,20 @@ export function WebSceneEditor({ canvas, value, onChange, disabled, onUndo, onRe
     const other = siblings[siblings.indexOf(node) + direction]; if (!other) return;
     const next = [...nodes], a = next.indexOf(node), b = next.indexOf(other); next[a] = other; next[b] = node; replaceNodes(next);
   };
+  const describe = (id: string | null): string => {
+    const item = nodes.find(candidate => candidate.id === id);
+    return item ? `${item.tag}${item.text ? ` 「${item.text.slice(0, 16)}」` : ''}` : '画面の最上位';
+  };
+  const commitMove = (result: WebMoveResult, nodeId: string, parentId: string | null): void => {
+    if (!result.ok) { setStatus(''); setError(moveErrorMessage(result.reason)); return; }
+    if (result.changed && apply(result.scene)) setStatus(moveStatusMessage(result.kind, describe(nodeId), describe(parentId), device));
+  };
+  const offset = node && node.tag !== 'text' ? readOffset(value.styles, node.id, device) : null;
   const html = frame ? webMarkup(value, frame.id) : '', css = webCss(value);
   const diff = frame ? sourceDiff(webMarkup(baseline.current, frame.id), html, 'scene.html') + sourceDiff(webCss(baseline.current), css, 'scene.css') : '';
-  return <section className="panel"><h2>WebUI DOM / CSS</h2>
+  return <section className={`panel web-scene-editor${isEditing ? ' is-editing' : ''}`} aria-label="WebUI DOM / CSS"><WebUiEditBar isEditing={isEditing} onOpen={onOpenEditing} onClose={onCloseEditing} save={save} /><h2>WebUI DOM / CSS</h2>
     <p className="meta">画面を選び、DOMを取り込むか要素を追加してください。プレビューの要素をクリックして選択できます。プレビュー中はアプリの処理を実行しません。</p>
-    <label className="simple-field">編集する画面<select value={frame?.id ?? ''} onChange={event => { setFrameId(event.target.value); setSelected(''); }}>{canvas.frames.map(item => <option key={item.id} value={item.id}>{item.name} / {deviceLabels[item.device ?? 'unspecified']} / {item.viewport.width}×{item.viewport.height}</option>)}</select></label>
+    <label className="simple-field">編集する画面<select value={frame?.id ?? ''} onChange={event => { setFrameId(event.target.value); setSelected(''); setStatus(''); }}>{canvas.frames.map(item => <option key={item.id} value={item.id}>{item.name} / {deviceLabels[item.device ?? 'unspecified']} / {item.viewport.width}×{item.viewport.height}</option>)}</select></label>
     {!frame ? <p>配置エディタでPC画面・スマホ画面を追加してください。</p> : <>
       {error ? <p role="alert" className="err-text">{error}</p> : null}
       <fieldset disabled={disabled} className="foundation-form">
@@ -64,10 +85,17 @@ export function WebSceneEditor({ canvas, value, onChange, disabled, onUndo, onRe
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}><nav aria-label="DOMツリー" style={{ maxHeight: 450, overflow: 'auto', minWidth: 220 }}>{tree(null).map(item => {
           let depth = 0, parent = item.parentId; while (parent && depth < 32) { depth++; parent = nodes.find(candidate => candidate.id === parent)?.parentId ?? null; }
           return <button type="button" key={item.id} style={{ display: 'block', marginLeft: depth * 12 }} aria-pressed={selected === item.id} onClick={() => setSelected(item.id)}>{item.tag} {item.text.slice(0, 24)} {item.classes.map(name => '.' + name).join(' ')}</button>;
-        })}</nav>{node ? <div><button type="button" onClick={() => reorder(-1)}>上へ</button><button type="button" onClick={() => reorder(1)}>下へ</button><WebDomInspector node={node} nodes={nodes} classes={value.styles.map(style => style.className)} onChange={next => replaceNodes(nodes.map(item => item.id === next.id ? next : item))} onDelete={remove} /></div> : null}</div>
+        })}</nav>{node ? <div><button type="button" onClick={() => reorder(-1)}>上へ</button><button type="button" onClick={() => reorder(1)}>下へ</button><button type="button" disabled={!node.parentId} onClick={() => node.parentId && setSelected(node.parentId)}>親要素を選択</button>
+          {node.tag !== 'text' ? <WebNodePlacement offset={offset} deviceLabel={placementDeviceLabel(device)} onChange={next => commitMove(placeGroup(value, frame.id, node.id, device, next), node.id, null)} /> : null}
+          <WebDomInspector node={node} nodes={nodes} classes={value.styles.map(style => style.className)} onChange={next => replaceNodes(nodes.map(item => item.id === next.id ? next : item))} onDelete={remove} /></div> : null}</div>
         <WebCssEditor styles={value.styles} onChange={styles => apply({ ...value, styles })} onError={setError} />
       </fieldset>
-      <WebDomPreview scene={value} frameId={frame.id} width={frame.viewport.width} height={frame.viewport.height} onSelect={setSelected} />
+      <WebMoveModeControl mode={mode} disabled={disabled} onChange={next => { setMode(next); setStatus(''); }} />
+      {status ? <p role="status" className="meta">{status}</p> : null}
+      <WebDomPreview scene={value} frameId={frame.id} width={frame.viewport.width} height={frame.viewport.height} selectedId={selected}
+        mode={disabled || mode === 'select' ? null : mode} baseOffset={id => readOffset(value.styles, id, device) ?? { x: 0, y: 0 }} onSelect={setSelected}
+        onGroupMove={(id, delta) => commitMove(groupMove(value, frame.id, id, device, delta), id, null)}
+        onIndividualMove={(id, parentId, beforeId) => commitMove(individualMove(value, frame.id, id, parentId, beforeId, device), id, parentId)} />
       <details><summary>HTML / CSS / 変更差分</summary><p>この編集画面を開いた時点との差分です。HTML/CSSとしてレビューし、React等の実装へ適用してください。</p><label className="simple-field">HTML<textarea readOnly rows={8} value={html} /></label><label className="simple-field">CSS<textarea readOnly rows={8} value={css} /></label><label className="simple-field">差分<textarea readOnly rows={8} value={diff || '変更なし'} /></label><button type="button" onClick={() => {
         const url = URL.createObjectURL(new Blob([JSON.stringify({ frame: { name: frame.name, device: frame.device, viewport: frame.viewport }, html, css, diff }, null, 2)], { type: 'application/json;charset=utf-8' }));
         const link = document.createElement('a'); link.href = url; link.download = 'webui-scene-changes.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 0);

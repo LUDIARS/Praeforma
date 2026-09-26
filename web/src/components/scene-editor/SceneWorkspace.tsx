@@ -8,6 +8,7 @@ import { sceneApi } from '../../lib/scene-editor-api.ts';
 import { SceneImport } from './SceneImport.tsx';
 import { WebSceneEditor } from './WebSceneEditor.tsx';
 import { emptyWebScene, useWebSceneHistory } from './useWebSceneHistory.ts';
+import { useMobileUiEditing } from './useMobileUiEditing.ts';
 import { SceneFrameLayers } from './SceneFrameLayers.tsx';
 import { SceneLayerPanel } from './SceneLayerPanel.tsx';
 import { useSceneLayerSources } from './useSceneLayerSources.ts';
@@ -18,7 +19,7 @@ const MAX_SOURCES=20;
 
 export function SceneWorkspace({pid,lid,name,initial,canEdit}:{pid:string;lid:string;name:string;initial:SceneDocument;canEdit:boolean}):React.ReactElement {
   const history=useCanvasHistory(initial.canvas);const [sources,setSources]=React.useState<SceneSource[]>(initial.sources);
-  const web=useWebSceneHistory(initial.web);
+  const web=useWebSceneHistory(initial.web);const uiEditing=useMobileUiEditing();
   // 重ねるシーンの構成は保存対象。 表示・非表示は見る人の切替なので保存・undo に含めない (PF-SCENE-8)。
   const [layers,setLayers]=React.useState<SceneLayer[]>(initial.layers??[]);const [hiddenScenes,setHiddenScenes]=React.useState<ReadonlySet<string>>(new Set());
   const layerSources=useSceneLayerSources(pid,layers);
@@ -40,7 +41,7 @@ export function SceneWorkspace({pid,lid,name,initial,canEdit}:{pid:string;lid:st
   const save=useMutation({mutationFn:()=>sceneApi.save(pid,lid,{canvas:history.canvas,sources:sources.filter(source=>hasFrame(source.frameId)),web:{...web.value,variants:web.value.variants.filter(variant=>hasFrame(variant.frameId))},layers:layers.filter(layer=>hasFrame(layer.frameId))}),
     onSuccess:({document})=>{history.reset(document.canvas);setSources(document.sources);web.reset(document.web??emptyWebScene);setLayers(document.layers??[]);setSaved(JSON.stringify({canvas:document.canvas,sources:document.sources,web:document.web??emptyWebScene,layers:document.layers??[]}));}});
   return <div className="scene-workspace">
-    <div className="scene-heading"><span>{dirty?'未保存の変更があります':history.canvas.revision===0?'既存の配置を表示しています。保存するとシーン設計として記録します。':'保存済みの画面を表示しています'}</span><label><input type="checkbox" checked={showReferences} onChange={e=>setShowReferences(e.target.checked)}/>元画像を重ねる</label><button type="button" className="ghost" disabled={!canEdit||save.isPending} onClick={()=>setShowImport(!showImport)}>キャプチャ・ノードを取り込む</button></div>
+    <div className="scene-heading"><span>{dirty?'未保存の変更があります':history.canvas.revision===0?'既存の配置を表示しています。保存するとシーン設計として記録します。':'保存済みの画面を表示しています'}</span><label><input type="checkbox" checked={showReferences} onChange={e=>setShowReferences(e.target.checked)}/>元画像を重ねる</label><button type="button" className="ghost" disabled={!canEdit||save.isPending} onClick={()=>setShowImport(!showImport)}>キャプチャ・ノードを取り込む</button><button type="button" className="ghost web-ui-edit-open" onClick={uiEditing.open}>UIを全画面で編集</button></div>
     {save.error?<p role="alert" className="err-text">保存できませんでした。権限・入力内容を確認してください。他の変更と競合した場合は、編集内容を控えてから開き直してください。</p>:null}
     {importError?<p role="alert" className="err-text">{importError}</p>:null}
     {showImport?<SceneImport pid={pid} lid={lid} disabled={!canEdit||save.isPending} onApply={(canvas,source)=>{
@@ -63,6 +64,7 @@ export function SceneWorkspace({pid,lid,name,initial,canEdit}:{pid:string;lid:st
       {source.runtime?<><p>{source.runtime.source} / {source.runtime.capturedAt}</p><ul>{source.runtime.nodes.map(node=><li key={node.id}>{node.label} — {node.id}{node.parentId?` / 親: ${node.parentId}`:''}{node.ontologyRef?` / 定義: ${node.ontologyRef}`:''}</li>)}</ul></>:null}
       <ul>{source.notes.map((note,index)=><li key={index}>{note}</li>)}</ul>
     </article>)}</details>
-    <WebSceneEditor canvas={history.canvas} value={web.value} onChange={web.change} disabled={!canEdit||save.isPending} onUndo={web.undo} onRedo={web.redo} canUndo={web.canUndo} canRedo={web.canRedo} />
+    <WebSceneEditor canvas={history.canvas} value={web.value} onChange={web.change} disabled={!canEdit||save.isPending} onUndo={web.undo} onRedo={web.redo} canUndo={web.canUndo} canRedo={web.canRedo}
+      isEditing={uiEditing.isEditing} onOpenEditing={uiEditing.open} onCloseEditing={uiEditing.close} save={{onSave:()=>save.mutate(),canSave:canEdit,isSaving:save.isPending,isDirty:dirty,hasFailed:!!save.error}} />
   </div>;
 }

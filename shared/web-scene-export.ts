@@ -1,4 +1,4 @@
-import { webSceneSchema, type WebScene, type WebNode } from './web-scene.ts';
+import { WEB_DESKTOP_MIN_WIDTH, WEB_MOBILE_MAX_WIDTH, webSceneSchema, type WebScene, type WebNode } from './web-scene.ts';
 
 function escape(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -22,7 +22,7 @@ export function webMarkup(scene: WebScene, frameId: string, preview = false): st
 export function webCss(scene: WebScene): string {
   return webSceneSchema.parse(scene).styles.slice().sort((a, b) => Number(a.device !== 'all') - Number(b.device !== 'all')).map(style => {
     const rule = `.${style.className} {\n${Object.entries(style.declarations).map(([key, value]) => `  ${key}: ${value};`).join('\n')}\n}`;
-    return style.device === 'all' ? rule : `@media (${style.device === 'mobile' ? 'max' : 'min'}-width: ${style.device === 'mobile' ? 767 : 768}px) {\n${rule}\n}`;
+    return style.device === 'all' ? rule : `@media (${style.device === 'mobile' ? 'max' : 'min'}-width: ${style.device === 'mobile' ? WEB_MOBILE_MAX_WIDTH : WEB_DESKTOP_MIN_WIDTH}px) {\n${rule}\n}`;
   }).join('\n\n');
 }
 

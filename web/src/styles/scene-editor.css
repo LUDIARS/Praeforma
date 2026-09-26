@@ -27,3 +27,31 @@
 .scene-visibility { display:flex !important; flex-wrap:wrap; gap:8px 16px !important; }
 .scene-visibility legend, .scene-layer-composer legend { font-weight:600; margin-bottom:4px; }
 .scene-visibility .meta { flex-basis:100%; margin:0; }
+/* WebUI preview drag (PF-WEB-7/8): the overlay belongs to the parent page; the sandboxed iframe gets no script. */
+.web-dom-stage { position:relative; }
+.web-dom-stage iframe { display:block; }
+.web-dom-overlay { position:absolute; inset:0; pointer-events:none; }
+.web-dom-overlay.is-moving { pointer-events:auto; touch-action:none; cursor:grab; }
+.web-dom-overlay.is-dragging { cursor:grabbing; }
+.web-dom-selection, .web-dom-ghost, .web-dom-drop-target, .web-dom-insertion { position:absolute; pointer-events:none; box-sizing:border-box; }
+.web-dom-selection { outline:2px solid var(--accent); outline-offset:1px; }
+.web-dom-ghost { border:2px dashed var(--accent); background:rgba(42,109,244,.08); }
+.web-dom-drop-target { outline:2px solid var(--success); outline-offset:2px; background:rgba(31,138,76,.06); }
+.web-dom-drop-target.is-root { inset:0; outline-offset:-2px; }
+.web-dom-insertion { background:var(--success); border-radius:2px; }
+.web-move-mode { border:0; padding:0; margin:12px 0 8px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; }
+.web-move-mode legend { font-weight:600; margin-bottom:4px; }
+.web-move-mode .meta { flex-basis:100%; margin:0; }
+.web-node-placement { border:0; padding:0; margin:8px 0; display:flex; flex-wrap:wrap; align-items:end; gap:8px; }
+.web-node-placement input { width:96px; }
+/* PF-WEB-9: only while UI editing is open on a phone-width screen does the editor replace the Pf chrome. PC keeps the inline layout. */
+.web-ui-edit-bar, .web-ui-edit-open { display:none; }
+@media(max-width:760px) {
+  .web-ui-edit-bar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:8px; }
+  .web-ui-edit-bar .err-text { flex-basis:100%; margin:0; }
+  .scene-heading .web-ui-edit-open { display:inline-block; }
+  .web-scene-editor.is-editing { position:fixed; inset:0; z-index:150; margin:0; border:0; border-radius:0; box-shadow:none; overflow:auto; overscroll-behavior:contain; padding:0 12px max(12px, env(safe-area-inset-bottom)); }
+  .web-scene-editor.is-editing .web-ui-edit-bar { position:sticky; top:0; z-index:2; background:var(--panel); padding:8px 0; border-bottom:1px solid var(--border); }
+  body.pf-ui-editing { overflow:hidden; }
+  body.pf-ui-editing .topbar, body.pf-ui-editing .pf-llm-window { display:none; }
+}

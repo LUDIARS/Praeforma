@@ -1,7 +1,14 @@
 import { z } from 'zod';
 
 export const webTags = ['div', 'section', 'main', 'header', 'footer', 'nav', 'article', 'aside', 'p', 'span', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'button', 'input', 'label', 'strong', 'em', 'br', 'hr', 'text'] as const;
-export const cssProperties = ['display', 'position', 'top', 'right', 'bottom', 'left', 'width', 'height', 'min-width', 'max-width', 'min-height', 'max-height', 'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'gap', 'row-gap', 'column-gap', 'flex', 'flex-direction', 'flex-wrap', 'align-items', 'justify-content', 'grid-template-columns', 'grid-template-rows', 'grid-column', 'grid-row', 'order', 'color', 'background-color', 'border', 'border-color', 'border-width', 'border-style', 'border-radius', 'font-size', 'font-weight', 'font-family', 'line-height', 'letter-spacing', 'text-align', 'text-decoration', 'white-space', 'overflow', 'overflow-x', 'overflow-y', 'box-sizing', 'box-shadow', 'opacity', 'cursor'] as const;
+export const cssProperties = ['display', 'position', 'top', 'right', 'bottom', 'left', 'width', 'height', 'min-width', 'max-width', 'min-height', 'max-height', 'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'gap', 'row-gap', 'column-gap', 'flex', 'flex-direction', 'flex-wrap', 'align-items', 'justify-content', 'grid-template-columns', 'grid-template-rows', 'grid-column', 'grid-row', 'order', 'color', 'background-color', 'border', 'border-color', 'border-width', 'border-style', 'border-radius', 'font-size', 'font-weight', 'font-family', 'line-height', 'letter-spacing', 'text-align', 'text-decoration', 'white-space', 'overflow', 'overflow-x', 'overflow-y', 'box-sizing', 'box-shadow', 'opacity', 'cursor', 'translate'] as const;
+/** Tags that cannot own child nodes (void elements and text). */
+export const childlessWebTags: readonly (typeof webTags)[number][] = ['input', 'br', 'hr', 'text'];
+/** A node may have at most this many ancestors. */
+export const MAX_WEB_DOM_DEPTH = 32;
+/** Device rules map to these media queries (PF-WEB-3). */
+export const WEB_MOBILE_MAX_WIDTH = 767;
+export const WEB_DESKTOP_MIN_WIDTH = 768;
 export const classNameSchema = z.string().regex(/^[A-Za-z_][A-Za-z0-9_-]*$/).max(100);
 const identifier = z.string().min(1).max(120);
 const cssValue = z.string().trim().min(1).max(300).refine(value => !/[;{}<>\\@]/.test(value) && !/url\s*\(|expression\s*\(|\/\*/i.test(value), 'unsafe_css_value');
@@ -29,7 +36,7 @@ export const webSceneSchema = z.object({
       const seen = new Set([node.id]); let parent = node.parentId;
       while (parent) {
         const ancestor = nodes.get(parent);
-        if (!ancestor || seen.has(parent) || seen.size > 32 || ['input', 'br', 'hr', 'text'].includes(ancestor.tag)) {
+        if (!ancestor || seen.has(parent) || seen.size > MAX_WEB_DOM_DEPTH || childlessWebTags.includes(ancestor.tag)) {
           ctx.addIssue({ code: 'custom', message: 'invalid_dom_tree' }); break;
         }
         seen.add(parent); parent = ancestor.parentId;
