@@ -63,7 +63,7 @@ export interface Project {
   id: string;
   name: string;
   description: string | null;
-  org_id: string;
+  orgId: string;
   owner_user_id: string;
   platforms: string[];
   default_layout_id: string | null;
@@ -239,6 +239,8 @@ export const api = {
 
   // projects
   listProjects: () => req<{ items: Project[] }>('/api/projects'),
+  listProjectIndex: (filters: { query: string; team: string }, offset: number, signal?: AbortSignal) =>
+    req<{ items: Project[]; total: number; teams: string[] }>(`/api/projects?${new URLSearchParams({ q: filters.query, team: filters.team, offset: String(offset), limit: '50' })}`, { signal }),
   getProject: (pid: string) => req<{ project: Project }>(`/api/projects/${pid}`),
   createProject: (body: { name: string; description?: string; org_id: string; platforms?: string[] }) =>
     req<{ project: Project }>('/api/projects', { method: 'POST', body: JSON.stringify(body) }),

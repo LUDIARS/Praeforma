@@ -33,6 +33,7 @@ export type AnalysisStatus = 'running' | 'completed' | 'error';
 export type GeniusPublishStatus = 'not_requested' | 'publishing' | 'published' | 'failed';
 
 export interface CanvasFrame {
+  scene_ref?: { layout_id: string; frame_id: string; revision?: number };
   id: string;
   name: string;
   description: string;
@@ -85,6 +86,9 @@ const uxScenariosPg = pgTable(
     projectId: text('project_id').notNull().references(() => projects.id),
     name: text('name').notNull(),
     actor: text('actor').notNull(),
+    category: text('category').$type<'gameplay' | 'expression'>().notNull().default('gameplay'),
+    experience: text('experience').notNull().default(''),
+    visualDirection: text('visual_direction').notNull().default(''),
     context: text('context').notNull().default(''),
     goal: text('goal').notNull(),
     successOutcome: text('success_outcome').notNull(),

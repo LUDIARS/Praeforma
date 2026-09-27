@@ -2,6 +2,9 @@
 import { parseAdditionalOrigins } from './lib/local-access.ts';
 
 export interface AppConfig {
+  actioUrl: string | null;
+  actioClientId: string | null;
+  actioClientSecret: string | null;
   port: number;
   databaseUrl: string;
   cernereBaseUrl: string;
@@ -31,6 +34,9 @@ export interface AppConfig {
 
 export function loadConfig(): AppConfig {
   return {
+    actioUrl: process.env.PRAEFORMA_ACTIO_URL ?? null,
+    actioClientId: process.env.PRAEFORMA_ACTIO_CLIENT_ID ?? null,
+    actioClientSecret: process.env.PRAEFORMA_ACTIO_CLIENT_SECRET ?? null,
     port: Number(process.env.PRAEFORMA_PORT ?? 8889),
     databaseUrl:
       process.env.PRAEFORMA_DATABASE_URL ??

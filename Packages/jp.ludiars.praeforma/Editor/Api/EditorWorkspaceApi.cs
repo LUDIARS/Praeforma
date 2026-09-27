@@ -23,6 +23,10 @@ namespace Ludiars.Praeforma.Editor
 
         public Task<EditorSpecPage> Specifications(string projectId, int offset, CancellationToken cancel)
             => Send<EditorSpecPage>(Project(projectId) + "/specs?limit=50&offset=" + offset, null, cancel);
+        public Task<EditorScenePage> Scenes(string projectId, CancellationToken cancel)
+            => Send<EditorScenePage>(Project(projectId) + "/layouts", null, cancel);
+        public Task<EditorOverlayDocument> ReviewOverlay(string projectId, string layoutId, CancellationToken cancel)
+            => Send<EditorOverlayDocument>(Project(projectId) + "/review-overlay?format=tela&layout_id=" + Uri.EscapeDataString(layoutId), null, cancel);
         public Task<EditorFragmentResponse> SaveInstruction(string projectId, EditorInstructionRequest request, CancellationToken cancel)
             => Send<EditorFragmentResponse>(Project(projectId) + "/spec-fragments", request, cancel);
         private static string Project(string id)

@@ -22,14 +22,17 @@ export async function createScenarioWithCanvas(
     const now = Date.now();
     sqlite.transaction(() => {
       sqlite.prepare(`INSERT INTO ux_scenarios
-        (id, project_id, name, actor, context, goal, success_outcome, source_project_key,
+        (id, project_id, name, actor, category, experience, visual_direction, context, goal, success_outcome, source_project_key,
          source_refs, status, revision, created_by, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', 1, ?, ?, ?)`)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', 1, ?, ?, ?)`)
         .run(
           scenario.id,
           scenario.projectId,
           scenario.name,
           scenario.actor,
+          scenario.category ?? 'gameplay',
+          scenario.experience ?? '',
+          scenario.visualDirection ?? '',
           scenario.context ?? '',
           scenario.goal,
           scenario.successOutcome,

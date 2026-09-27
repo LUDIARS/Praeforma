@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { sceneApi } from '../lib/scene-editor-api.ts';
 import { SceneWorkspace } from '../components/scene-editor/SceneWorkspace.tsx';
 import { LayoutEditorPage } from './LayoutEditorPage.tsx';
+import { ReviewOverlayLauncher } from '../components/ReviewOverlayLauncher.tsx';
 import '../styles/ux-design.css';
 import '../styles/scene-editor.css';
 
@@ -11,7 +12,7 @@ export function SceneEditorPage():React.ReactElement {
   const {pid,lid}=useParams();const [search]=useSearchParams();
   const query=useQuery({queryKey:['scene-editor',pid,lid],queryFn:()=>sceneApi.get(pid!,lid!),enabled:!!pid&&!!lid&&search.get('editor')!=='legacy',refetchOnWindowFocus:false});
   if(search.get('editor')==='legacy')return <><Link to="?">統合シーンエディタに戻る</Link><LayoutEditorPage/></>;
-  return <><div className="scene-heading"><h2>{query.data?.name??'シーン'} — シーンエディタ</h2><Link to="?editor=legacy">旧2D・3Dエディタ</Link></div>
+  return <><div className="scene-heading"><h2>{query.data?.name??'シーン'} — シーンエディタ</h2><Link to="?editor=legacy">旧2D・3Dエディタ</Link></div><p>各画面の基本構成を定義します。体験に応じた追加パーツと画面遷移はシナリオで定義します。</p>{pid && lid ? <ReviewOverlayLauncher projectId={pid} layoutId={lid} /> : null}
     {query.isPending?<p>読み込み中…</p>:query.error?<p role="alert">シーンを読み込めませんでした。</p>:query.data&&pid&&lid?<SceneWorkspace key={`${pid}/${lid}`} pid={pid} lid={lid} name={query.data.name} initial={query.data.document} canEdit={query.data.canEdit}/>:null}
   </>;
 }

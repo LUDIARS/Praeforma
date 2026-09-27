@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { scenarioCategorySchema } from '../../../shared/scenario-experience.ts';
 export { canvasSchema } from '../../../shared/design-canvas.ts';
 import { AppError } from '../lib/errors.ts';
 
@@ -7,6 +8,9 @@ const stringList = z.array(z.string().trim().min(1).max(2000)).max(100).default(
 export const createScenarioSchema = z.object({
   name: z.string().trim().min(1).max(200),
   actor: z.string().trim().min(1).max(500),
+  category: scenarioCategorySchema.default('gameplay'),
+  experience: z.string().trim().min(1).max(4000),
+  visualDirection: z.string().max(16000).default(''),
   context: z.string().max(4000).default(''),
   goal: z.string().trim().min(1).max(4000),
   successOutcome: z.string().trim().min(1).max(4000),

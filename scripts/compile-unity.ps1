@@ -18,6 +18,6 @@ Compile 'Praeforma.Runtime' 'Packages/jp.ludiars.praeforma/Runtime' @()
 Compile 'Praeforma.Editor' 'Packages/jp.ludiars.praeforma/Editor' @('/r:build-unity/Praeforma.Runtime.dll')
 $nunit = Join-Path $EditorData 'Resources/PackageManager/BuiltInPackages/com.unity.ext.nunit/net40/unity-custom/nunit.framework.dll'
 Compile 'Praeforma.Editor.Tests' 'Packages/jp.ludiars.praeforma/Tests/Editor' @('/r:build-unity/Praeforma.Editor.dll', ('/r:' + $nunit))
-if ($TelaAssembly) {
-    Compile 'Praeforma.Tela.Editor' 'Packages/jp.ludiars.praeforma.tela/Editor' @('/r:build-unity/Praeforma.Editor.dll', ('/r:' + $TelaAssembly))
-}
+$adapterRefs = @('/r:build-unity/Praeforma.Editor.dll')
+if ($TelaAssembly) { $adapterRefs += '/r:' + $TelaAssembly }
+Compile 'Praeforma.Tela.Editor' 'Packages/jp.ludiars.praeforma.tela/Editor' $adapterRefs

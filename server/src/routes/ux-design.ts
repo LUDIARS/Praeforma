@@ -49,6 +49,8 @@ import {
   updateUseCaseSchema,
 } from './ux-design-contracts.ts';
 import { currentCanvas, readWorkspace, scenarioInProject } from './ux-design-workspace.ts';
+import { scenarioExperienceIssues } from '../../../shared/scenario-experience.ts';
+import { assertScenarioSceneReferences } from '../lib/scenario-scene-references.ts';
 
 const ALL_ROLES: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer'];
 const EDIT_ROLES: readonly ProjectRole[] = ['owner', 'planner', 'designer'];
@@ -119,12 +121,17 @@ export function makeUxDesignRouter(options: {
     if (!getDbState().ok) throw AppError.internal('db_unavailable');
     const pid = c.req.param('pid')!;
     const data = parse(createScenarioSchema, await c.req.json().catch(() => null));
+    const issues = scenarioExperienceIssues(data);
+    if (issues[0]) throw AppError.badRequest(issues[0]);
     const actor = getIdentity(c);
     const id = ulid();
     await createScenarioWithCanvas({
       id,
       projectId: pid,
       name: data.name,
+      category: data.category,
+      experience: data.experience,
+      visualDirection: data.visualDirection,
       actor: data.actor,
       context: data.context,
       goal: data.goal,
@@ -147,9 +154,11 @@ export function makeUxDesignRouter(options: {
     if (!getDbState().ok) throw AppError.internal('db_unavailable');
     const pid = c.req.param('pid')!;
     const scenarioId = c.req.param('scenarioId')!;
-    await scenarioInProject(pid, scenarioId);
+    const scenario = await scenarioInProject(pid, scenarioId);
     const data = parse(updateScenarioSchema, await c.req.json().catch(() => null));
     const { expectedRevision, ...fields } = data;
+    const issues = scenarioExperienceIssues({ ...scenario, ...fields });
+    if (issues[0]) throw AppError.badRequest(issues[0]);
     // status='reviewed' は 「人間がレビューした」 と主張する唯一の遷移なので、
     // 他のレビュー操作 (analysis / decision / evidence) と同じ REVIEW_ROLES に揃える。
     // 本文の編集自体は EDIT_ROLES のままで、 status 欄だけを追加で絞る。
@@ -202,6 +211,7 @@ export function makeUxDesignRouter(options: {
     const scenarioId = c.req.param('scenarioId')!;
     await scenarioInProject(pid, scenarioId);
     const data = parse(canvasSchema, await c.req.json().catch(() => null));
+    await assertScenarioSceneReferences(pid, data.frames);
     const [updated] = await getDb().update(uxCanvases).set({
       frames: data.frames as CanvasFrame[],
       elements: data.elements as CanvasElement[],

@@ -1,9 +1,10 @@
 import { req } from './api.ts';
+import type { ScenarioExperience } from '../../../shared/scenario-experience.ts';
 
 export type EvidenceStatus = 'unverified' | 'candidate' | 'verified' | 'stale' | 'failed';
 export type ProposalDecisionAction = 'accept' | 'reject' | 'revise' | 'split' | 'merge';
 
-export interface UxScenario {
+export interface UxScenario extends ScenarioExperience {
   id: string;
   projectId: string;
   name: string;
@@ -152,6 +153,7 @@ export interface VerificationEvidence {
 }
 
 export interface CanvasFrame {
+  scene_ref?: { layout_id: string; frame_id: string; revision?: number };
   device?: 'unspecified' | 'desktop' | 'mobile';
   id: string;
   name: string;
@@ -223,9 +225,9 @@ export const uxDesignApi = {
   listScenarios: (projectId: string) => req<{ items: UxScenario[] }>(`${root(projectId)}/scenarios`),
   createScenario: (
     projectId: string,
-    body: Pick<UxScenario, 'name' | 'actor' | 'context' | 'goal' | 'successOutcome' | 'sourceProjectKey' | 'sourceRefs'>,
+    body: Pick<UxScenario, 'name' | 'actor' | 'context' | 'goal' | 'successOutcome' | 'sourceProjectKey' | 'sourceRefs'> & ScenarioExperience,
   ) => req<{ scenario: UxScenario }>(`${root(projectId)}/scenarios`, { method: 'POST', body: JSON.stringify(body) }),
-  updateScenario: (projectId: string, scenarioId: string, body: Partial<Pick<UxScenario, 'name' | 'actor' | 'context' | 'goal' | 'successOutcome' | 'sourceProjectKey' | 'sourceRefs' | 'status'>> & { expectedRevision: number }) =>
+  updateScenario: (projectId: string, scenarioId: string, body: Partial<Pick<UxScenario, 'name' | 'actor' | 'context' | 'goal' | 'successOutcome' | 'sourceProjectKey' | 'sourceRefs' | 'status'> & ScenarioExperience> & { expectedRevision: number }) =>
     req<{ scenario: UxScenario }>(`${root(projectId)}/scenarios/${scenarioId}`, { method: 'PATCH', body: JSON.stringify(body) }),
   getWorkspace: (projectId: string, scenarioId: string) =>
     req<{ workspace: UxWorkspace }>(`${root(projectId)}/scenarios/${scenarioId}/workspace`),

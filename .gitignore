@@ -13,3 +13,4 @@ Thumbs.db
 # Anatomia のローカル状態 (ドメイン定義の正本は spec/domains/)
 .anatomia/
 build-unity/
+.verification/

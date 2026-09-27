@@ -1,4 +1,5 @@
 import React from 'react';
+import '../styles/scenario-experience.css';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type ApiError } from '../lib/api.ts';
@@ -21,6 +22,10 @@ import { ImageImportPanel } from '../components/ux-design/ImageImportPanel.tsx';
 import { UseCasePanel } from '../components/ux-design/UseCasePanel.tsx';
 import { ScenarioFields, type ScenarioDraft } from '../components/ux-design/ScenarioFields.tsx';
 import { ScenarioSummary } from '../components/ux-design/ScenarioSummary.tsx';
+import { ReviewOverlayLauncher } from '../components/ReviewOverlayLauncher.tsx';
+import { ScenarioScenes } from '../components/ux-design/ScenarioScenes.tsx';
+import { ScenarioBaseFrame } from '../components/ux-design/ScenarioBaseFrame.tsx';
+import { scenarioCategoryLabels } from '../../../shared/scenario-experience.ts';
 import { useCanvasHistory } from '../components/ux-design/useCanvasHistory.ts';
 
 type WorkspaceTab = 'definition' | 'canvas' | 'boundaries' | 'evidence';
@@ -44,6 +49,7 @@ function emptyScenarioDraft(todoRef?: string | null, todoName?: string | null): 
   return {
     name: todoRef ? (todoName ?? '').slice(0, 200) : '',
     actor: '', context: '', goal: '', successOutcome: '', sourceProjectKey: '',
+    category: 'gameplay', experience: '', visualDirection: '',
     sourceRefs: todoRef ? [todoRef] : [],
   };
 }
@@ -173,15 +179,16 @@ function WorkspaceEditor({ projectId, workspace, onReload }: WorkspaceEditorProp
   return (
     <div className="ux-workspace-main">
       <ScenarioSummary scenario={workspace.scenario} isSaving={updateScenarioM.isPending} onUpdate={(fields) => updateScenarioM.mutate(fields)} />
-      <UseCasePanel useCases={workspace.useCases} isSaving={createUseCaseM.isPending || updateUseCaseM.isPending} onCreate={(draft) => createUseCaseM.mutate(draft)} onUpdate={(useCase, draft) => updateUseCaseM.mutate({ useCase, draft })} />
+      {workspace.scenario.category === 'gameplay' ? <UseCasePanel useCases={workspace.useCases} isSaving={createUseCaseM.isPending || updateUseCaseM.isPending} onCreate={(draft) => createUseCaseM.mutate(draft)} onUpdate={(useCase, draft) => updateUseCaseM.mutate({ useCase, draft })} /> : null}
       <nav className="ux-workspace-tabs" aria-label="設計ビュー">
-        {([['definition', 'UX定義'], ['canvas', '画面・遷移'], ['boundaries', '境界レビュー'], ['evidence', '実装・検証']] as Array<[WorkspaceTab, string]>).map(([value, label]) => <button key={value} type="button" className={tab === value ? 'active' : ''} onClick={() => setTab(value)}>{label}</button>)}
+        {([['definition', '体験の定義'], ['canvas', workspace.scenario.category === 'expression' ? '対象シーン・追加パーツ' : '画面・遷移・追加パーツ'], ['boundaries', '境界レビュー'], ['evidence', '実装・検証']] as Array<[WorkspaceTab, string]>).map(([value, label]) => <button key={value} type="button" className={tab === value ? 'active' : ''} onClick={() => setTab(value)}>{label}</button>)}
       </nav>
       {message ? <div className={`ux-message ${message.kind}`} role="status">{message.text}{message.kind === 'error' ? <button type="button" onClick={onReload}>最新状態を取得</button> : null}{workspace.canvas.revision !== history.canvas.revision ? <><button type="button" onClick={() => { history.reset(workspace.canvas); setDirty(false); localStorage.removeItem(storageKey); setMessage({ kind: 'ok', text: 'サーバ版を採用しました' }); }}>サーバ版を採用</button><button type="button" onClick={() => { history.reset({ ...history.canvas, revision: workspace.canvas.revision }); setDirty(true); setMessage({ kind: 'ok', text: 'ローカル下書きを最新 revision に載せ替えました。内容を確認して保存してください。' }); }}>ローカル案を載せ替え</button></> : null}</div> : null}
-      {tab === 'definition' ? <section className="ux-definition-guide"><h3>UX定義</h3><p>上のシナリオ欄と use case 欄で、誰が・どんな状況で・何を達成し・どうなれば成功かを文章で定義します。画面や遷移は「画面・遷移」タブで扱います。</p></section> : null}
+      {tab === 'definition' ? <section className="ux-definition-guide"><h3>やりたいことを流れに沿って書く</h3><p>操作することも、見て感じることも、届けたいユーザー体験につなげます。ゲームプレイは画面の遷移を、表現はシーン全体のグラフィックの指示書を定義します。基本構成はシーンで、追加パーツはこのシナリオで編集します。</p></section> : null}
       {tab === 'canvas' ? <>
+        <ScenarioScenes projectId={projectId} canvas={history.canvas} disabled={saveCanvasM.isPending || applyImageM.isPending} onChange={next => { history.replace(next); setDirty(true); }} />
         <ImageImportPanel result={imageResult} isAnalyzing={imageM.isPending} isApplying={applyImageM.isPending} isDisabled={isDirty} onAnalyze={(file) => imageM.mutate(file)} onApply={(ids) => applyImageM.mutate(ids)} />
-        <DesignCanvas canvas={history.canvas} onPreview={history.preview} onCancelPreview={history.cancelPreview} onChange={(next) => { history.replace(next); setDirty(true); }} onUndo={history.undo} onRedo={history.redo} canUndo={history.canUndo} canRedo={history.canRedo} onSave={() => saveCanvasM.mutate(history.canvas)} isSaving={saveCanvasM.isPending} isReadOnly={applyImageM.isPending} />
+        <DesignCanvas canvas={history.canvas} allowTransitions={workspace.scenario.category === 'gameplay'} renderFrameBackground={frame => <ScenarioBaseFrame projectId={projectId} frame={frame} />} onPreview={history.preview} onCancelPreview={history.cancelPreview} onChange={(next) => { history.replace(next); setDirty(true); }} onUndo={history.undo} onRedo={history.redo} canUndo={history.canUndo} canRedo={history.canRedo} onSave={() => saveCanvasM.mutate(history.canvas)} isSaving={saveCanvasM.isPending} isReadOnly={applyImageM.isPending} />
       </> : null}
       {tab === 'boundaries' ? <BoundaryPanel proposals={workspace.proposals} decisions={workspace.decisions} analysis={workspace.latestAnalysis} useCases={workspace.useCases} isAnalyzing={analysisM.isPending} isDeciding={decisionM.isPending} onAnalyze={(note, visibility) => analysisM.mutate({ note, visibility })} onDecide={(proposal, action, rationale, boundaries) => decisionM.mutate({ proposal, action, rationale, boundaries })} onFetchAnatomia={(proposal, query) => anatomiaEvidenceM.mutate({ proposal, query })} isFetchingAnatomia={anatomiaEvidenceM.isPending} /> : null}
       {tab === 'evidence' ? <EvidencePanel scenarioId={workspace.scenario.id} useCases={workspace.useCases} evidence={workspace.evidence} isSaving={evidenceM.isPending} onCreate={(draft) => evidenceM.mutate(draft)} /> : null}
@@ -212,7 +219,7 @@ export function UxCoreDesignPage(): React.ReactElement {
 
   /** 入力途中の新規UXは黙って捨てない (旧TODO一覧の確認を選択操作でも維持する)。 */
   function selectExistingScenario(id: string): void {
-    const hasInput = showCreate && Object.values(scenarioDraft).some((value) => typeof value === 'string' && value.length > 0);
+    const hasInput = showCreate && Object.entries(scenarioDraft).some(([key, value]) => key !== 'category' && typeof value === 'string' && value.length > 0);
     if (hasInput && !window.confirm('入力中の新規UXを破棄して、このシナリオを開きますか？')) return;
     setShowCreate(false);
     setScenarioDraft(emptyScenarioDraft());
@@ -233,14 +240,15 @@ export function UxCoreDesignPage(): React.ReactElement {
 
   return (
     <div className="ux-design-page">
-      <header className="ux-page-header"><div><Link to={`/projects/${pid}`}>← {projectName}</Link><h1>シナリオ</h1><p>インゲームの詳しい流れを、シナリオごとに設計します。</p></div>{workspaceQ.data?.workspace.scenario.sourceProjectKey ? <span className="ux-project-chip">Source: {workspaceQ.data.workspace.scenario.sourceProjectKey}</span> : null}</header>
+      <ReviewOverlayLauncher projectId={pid} />
+      <header className="ux-page-header"><div><Link to={`/projects/${pid}`}>← {projectName}</Link><h1>シナリオ</h1><p>やりたいことを流れに沿って書く。操作や表現を、ユーザー体験につなげます。</p></div>{workspaceQ.data?.workspace.scenario.sourceProjectKey ? <span className="ux-project-chip">Source: {workspaceQ.data.workspace.scenario.sourceProjectKey}</span> : null}</header>
       <div className="ux-design-shell">
         <section className="ux-scenario-selector">
           <div className="ux-section-heading"><label className="simple-field" htmlFor="ux-scenario-select"><span>シナリオ</span>
             <select id="ux-scenario-select" value={activeId ?? ''} disabled={!scenariosQ.isSuccess || scenariosQ.data.items.length === 0}
               onChange={(event) => selectExistingScenario(event.target.value)}>
               <option value="" disabled>シナリオを選択</option>
-              {scenariosQ.data?.items.map((scenario: UxScenario) => <option key={scenario.id} value={scenario.id}>{scenario.name}</option>)}
+              {scenariosQ.data?.items.map((scenario: UxScenario) => <option key={scenario.id} value={scenario.id}>[{scenarioCategoryLabels[scenario.category]}] {scenario.name}</option>)}
             </select>
           </label><button type="button" className="ghost" onClick={() => setShowCreate((value) => !value)}>新しいUX</button></div>
           {showCreate ? <form className="foundation-form ux-create-scenario" onSubmit={(event) => { event.preventDefault(); createScenarioM.mutate(); }}>

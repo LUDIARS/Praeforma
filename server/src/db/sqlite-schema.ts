@@ -311,6 +311,9 @@ export const uxScenarios = sqliteTable('ux_scenarios', {
   projectId: text('project_id').notNull(),
   name: text('name').notNull(),
   actor: text('actor').notNull(),
+  category: text('category').$type<'gameplay' | 'expression'>().notNull().default('gameplay'),
+  experience: text('experience').notNull().default(''),
+  visualDirection: text('visual_direction').notNull().default(''),
   context: text('context').notNull().default(''),
   goal: text('goal').notNull(),
   successOutcome: text('success_outcome').notNull(),
@@ -473,6 +476,9 @@ export const sqliteTables = {
 /** 起動時に流す DDL (CREATE TABLE IF NOT EXISTS + 必要な UNIQUE INDEX)。 FK は張らない (ローカル単一利用)。 */
 /** 既存 DB へ後から足す列 (重複時はエラーになるので connection 側で個別に try する)。 */
 export const SQLITE_ALTERS: string[] = [
+  `ALTER TABLE ux_scenarios ADD COLUMN category TEXT NOT NULL DEFAULT 'gameplay'`,
+  `ALTER TABLE ux_scenarios ADD COLUMN experience TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE ux_scenarios ADD COLUMN visual_direction TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE objects ADD COLUMN description TEXT`,
   `ALTER TABLE projects ADD COLUMN ux_experience TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE projects ADD COLUMN ux_design TEXT NOT NULL DEFAULT ''`,

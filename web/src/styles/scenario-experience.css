@@ -1,0 +1,4 @@
+.ux-base-scene { position: absolute; inset: 0; pointer-events: none; opacity: .55; }
+.ux-base-scene .ux-element { pointer-events: none; }
+.ux-scenario-summary p { overflow-wrap: anywhere; white-space: pre-wrap; }
+.ux-scenario-fields > p { grid-column: 1 / -1; }

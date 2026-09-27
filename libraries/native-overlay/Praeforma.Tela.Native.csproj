@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>netstandard2.1</TargetFramework><EnableDefaultCompileItems>false</EnableDefaultCompileItems><LangVersion>8.0</LangVersion></PropertyGroup>
+  <ItemGroup><Compile Include="../../Packages/jp.ludiars.praeforma.tela/Editor/Native/*.cs" /></ItemGroup>
+</Project>

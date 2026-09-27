@@ -20,6 +20,7 @@ import { requireAuth, getIdentity } from '../middleware/require-auth.ts';
 import { requireRole } from '../middleware/require-role.ts';
 import { AppError } from '../lib/errors.ts';
 import { parsePagination } from '../lib/pagination.ts';
+import { filterProjects } from '../../../shared/project-index.ts';
 import { recordAudit } from '../lib/audit.ts';
 
 const ALL_ROLES: readonly ProjectRole[] = [
@@ -70,16 +71,16 @@ export function makeProjectRouter(): Hono {
       .where(eq(projectMembers.userId, id.userId));
     const ids = memberRows.map((r) => r.projectId);
     if (ids.length === 0) {
-      return c.json({ items: [], total: 0, limit: page.limit, offset: page.offset });
+      return c.json({ items: [], total: 0, teams: [], limit: page.limit, offset: page.offset });
     }
     const items = await getDb()
       .select()
       .from(projects)
       .where(and(inArray(projects.id, ids), isNull(projects.deletedAt)))
-      .orderBy(desc(projects.updatedAt))
-      .limit(page.limit)
-      .offset(page.offset);
-    return c.json({ items, total: ids.length, limit: page.limit, offset: page.offset });
+      .orderBy(desc(projects.updatedAt), desc(projects.id));
+    const filtered = filterProjects(items, { query: c.req.query('q') ?? '', team: c.req.query('team') ?? '' });
+    const teams = [...new Set(items.map(project => project.orgId))].sort();
+    return c.json({ items: filtered.slice(page.offset, page.offset + page.limit), total: filtered.length, teams, limit: page.limit, offset: page.offset });
   });
 
   // single get

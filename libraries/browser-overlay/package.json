@@ -1,0 +1,8 @@
+{
+  "name": "@ludiars/praeforma-overlay",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "exports": { ".": { "types": "./index.d.mts", "import": "./index.mjs" } },
+  "files": ["*.mjs", "*.d.mts", "README.md"]
+}
