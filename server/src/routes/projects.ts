@@ -20,7 +20,9 @@ import { requireAuth, getIdentity } from '../middleware/require-auth.ts';
 import { requireRole } from '../middleware/require-role.ts';
 import { AppError } from '../lib/errors.ts';
 import { parsePagination } from '../lib/pagination.ts';
-import { filterProjects } from '../../../shared/project-index.ts';
+import { filterProjects, sortProjectsByActivity } from '../../../shared/project-index.ts';
+import { LOCAL_MODE } from '../db/mode.ts';
+import { defaultReposRoot, ProjectGitActivity } from '../lib/project-git-activity.ts';
 import { recordAudit } from '../lib/audit.ts';
 
 const ALL_ROLES: readonly ProjectRole[] = [
@@ -57,6 +59,10 @@ const updateMemberSchema = z.object({
   role: z.enum(['owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer']),
 });
 
+/** リポジトリの置き場所を見るのはローカル動作か、置き場所を明示したときだけ。 */
+const gitActivity = LOCAL_MODE || process.env.PRAEFORMA_GIT_REPOS_ROOT?.trim()
+  ? new ProjectGitActivity(defaultReposRoot()) : null;
+
 export function makeProjectRouter(): Hono {
   const r = new Hono();
 
@@ -73,11 +79,14 @@ export function makeProjectRouter(): Hono {
     if (ids.length === 0) {
       return c.json({ items: [], total: 0, teams: [], limit: page.limit, offset: page.offset });
     }
-    const items = await getDb()
+    const rows = await getDb()
       .select()
       .from(projects)
       .where(and(inArray(projects.id, ids), isNull(projects.deletedAt)))
       .orderBy(desc(projects.updatedAt), desc(projects.id));
+    // 最近 git 更新があったプロジェクトを頭に (リポジトリが無ければ Pf 上の更新順)。
+    const activity = gitActivity ? await gitActivity.lookup(rows) : new Map<string, string | null>();
+    const items = sortProjectsByActivity(rows.map((row) => ({ ...row, gitUpdatedAt: activity.get(row.id) ?? null })));
     const filtered = filterProjects(items, { query: c.req.query('q') ?? '', team: c.req.query('team') ?? '' });
     const teams = [...new Set(items.map(project => project.orgId))].sort();
     return c.json({ items: filtered.slice(page.offset, page.offset + page.limit), total: filtered.length, teams, limit: page.limit, offset: page.offset });

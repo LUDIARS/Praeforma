@@ -70,6 +70,8 @@ export interface Project {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  /** 最新の git コミット時刻 (リポジトリを見られないプロジェクトは null)。 */
+  gitUpdatedAt?: string | null;
 }
 
 export interface ProjectMember {
@@ -238,7 +240,15 @@ export const api = {
   me: () => req<MeResponse>('/api/auth/me'),
 
   // projects
-  listProjects: () => req<{ items: Project[] }>('/api/projects'),
+  /** 見られる全プロジェクト (一覧 API のページを最後までたどる)。 */
+  listProjects: async (): Promise<{ items: Project[] }> => {
+    const items: Project[] = [];
+    for (;;) {
+      const page = await req<{ items: Project[]; total: number }>(`/api/projects?limit=200&offset=${items.length}`);
+      items.push(...page.items);
+      if (!page.items.length || items.length >= page.total) return { items };
+    }
+  },
   listProjectIndex: (filters: { query: string; team: string }, offset: number, signal?: AbortSignal) =>
     req<{ items: Project[]; total: number; teams: string[] }>(`/api/projects?${new URLSearchParams({ q: filters.query, team: filters.team, offset: String(offset), limit: '50' })}`, { signal }),
   getProject: (pid: string) => req<{ project: Project }>(`/api/projects/${pid}`),

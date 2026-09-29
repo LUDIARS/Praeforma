@@ -23,3 +23,13 @@ export function parseProjectFilters(raw: string | null): SavedProjectFilters {
 export function serializeProjectFilters(value: SavedProjectFilters): string {
   return JSON.stringify(value.remember ? value : { remember: false });
 }
+export interface ProjectActivityRow { id: string; updatedAt: string | Date; gitUpdatedAt: string | null }
+const time = (value: string | Date | null): number => (value ? new Date(value).getTime() || 0 : 0);
+/**
+ * Recent git commits first (2026-09-29 neco). Projects without a readable repository follow,
+ * ordered by their own update time, so the list order stays stable between visits.
+ */
+export function sortProjectsByActivity<T extends ProjectActivityRow>(projects: readonly T[]): T[] {
+  return [...projects].sort((a, b) => time(b.gitUpdatedAt) - time(a.gitUpdatedAt)
+    || time(b.updatedAt) - time(a.updatedAt) || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0));
+}
