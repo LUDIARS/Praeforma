@@ -4,22 +4,22 @@
 // 必要とする場合がある (PRAEFORMA_CLAUDE_BIN で wrapper を差せる)。 失敗時は無言 fallback
 // せず明示エラー (= mock に落とさない)。
 
-import { spawn } from 'node:child_process';
+import { spawnOneShot as spawn, resolveModel } from '@ludiars/one-shot';
 import { AppError } from './errors.ts';
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 
 /**
  * `--model` を固定するためのプロセス全体設定 (memory: claude CLI を spawn する機能は
- * --model を固定する。 既定任せは上限切れの巻き添えで即 exit する)。 null なら付けない。
+ * --model を固定する。 既定任せは上限切れの巻き添えで即 exit する)。 null も共有ライブラリの既定へ解決する。
  */
 let pinnedModel: string | null = null;
 export function setClaudeModel(model: string | null): void {
   pinnedModel = model;
 }
 
-export function getClaudeModel(): string | null {
-  return pinnedModel;
+export function getClaudeModel(): string {
+  return resolveModel(pinnedModel ?? undefined, 'claude');
 }
 
 /** claude CLI を non-interactive (`-p`) で叩き、 stdout を返す。 プロンプトは stdin 経由。 */
@@ -31,7 +31,7 @@ export function runClaude(
   return new Promise((resolve, reject) => {
     let child;
     try {
-      const args = pinnedModel ? ['-p', '--model', pinnedModel] : ['-p'];
+      const args = ['-p', '--model', getClaudeModel()];
       child = spawn(claudeBin, args, { stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (e) {
       reject(new AppError('llm_spawn_failed', 503, { reason: String(e) }));

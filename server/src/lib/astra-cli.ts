@@ -3,14 +3,14 @@
 // - 画像は一時フォルダへ書いて --image で渡し、最終応答は --output-schema の形で -o のファイルに受ける。
 // - 一時フォルダは成功・失敗・時間切れのどの経路でも消す。
 // - Codex CLI が無いときは 503 で止める。別のモデルへ黙って切り替えない (RULE_CODE §7.1)。
-import { spawn } from 'node:child_process';
+import { spawnOneShot as spawn, resolveModel } from '@ludiars/one-shot';
 import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { AppError } from './errors.ts';
 
-export const ASTRA_MODEL = 'gpt-6-astra';
+export const ASTRA_MODEL = resolveModel('astra', 'codex');
 export type AstraEffort = 'medium' | 'high' | 'xhigh';
 
 export interface AstraRequest {

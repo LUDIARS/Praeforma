@@ -1,12 +1,13 @@
-import { spawn } from 'node:child_process';
+import { spawnOneShot as spawn } from '@ludiars/one-shot';
 import { getClaudeModel } from './llm.ts';
 import { AppError } from './errors.ts';
+import { fileURLToPath } from 'node:url';
 export function runRestrictedWriter(binary: string, prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const model = getClaudeModel();
     const child = spawn(binary, ['-p', '--tools', '', '--disable-slash-commands', '--no-session-persistence',
       '--setting-sources', '', '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', ...(model ? ['--model', model] : [])], {
-      shell: false, windowsHide: true, cwd: new URL('../../../', import.meta.url), stdio: ['pipe', 'pipe', 'pipe'],
+      shell: false, windowsHide: true, cwd: fileURLToPath(new URL('../../../', import.meta.url)), stdio: ['pipe', 'pipe', 'pipe'],
     });
     let settled = false;
     let out = '';

@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawnOneShot as spawn } from '@ludiars/one-shot';
 import { AppError } from './errors.ts';
 import { getClaudeModel } from './llm.ts';
 
