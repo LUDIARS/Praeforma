@@ -22,6 +22,7 @@
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { Server as HttpServer } from 'node:http';
 import { ulid } from 'ulid';
+import { eq } from 'drizzle-orm';
 import { getDb, getDbState } from '../db/connection.ts';
 import { editSessions, editOps } from '../db/schema/collab.ts';
 import { verifyPaseto, type AuthIdentity } from '../auth/paseto.ts';
@@ -235,7 +236,7 @@ export function attachCollab(httpServer: HttpServer): void {
           await getDb()
             .update(editSessions)
             .set({ disconnectedAt: new Date() })
-            .where(eqEditSession(peer.sessionId));
+            .where(eq(editSessions.id, peer.sessionId));
         } catch (e) {
           console.warn('[collab] edit_session close update failed:', (e as Error).message);
         }
@@ -245,10 +246,4 @@ export function attachCollab(httpServer: HttpServer): void {
   });
 
   console.log('[collab] WebSocket attached at /ws/edit');
-}
-
-// 1 行 helper (= drizzle の eq import を増やしたくない)
-import { eq } from 'drizzle-orm';
-function eqEditSession(id: string) {
-  return eq(editSessions.id, id);
 }
