@@ -77,6 +77,8 @@ UI で URL を入力したとき、 ホスト名で kind をデフォルト推�
 - create: `owner` / `planner` (= ドメイン定義を編集できる人)
 - delete: `owner` / `planner`
 
+全操作で URL の project membership を検査する。content / delete は `id` と `project_id` を同時に検索条件へ含め、他 project の rid を 404 とする。一覧・作成の target も同じ project に属する必要がある。Confluence の取得先は管理者指定 `CONFLUENCE_ORIGIN` の HTTPS origin に固定し、redirect を拒否する。詳細: [資料・相談の権限境界](../../feature/security-pf-boundaries.md)。
+
 ## v0.2+ 拡張
 
 - **webview モード**:

@@ -4,6 +4,7 @@ import type { ChatMessage } from '../../../shared/llm-chat.ts';
 import { AppError } from '../lib/errors.ts';
 
 export interface ChatRecord {
+  backend?: 'tool-less-v1';
   id: string; operation: string; cwd: string | null; sessions: string[];
   state: 'starting' | 'ready' | 'sending' | 'uncertain';
   startedAt: number; messages: ChatMessage[];

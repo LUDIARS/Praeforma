@@ -1,0 +1,7 @@
+{
+  "service": "praeforma",
+  "include": ["server/src/lib/**/*.ts"],
+  "exclude": ["server/src/lib/__tests__/**"],
+  "runtime": { "autoImport": false, "entrypoints": [] },
+  "rules": { "contract-wrap": true }
+}

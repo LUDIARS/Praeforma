@@ -30,7 +30,8 @@
     "ulid": "^2.3.0",
     "ws": "^8.20.0",
     "zod": "^3.23.8",
-    "@ludiars/one-shot": "file:../lib/lapilli/packages/one-shot"
+    "@ludiars/one-shot": "file:../lib/lapilli/packages/one-shot",
+    "@ludiars/log-weaver": "file:../lib/lapilli/packages/log-weaver"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

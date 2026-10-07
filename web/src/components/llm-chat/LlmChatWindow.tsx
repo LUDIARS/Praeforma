@@ -7,9 +7,9 @@ import '../../styles/llm-chat.css';
 function errorText(error: unknown): string {
   const apiError = error as ApiError;
   if (apiError?.status === 403) return 'AI相談にはオーナーまたは企画者の権限が必要です。';
-  if (apiError?.status === 503) return 'Ccへの接続設定がありません。';
+  if (apiError?.status === 503) return 'AI相談の実行設定を確認してください。';
   if (apiError?.status === 409) return '会話の処理中、または状態が変わりました。再接続して確認してください。';
-  return 'Ccと通信できませんでした。送信は自動で繰り返しません。再接続して会話を確認してください。';
+  return 'AIの応答を取得できませんでした。送信は自動で繰り返しません。再接続して会話を確認してください。';
 }
 
 export function LlmChatWindow({ pid, onClose }: { pid: string; onClose: () => void }): React.ReactElement {
@@ -54,7 +54,7 @@ export function LlmChatWindow({ pid, onClose }: { pid: string; onClose: () => vo
       <button type="button" className="ghost" onClick={onClose} aria-label="AI相談を畳む">畳む</button>
     </header>
     <div className="pf-llm-toolbar">
-      <span>{disconnected ? '切断中（会話は保存されています）' : state === 'starting' ? 'Ccセッション起動中…' : state === 'ended' ? '再開できます' : '仕様・設計を相談'}</span>
+      <span>{disconnected ? '切断中（会話は保存されています）' : state === 'starting' ? '回答を作成中…' : state === 'ended' ? '再開できます' : '仕様・設計を相談'}</span>
       <button type="button" className="ghost" disabled={mutation.isPending || !query.data || state === 'empty'} onClick={() => setConfirmClear(true)}>Clear</button>
     </div>
     {confirmClear && <div className="pf-llm-notice"><p>この会話を終了して、新しい会話にしますか？</p>
@@ -66,7 +66,7 @@ export function LlmChatWindow({ pid, onClose }: { pid: string; onClose: () => vo
     <div ref={scroll} className="pf-llm-messages" role="log" aria-label="会話">
       {query.isPending && <p>会話を読み込み中…</p>}
       {state === 'empty' && <p>最初のメッセージを送ると会話を開始します。指示は仕様のフラグメントにも保存します。</p>}
-      {query.data && state !== 'empty' && <p className="meta">AIの応答は各セッションの直近100件を表示します。</p>}
+      {query.data && state !== 'empty' && <p className="meta">相談内容と応答はこのプロジェクトの会話として保存されます。</p>}
       {query.data?.messages.map(message => <article key={message.id} className={`pf-llm-message ${message.role}`}>
         <strong>{message.role === 'user' ? 'あなた' : message.role === 'assistant' ? 'AI' : '確認事項'}</strong>
         <p>{message.text}</p>

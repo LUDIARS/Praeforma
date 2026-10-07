@@ -11,24 +11,12 @@
 //   または { error, fallback_url } (= link で開いてもらう)
 
 import { Hono } from 'hono';
-import { eq } from 'drizzle-orm';
-import { getDb, getDbState } from '../db/connection.ts';
-import { references } from '../db/schema/reference.ts';
-import { type ProjectRole } from '../db/schema/project.ts';
 import { requireAuth } from '../middleware/require-auth.ts';
 import { requireRole } from '../middleware/require-role.ts';
 import { AppError } from '../lib/errors.ts';
 
-const ALL_ROLES: readonly ProjectRole[] = [
-  'owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer',
-];
-
-interface FetchResult {
-  ok: boolean;
-  markdown?: string;
-  title?: string;
-  errorMessage?: string;
-}
+import { fetchConfluence, type ReferenceContentResult as FetchResult } from '../lib/confluence-content.ts';
+import { REFERENCE_READ_ROLES, requireProjectReference } from '../lib/reference-access.ts';
 
 async function fetchNotion(url: string): Promise<FetchResult> {
   const token = process.env.NOTION_INTEGRATION_TOKEN;
@@ -100,50 +88,14 @@ async function fetchGoogleDocs(url: string): Promise<FetchResult> {
   }
 }
 
-async function fetchConfluence(url: string): Promise<FetchResult> {
-  const token = process.env.CONFLUENCE_TOKEN;
-  const user = process.env.CONFLUENCE_USER;
-  if (!token || !user) return { ok: false, errorMessage: 'CONFLUENCE_TOKEN/USER not set' };
-  const m = url.match(/\/pages\/(\d+)/) ?? url.match(/pageId=(\d+)/);
-  if (!m) return { ok: false, errorMessage: 'pageId not detected in URL' };
-  const pageId = m[1]!;
-  const origin = new URL(url).origin;
-  try {
-    const auth = Buffer.from(`${user}:${token}`).toString('base64');
-    const res = await fetch(`${origin}/wiki/rest/api/content/${pageId}?expand=body.storage`, {
-      headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
-    });
-    if (!res.ok) return { ok: false, errorMessage: `Confluence API ${res.status}` };
-    const body = (await res.json()) as { title?: string; body?: { storage?: { value?: string } } };
-    const html = body.body?.storage?.value ?? '';
-    // 雑に HTML → text (= 真面目に変換するなら別 library)
-    const text = html
-      .replace(/<\/p>/g, '\n')
-      .replace(/<br[^>]*>/g, '\n')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .trim();
-    return { ok: true, markdown: text, title: body.title ?? 'Confluence page' };
-  } catch (e) {
-    return { ok: false, errorMessage: (e as Error).message };
-  }
-}
-
 export function makeReferenceContentRouter(): Hono {
   const r = new Hono();
 
-  r.get('/:rid/content', requireAuth, requireRole(ALL_ROLES), async (c) => {
-    if (!getDbState().ok) throw AppError.internal('db_unavailable');
-    const rid = c.req.param('rid')!;
-    const [ref] = await getDb()
-      .select()
-      .from(references)
-      .where(eq(references.id, rid))
-      .limit(1);
-    if (!ref) throw AppError.notFound();
+  r.get('/:rid/content', requireAuth, requireRole(REFERENCE_READ_ROLES), async (c) => {
+    const projectId = c.req.param('pid');
+    const rid = c.req.param('rid');
+    if (!projectId || !rid) throw AppError.badRequest('reference_id_required');
+    const ref = await requireProjectReference(projectId, rid);
 
     let result: FetchResult;
     switch (ref.kind) {
