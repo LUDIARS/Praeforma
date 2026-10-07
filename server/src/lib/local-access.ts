@@ -5,7 +5,7 @@ export function parseAdditionalOrigins(value: string | undefined): readonly stri
   for (const origin of origins) {
     try {
       const url = new URL(origin);
-      if (url.protocol === 'https:' && origin === url.origin) continue;
+      if (url.protocol === 'https:' && !url.hostname.includes('*') && origin === url.origin) continue;
     } catch { /* Report configuration failure without echoing the supplied value. */ }
     throw new Error('PRAEFORMA_ALLOWED_ORIGINS must contain comma-separated exact HTTPS origins');
   }

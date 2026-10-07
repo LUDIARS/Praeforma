@@ -38,3 +38,16 @@ C-7 buildConsultationPolicy(model, cwd, token, env): tools/MCP/hooks/設定を�
 - 設定適用前に `CONFLUENCE_ORIGIN`、相談専用 `PRAEFORMA_CONSULTATION_OAUTH_TOKEN`、bare/restricted 対応 CLI を管理者が用意する必要がある。実秘密情報の有無・値は確認していない。
 - 旧 Cc セッション側だけにある応答の移行と既存 agent の停止は未実施。新経路から旧 agent を操作しない。
 - サービス起動・再起動、実 LLM 起動、外部資格情報付き通信、merge・push・反映は実施していない。Revisor の設定や既定 OFF は変更しない。
+
+## 2026-10-07 許可後の隔離検証
+
+- current Actio 526a を正本として継続。初回失敗・実装未着手の旧46546は cancelled に整理。レビュー自動修正 head659d3a3 の package-lock を保持した。
+- cc-test claim付きの P1/P2/P3 と既存 local Origin guard の16件を実行。初回15/16で既存wildcard拒否期待値が失敗し、exact HTTPS Origin parserへwildcard hostname拒否を追加。同一suite再実行16/16成功。fake fetch/pgと純粋policyのみで実ネットワーク、DB、CLI、サービス起動はない。
+- server静的型検査とgit diff --check成功。上記初回未実行記録は人間の隔離実行許可前の履歴。実LLMや配備設定の受入は未実施。
+
+## 公開済み成果からの追補復旧
+
+- PR2519のmerged成果はf6c6edd0（親73b905d）で、067ad956のwildcard拒否/受入2filesが含まれなかった。本体main反映はcheckoutSync worktree_dirtyで未完了、他者trackedログ削除を復元・stashしない。
+- 公式new worktree feat/security-pf-acceptance-review-20261007 をローカルmainから作成し、published f6c6edd0をfast-forward取込み。067ad956追加2filesのみcherry-pickした。既存PR2519を再open/再mergeせず、追補PRとして親が提出する。
+- 同既存task526aをdoneからdelegatedへ正規state APIで再開し、未反映の追補を残件として保持。旧46546はcancelledを維持。
+- 新treeでcc-test claim付き同mock16/16とserver型検査成功。依存は既存テスト用node_modules junctionをread-only参照し、install/共有directory変更なし。実CLI/LLM/DB/サービス起動なし。
