@@ -57,8 +57,10 @@ export function SceneWorkspace({pid,lid,name,initial,canEdit}:{pid:string;lid:st
     }}/>:null}
     <DesignCanvas showLayers referenceImages={showReferences?Object.fromEntries(sources.filter(source=>source.image).map(source=>[source.frameId,source.image!])):undefined} canvas={history.canvas} onChange={history.replace} onPreview={history.preview} onCancelPreview={history.cancelPreview} onUndo={history.undo} onRedo={history.redo} canUndo={history.canUndo} canRedo={history.canRedo} onSave={()=>save.mutate()} isSaving={save.isPending} isReadOnly={!canEdit||save.isPending}
       hideElements={hiddenScenes.has(lid)} renderFrameOverlay={frame=><SceneFrameLayers base={frame} layers={layersForFrame(layers,frame.id)} sources={layerSources} hidden={hiddenScenes}/>} />
+    {/* 主表示は画面と構成要素 (キャンバス)。 重ね合わせ・取り込み資料・WebUI DOM/CSS は必要な時だけ開く。 全画面のUI編集中は中身を出すため開いておく。 */}
+    <details className="panel scene-extras" open={uiEditing.isEditing || undefined}><summary>重ね合わせ・取り込み資料・WebUI DOM/CSS</summary>
     <SceneLayerPanel pid={pid} lid={lid} sceneName={name} canvas={history.canvas} layers={layers} sources={layerSources} hidden={hiddenScenes} disabled={!canEdit||save.isPending} onLayersChange={setLayers} onHiddenChange={setHiddenScenes} />
-    <details className="panel"><summary>取り込んだ資料と対応するノード</summary>{sources.filter(source=>hasFrame(source.frameId)).map(source=><article key={source.id}>
+    <details><summary>取り込んだ資料と対応するノード</summary>{sources.filter(source=>hasFrame(source.frameId)).map(source=><article key={source.id}>
       <h3>{history.canvas.frames.find(frame=>frame.id===source.frameId)?.name}</h3>
       {source.image?<img className="scene-reference" src={source.image} alt="採用したキャプチャ"/>:null}<p className="meta">{source.fingerprint}</p>
       {source.runtime?<><p>{source.runtime.source} / {source.runtime.capturedAt}</p><ul>{source.runtime.nodes.map(node=><li key={node.id}>{node.label} — {node.id}{node.parentId?` / 親: ${node.parentId}`:''}{node.ontologyRef?` / 定義: ${node.ontologyRef}`:''}</li>)}</ul></>:null}
@@ -66,5 +68,6 @@ export function SceneWorkspace({pid,lid,name,initial,canEdit}:{pid:string;lid:st
     </article>)}</details>
     <WebSceneEditor canvas={history.canvas} value={web.value} onChange={web.change} disabled={!canEdit||save.isPending} onUndo={web.undo} onRedo={web.redo} canUndo={web.canUndo} canRedo={web.canRedo}
       isEditing={uiEditing.isEditing} onOpenEditing={uiEditing.open} onCloseEditing={uiEditing.close} save={{onSave:()=>save.mutate(),canSave:canEdit,isSaving:save.isPending,isDirty:dirty,hasFailed:!!save.error}} />
+    </details>
   </div>;
 }

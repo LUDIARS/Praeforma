@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import type { SpecFragment, ImplementationState } from '../../../../shared/spec-fragments.ts';
 import { fragmentApi } from '../../lib/spec-fragments-api.ts';
 import type { ApiError } from '../../lib/api.ts';
+import { summarize } from './spec-block-summary.ts';
 
 const labels: Record<ImplementationState, string> = { unverified: '未確認', unimplemented: '未実装', implemented: '実装済' };
 
@@ -19,10 +20,13 @@ export function FragmentCard({ fragment, canEdit, onChanged }: {
     }),
     onSuccess: async () => { setEditing(false); await onChanged(); },
   });
-  return <article className="fragment-card">
-    <div className="fragment-meta"><span>{labels[fragment.implementationState]}</span>
-      <time dateTime={fragment.createdAt}>{new Date(fragment.createdAt).toLocaleString()}</time>
-      <span>出所: {fragment.source}</span></div>
+  return <details className="fragment-card">
+    <summary className="spec-block-summary">
+      <span className="spec-block-title">{summarize(fragment.content)}</span>
+      <span className="fragment-meta"><span>{labels[fragment.implementationState]}</span>
+        <time dateTime={fragment.createdAt}>{new Date(fragment.createdAt).toLocaleString()}</time></span>
+    </summary>
+    <div className="fragment-meta"><span>出所: {fragment.source}</span></div>
     <p className="fragment-content">{fragment.content}</p>
     {fragment.implementationEvidence && <p className="fragment-content">確認根拠: {fragment.implementationEvidence}</p>}
     {canEdit && !editing && <button type="button" className="ghost" onClick={() => {
@@ -43,5 +47,5 @@ export function FragmentCard({ fragment, canEdit, onChanged }: {
         ? '別の変更が保存されています。入力は残っています。最新状態を確認してから変更し直してください。'
         : '保存できませんでした。入力は残っています。'}</p>}
     </form>}
-  </article>;
+  </details>;
 }

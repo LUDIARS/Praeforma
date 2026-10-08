@@ -15,6 +15,7 @@ import { DataDesignPanel } from '../components/data-design/DataDesignPanel.tsx';
 import { FlowDiagram } from '../components/flow/FlowDiagram.tsx';
 import { ProjectTodos } from '../components/ProjectTodos.tsx';
 import { SpecWorkspace } from '../components/specs/SpecWorkspace.tsx';
+import { StructuredSpecList } from '../components/specs/StructuredSpecList.tsx';
 import { ConceptSheetWorkspace } from '../components/concept-sheets/ConceptSheetWorkspace.tsx';
 import { ProjectVisuals } from '../components/visuals/ProjectVisuals.tsx';
 
@@ -181,17 +182,8 @@ export function ProjectShowPage(): React.ReactElement {
           <h3>ストラクチャード</h3>
           {specsQ.isLoading && <p>読み込み中…</p>}
           {specsQ.isError && <p role="alert">仕様を取得できませんでした。</p>}
-          <ul className="item-list">
-            {specsQ.data?.items.map((s) => (
-              <li key={s.id} className="item-row" data-focus={s.code}>
-                <div className="label">
-                  {s.code} — {s.title}
-                  <span className="role-badge">{s.status}</span>
-                </div>
-                <div className="meta">priority={s.priority} category={s.category}</div>
-              </li>
-            ))}
-          </ul>
+          {specsQ.isSuccess && specsQ.data.items.length === 0 && <p>ストラクチャードはありません。</p>}
+          <StructuredSpecList specs={specsQ.data?.items ?? []} focus={focus} />
         </SpecWorkspace>
       )}
     </>
