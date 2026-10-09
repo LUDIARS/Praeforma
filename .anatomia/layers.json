@@ -1,0 +1,174 @@
+{
+  "$comment": "Anatomia のプログラムドメイン (二層判定) 用の層宣言。 glob は repo 相対パスへ完全一致 (`*` = 1 階層)。 ローダーが glob 文字列でソートして先勝ちで評価するため、 glob を重ねずモジュール 1 つにつき `<dir>/*` を 1 本置く。 確認は `anatomia domains program --repo .` で unclassified 0。",
+  "layers": [
+    {
+      "glob": "libraries/browser-overlay/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "libraries/native-overlay/host/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "Packages/jp.ludiars.praeforma.tela/Editor/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "Packages/jp.ludiars.praeforma.tela/Editor/Native/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "Packages/jp.ludiars.praeforma/Editor/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "Packages/jp.ludiars.praeforma/Editor/Api/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "Packages/jp.ludiars.praeforma/Editor/Instructions/*",
+      "layer": "application"
+    },
+    {
+      "glob": "Packages/jp.ludiars.praeforma/Editor/Views/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "Packages/jp.ludiars.praeforma/Runtime/*",
+      "layer": "domain-logic"
+    },
+    {
+      "glob": "Packages/jp.ludiars.praeforma/Tests/Editor/*",
+      "layer": "shared"
+    },
+    {
+      "glob": "server/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "server/contracts/*",
+      "layer": "shared"
+    },
+    {
+      "glob": "server/scripts/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "server/src/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "server/src/auth/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "server/src/db/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "server/src/db/schema/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "server/src/lib/*",
+      "layer": "application"
+    },
+    {
+      "glob": "server/src/lib/__tests__/*",
+      "layer": "shared"
+    },
+    {
+      "glob": "server/src/lib/anatomia-graph/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "server/src/lib/export/*",
+      "layer": "application"
+    },
+    {
+      "glob": "server/src/lib/export/__tests__/*",
+      "layer": "shared"
+    },
+    {
+      "glob": "server/src/middleware/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "server/src/routes/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "server/src/storage/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "server/src/ws/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "shared/*",
+      "layer": "shared"
+    },
+    {
+      "glob": "web/src/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/components/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/components/concept-sheets/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/components/data-design/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/components/domain-definitions/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/components/flow/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/components/llm-chat/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/components/manuals/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/components/registration/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/components/scene-editor/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/components/specs/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/components/ux-design/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/components/visuals/*",
+      "layer": "presentation"
+    },
+    {
+      "glob": "web/src/lib/*",
+      "layer": "infrastructure"
+    },
+    {
+      "glob": "web/src/pages/*",
+      "layer": "presentation"
+    }
+  ],
+  "mergeCouplingThreshold": 1
+}

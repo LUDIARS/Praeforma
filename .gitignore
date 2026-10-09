@@ -11,6 +11,7 @@ Thumbs.db
 .praeforma-local/
 
 # Anatomia のローカル状態 (ドメイン定義の正本は spec/domains/)
-.anatomia/
+.anatomia/*
+!.anatomia/layers.json
 build-unity/
 .verification/
