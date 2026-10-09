@@ -107,7 +107,7 @@ export function makeUxDesignRouter(options: {
   genius: GeniusOptions;
 }): Hono {
   const r = new Hono();
-  r.route('/', makeDefinitionTodosRouter(options.anatomia));
+  r.route('/', makeDefinitionTodosRouter());
 
   r.get('/scenarios', requireAuth, requireRole(ALL_ROLES), async (c) => {
     if (!getDbState().ok) throw AppError.internal('db_unavailable');
