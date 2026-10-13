@@ -24,8 +24,16 @@ export const GRAPH_LAYOUTS: readonly (readonly [GraphLayout, string])[] = [['col
 export const GRAPH_NODE_WIDTH = 220, GRAPH_NODE_HEIGHT = 80;
 const COLUMN_GAP = 340, ROW_GAP = 120, LEFT = 40, TOP = 60, HEADING = 30;
 const CANVAS_WIDTH = 1040, MINIMUM_HEIGHT = 200;
-/** 円配置はノードが重ならない半径を件数から決め、下限で小さすぎる円を避ける。 */
+/**
+ * 円配置はノードが重ならない半径を件数から決め、下限で小さすぎる円を避ける。
+ * 2 / 3 / 8 / 32 / 128 件で重ならないことを確認済み (domain-graph.test.ts)。
+ */
 const CIRCLE_MINIMUM_RADIUS = 200, CIRCLE_MARGIN = 60;
+/**
+ * 円配置の全体を列配置と同じ幅 (CANVAS_WIDTH) に縮めても文字が読める件数の目安。
+ * これを超えると図が大きくなり、拡大・スクロールで読む (PF-DR-4) 前提になる。
+ */
+export const CIRCLE_OVERVIEW_READABLE_COUNT = 20;
 /** 辺は曲線で描く。画面と Tela で同じ形にするため、刻み数もここで決める。 */
 export const GRAPH_EDGE_SEGMENTS = 16;
 
@@ -83,10 +91,20 @@ function exit(node: Placed, toward: Point): Point {
   return { x: cx + dx * scale, y: cy + dy * scale };
 }
 
-/** 円配置の経路。両端の制御点を円の中心に置いて内側へ弓なりにする。 */
+/**
+ * 円配置の制御点を、端点から中心へどこまで寄せるか (0 = 端点、1 = 中心)。
+ * 1 だと全部の辺が中心の 1 点付近を通って束になり、件数が増えると見分けがつかない。
+ * 0.5 なら内側へ弓なりのまま、隣どうしの辺は円周寄り、対角の辺だけが中心近くを通る。
+ */
+export const CIRCLE_EDGE_PULL = 0.5;
+
+const toward = (from: Point, to: Point, ratio: number): Point =>
+  ({ x: from.x + (to.x - from.x) * ratio, y: from.y + (to.y - from.y) * ratio });
+
+/** 円配置の経路。両端の制御点を中心の方へ寄せて内側へ弓なりにする。 */
 function circleRoute(from: Placed, to: Placed, center: Point): Point[] {
   const start = exit(from, center), end = exit(to, center);
-  return sample(start, center, center, end);
+  return sample(start, toward(start, center, CIRCLE_EDGE_PULL), toward(end, center, CIRCLE_EDGE_PULL), end);
 }
 
 function placeColumns(domains: readonly GraphDomain[]): Placement {

@@ -61,6 +61,37 @@ test('PF-DR-7 arranges the same relations on a circle without changing their dir
     'the route starts within the node height');
 });
 
+test('PF-DR-7 keeps nodes apart and edges distinguishable at 2 / 3 / 8 / 32 / 128 domains', () => {
+  for (const count of [2, 3, 8, 32, TELA_GRAPH_MAX_NODES]) {
+    const many = Array.from({ length: count }, (_, index) => domain(`d${index}`, `D${index}`, 'core'));
+    // 隣どうしと、半周先への関係を張る (束になりやすい組み合わせ)。
+    const relations = Array.from({ length: count }, (_, index) => ({ coreId: `d${index}`, businessId: `d${(index + 1) % count}` }));
+    const graph = domainGraph('Praeforma', many, relations, 'circle');
+    const center = graph.width / 2;
+
+    // ノードの箱がどの組でも重ならない。
+    for (let a = 0; a < graph.nodes.length; ++a) {
+      for (let b = a + 1; b < graph.nodes.length; ++b) {
+        const p = graph.nodes[a]!, q = graph.nodes[b]!;
+        const apart = p.x + p.width <= q.x || q.x + q.width <= p.x || p.y + p.height <= q.y || q.y + q.height <= p.y;
+        assert.ok(apart, `${count} domains: ${p.id} and ${q.id} overlap`);
+      }
+    }
+
+    // 辺の中点が中心の 1 点に集まらない。隣どうしの辺は円周寄りを通り、互いに離れている。
+    const radius = Math.hypot(graph.nodes[0]!.x + graph.nodes[0]!.width / 2 - center, graph.nodes[0]!.y + graph.nodes[0]!.height / 2 - center);
+    const middles = graph.edges.map(edge => edge.points[GRAPH_EDGE_SEGMENTS / 2]!);
+    if (count >= 3) {
+      for (const middle of middles) {
+        assert.ok(Math.hypot(middle.x - center, middle.y - center) > radius * 0.25,
+          `${count} domains: a neighbour edge passes through the centre`);
+      }
+      const distinct = new Set(middles.map(point => `${Math.round(point.x)}:${Math.round(point.y)}`));
+      assert.equal(distinct.size, middles.length, `${count} domains: two edges share the same middle`);
+    }
+  }
+});
+
 test('PF-DR-4 exports TELA_GRAPH 1 with escaped labels and rejects overflow', () => {
   const text = telaGraph(domainGraph('Praeforma', domains, memberships));
   const lines = text.split('\n');
