@@ -114,6 +114,27 @@ export interface Layout {
   description: string | null;
   kind: 'world-3d' | 'world-2d' | 'ui-2d';
   is_default: boolean;
+  /** Anatomia の解析シーン候補から登録したときの解析元シーン ID。手入力は null。 */
+  anatomia_scene_id?: string | null;
+}
+
+/** Anatomia の解析シーンから作ったシーン登録候補 (GET /anatomia/scene-proposals)。 */
+export interface SceneProposal {
+  scene_id: string;
+  label: string;
+  kind: string;
+  origin: string;
+  suggested_kind: Layout['kind'];
+  evidence: { path: string; start_line: number; end_line: number; detector: string; reason: string } | null;
+  description: string | null;
+  registered_layout_id: string | null;
+}
+
+export interface SceneProposalList {
+  repo: string;
+  stale: boolean;
+  stale_reasons: string[];
+  proposals: SceneProposal[];
 }
 
 export interface LayoutObject {
@@ -286,8 +307,10 @@ export const api = {
     req<{ layout: Layout; layout_objects: LayoutObject[]; cameras: unknown[] }>(
       `/api/projects/${pid}/layouts/${lid}`,
     ),
-  createLayout: (pid: string, body: { name: string; description?: string; kind?: Layout['kind'] }) =>
+  createLayout: (pid: string, body: { name: string; description?: string; kind?: Layout['kind']; anatomia_scene_id?: string }) =>
     req<{ layout: Layout }>(`/api/projects/${pid}/layouts`, { method: 'POST', body: JSON.stringify(body) }),
+  listSceneProposals: (pid: string) =>
+    req<SceneProposalList>(`/api/projects/${pid}/anatomia/scene-proposals`),
   putLayoutObjects: (pid: string, lid: string, items: Array<Partial<LayoutObject> & { object_id: string }>) =>
     req<{ layout_objects: LayoutObject[] }>(`/api/projects/${pid}/layouts/${lid}/objects`, {
       method: 'PUT',

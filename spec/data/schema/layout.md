@@ -13,12 +13,16 @@
 | `description` | `text` |  | NULL | 概要 |
 | `kind` | `text` | ✓ | `'world-3d'` | `world-3d` / `world-2d` / `ui-2d` |
 | `is_default` | `boolean` | ✓ | `false` | project の default layout フラグ |
+| `anatomia_scene_id` | `text` |  | NULL | Anatomia の解析シーン候補から登録したときの解析元シーン ID (`CanonicalScene.id`)。手入力のシーンは NULL |
 | `created_at` | `timestamptz` | ✓ | `now()` | — |
 | `updated_at` | `timestamptz` | ✓ | `now()` | — |
 | `deleted_at` | `timestamptz` |  | NULL | — |
 
 ### Constraint
 - 1 project につき `is_default = true` は最大 1 行 (= partial unique index)
+- 1 project につき同じ `anatomia_scene_id` を持つ未削除 layout は最大 1 行
+  (`uq_layouts_project_anatomia_scene`、`anatomia_scene_id IS NOT NULL AND deleted_at IS NULL` の
+  partial unique index)。再取得しても同じ解析シーンを二重登録しない
 
 ### Index
 - `idx_layouts_project` (`project_id`)

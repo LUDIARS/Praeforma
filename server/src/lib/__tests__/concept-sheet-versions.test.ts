@@ -139,14 +139,17 @@ test('old versions keep the images they used after visuals are deleted, and chan
 test('specs are material by title, category and status only, and their changes make sheets outdated', async () => {
   const { getDb } = await import('../../db/connection.ts');
   const { specs } = await import('../../db/schema/spec.ts');
+  const { domains } = await import('../../db/schema/domain.ts');
   const { readConceptSheetMaterial } = await import('../concept-sheet-sources.ts');
   const changes: string[] = [];
   const t = await openSheetsApp([], changes);
   try {
     assert.equal((await t.request('/projects/p/ux-goal', 'PUT', UX)).status, 200);
     const shot = await addVisual(t, { kind: 'screenshot', label: '庭の画面', dataUrl: tinyPng(1) });
+    // 仕様の登録には登録先プロジェクトのドメインが要る (requireProjectDomains)。
+    await getDb().insert(domains).values({ id: 'garden', projectId: 'p', name: 'Garden' });
     const res = await t.request('/projects/p/specs', 'POST', { code: 'GARDEN-1', title: '光を集めると花が咲く', description: '本文は材料に入れない',
-      category: 'behavior', status: 'draft' });
+      category: 'behavior', status: 'draft', targets: [{ kind: 'domain', ref_id: 'garden' }] });
     assert.equal(res.status, 201);
     const spec = (await res.json() as { spec: { id: string; version: number } }).spec;
     let material = await readConceptSheetMaterial('p');

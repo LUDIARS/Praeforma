@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "repository": "Praeforma",
+  "defaultBus": "local",
+  "buses": {
+    "local": { "type": "local", "env": [] }
+  }
+}

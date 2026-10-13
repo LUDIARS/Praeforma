@@ -27,6 +27,8 @@ const layoutsPg = pgTable(
     description: text('description'),
     kind: text('kind').notNull().default('world-3d'),
     isDefault: boolean('is_default').notNull().default(false),
+    /** Anatomia の解析シーン候補から登録したときの解析元 `CanonicalScene.id`。手入力は NULL。 */
+    anatomiaSceneId: text('anatomia_scene_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),

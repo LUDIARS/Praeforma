@@ -9,6 +9,7 @@ import { ProjectConstraints } from '../components/ProjectConstraints.tsx';
 import { ProjectTabs, parseProjectTab } from '../components/ProjectTabs.tsx';
 import { ActorRegistration } from '../components/registration/ActorRegistration.tsx';
 import { SceneRegistration } from '../components/registration/SceneRegistration.tsx';
+import { SceneProposals } from '../components/registration/SceneProposals.tsx';
 import { SpecRegistration } from '../components/registration/SpecRegistration.tsx';
 import { ActorCards } from '../components/ActorCards.tsx';
 import { DataDesignPanel } from '../components/data-design/DataDesignPanel.tsx';
@@ -162,6 +163,7 @@ export function ProjectShowPage(): React.ReactElement {
       {tab === 'layouts' && (
         <div className="panel">
           <SceneRegistration key={pid} pid={pid} />
+          <SceneProposals key={`proposals-${pid}`} pid={pid} />
           <h3>シーン</h3>
           {layoutsQ.isLoading && <p>読み込み中…</p>}
           {layoutsQ.isError && <p role="alert">シーンを取得できませんでした。</p>}

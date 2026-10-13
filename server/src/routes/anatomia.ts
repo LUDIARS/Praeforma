@@ -3,14 +3,16 @@
 //
 //   GET  /domains  … Anatomia 一覧 + 各 Praeforma ドメインの突合結果 (exact / candidates)
 //   POST /match    … 同名一致のものに anatomia_domain を自動で埋める (上書きしない)
+//   GET  /scene-proposals … Anatomia の解析シーンをシーン登録候補として返す (登録済みの対応付き)
 //
 // @spec 4.1 正本と突合
 
 import { Hono } from 'hono';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { getDb, getDbState } from '../db/connection.ts';
 import { projects, type ProjectRole } from '../db/schema/project.ts';
 import { domains } from '../db/schema/domain.ts';
+import { layouts } from '../db/schema/layout.ts';
 import { requireAuth, getIdentity } from '../middleware/require-auth.ts';
 import { requireRole } from '../middleware/require-role.ts';
 import { AppError } from '../lib/errors.ts';
@@ -21,6 +23,7 @@ import {
   type AnatomiaDomain,
   type AnatomiaDomainsOptions,
 } from '../lib/anatomia-domains.ts';
+import { fetchAnatomiaScenes, toSceneProposals } from '../lib/anatomia-scenes.ts';
 
 const ALL_ROLES: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer'];
 const EDIT_ROLES: readonly ProjectRole[] = ['owner', 'planner'];
@@ -53,6 +56,23 @@ export function makeAnatomiaRouter(opts: AnatomiaDomainsOptions): Hono {
       };
     });
     return c.json({ repo, catalog, matches });
+  });
+
+  // 解析シーン → シーン登録候補 (spec/feature/anatomia-scene-proposals.md)。
+  // 登録は layouts POST に anatomia_scene_id を付けて利用者が明示的に行う。ここでは書き込まない。
+  r.get('/scene-proposals', requireAuth, requireRole(ALL_ROLES), async (c) => {
+    if (!getDbState().ok) throw AppError.internal('db_unavailable');
+    const pid = c.req.param('pid')!;
+    const [project] = await getDb().select().from(projects).where(eq(projects.id, pid)).limit(1);
+    if (!project) throw AppError.notFound('project_not_found');
+    if (!project.anatomiaRepo) throw new AppError('anatomia_repo_unset', 409);
+    const payload = await fetchAnatomiaScenes(opts, project.anatomiaRepo);
+    const rows = await getDb()
+      .select({ id: layouts.id, anatomiaSceneId: layouts.anatomiaSceneId })
+      .from(layouts)
+      .where(and(eq(layouts.projectId, pid), isNull(layouts.deletedAt), isNotNull(layouts.anatomiaSceneId)));
+    const registered = new Map(rows.map((row) => [row.anatomiaSceneId as string, row.id]));
+    return c.json({ repo: project.anatomiaRepo, ...toSceneProposals(payload, registered) });
   });
 
   r.post('/match', requireAuth, requireRole(EDIT_ROLES), async (c) => {

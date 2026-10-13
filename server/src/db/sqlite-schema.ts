@@ -156,6 +156,7 @@ export const layouts = sqliteTable('layouts', {
   description: text('description'),
   kind: text('kind').notNull().default('world-3d'),
   isDefault: integer('is_default', { mode: 'boolean' }).notNull().default(false),
+  anatomiaSceneId: text('anatomia_scene_id'),
   createdAt: ts('created_at').notNull().$defaultFn(now),
   updatedAt: ts('updated_at').notNull().$defaultFn(now),
   deletedAt: ts('deleted_at'),
@@ -476,6 +477,8 @@ export const sqliteTables = {
 /** 起動時に流す DDL (CREATE TABLE IF NOT EXISTS + 必要な UNIQUE INDEX)。 FK は張らない (ローカル単一利用)。 */
 /** 既存 DB へ後から足す列 (重複時はエラーになるので connection 側で個別に try する)。 */
 export const SQLITE_ALTERS: string[] = [
+  `ALTER TABLE layouts ADD COLUMN anatomia_scene_id TEXT`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS uq_layouts_project_anatomia_scene ON layouts(project_id, anatomia_scene_id) WHERE anatomia_scene_id IS NOT NULL AND deleted_at IS NULL`,
   `ALTER TABLE ux_scenarios ADD COLUMN category TEXT NOT NULL DEFAULT 'gameplay'`,
   `ALTER TABLE ux_scenarios ADD COLUMN experience TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE ux_scenarios ADD COLUMN visual_direction TEXT NOT NULL DEFAULT ''`,

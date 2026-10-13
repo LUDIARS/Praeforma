@@ -30,9 +30,11 @@ const layoutCreateSchema = z.object({
   description: z.string().max(2000).nullish(),
   kind: z.enum(['world-3d', 'world-2d', 'ui-2d']).optional(),
   is_default: z.boolean().optional(),
+  /** Anatomia の解析シーン候補から登録するときの解析元シーン ID (spec/feature/anatomia-scene-proposals.md)。 */
+  anatomia_scene_id: z.string().min(1).max(200).optional(),
 });
 
-const layoutUpdateSchema = layoutCreateSchema.partial();
+const layoutUpdateSchema = layoutCreateSchema.omit({ anatomia_scene_id: true }).partial();
 
 const layoutObjectSchema = z.object({
   id: z.string().optional(), // 既存更新時のみ
@@ -102,24 +104,43 @@ export function makeLayoutRouter(): Hono {
     const body = await c.req.json().catch(() => null);
     const parsed = layoutCreateSchema.safeParse(body);
     if (!parsed.success) throw AppError.badRequest('bad_body', parsed.error.flatten());
+    const sceneId = parsed.data.anatomia_scene_id ?? null;
+    if (sceneId) {
+      // 同じ解析シーンは 1 度だけ登録する (再取得・二重押下でも重複させない)。
+      const [existing] = await getDb()
+        .select({ id: layouts.id })
+        .from(layouts)
+        .where(and(eq(layouts.projectId, pid), eq(layouts.anatomiaSceneId, sceneId), isNull(layouts.deletedAt)))
+        .limit(1);
+      if (existing) throw new AppError('anatomia_scene_already_registered', 409, { layout_id: existing.id });
+    }
     const lid = ulid();
-    await getDb()
-      .insert(layouts)
-      .values({
-        id: lid,
-        projectId: pid,
-        name: parsed.data.name,
-        description: parsed.data.description ?? null,
-        kind: parsed.data.kind ?? 'world-3d',
-        isDefault: parsed.data.is_default ?? false,
-      });
+    try {
+      await getDb()
+        .insert(layouts)
+        .values({
+          id: lid,
+          projectId: pid,
+          name: parsed.data.name,
+          description: parsed.data.description ?? null,
+          kind: parsed.data.kind ?? 'world-3d',
+          isDefault: parsed.data.is_default ?? false,
+          anatomiaSceneId: sceneId,
+        });
+    } catch (error) {
+      // 同時登録は uq_layouts_project_anatomia_scene が止める。
+      if (sceneId && /uq_layouts_project_anatomia_scene|UNIQUE constraint/i.test(String(error))) {
+        throw new AppError('anatomia_scene_already_registered', 409);
+      }
+      throw error;
+    }
     await recordAudit({
       projectId: pid,
       actor: getIdentity(c),
       action: 'layout.create',
       targetKind: 'layout',
       targetId: lid,
-      meta: { name: parsed.data.name },
+      meta: { name: parsed.data.name, ...(sceneId ? { anatomia_scene_id: sceneId } : {}) },
     });
     const [row] = await getDb().select().from(layouts).where(eq(layouts.id, lid)).limit(1);
     return c.json({ layout: row }, 201);
