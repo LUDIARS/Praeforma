@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "overview": "overview",
+  "contexts": [
+    { "key": "project.list", "chapter": "create-project", "anchor": "start" },
+    { "key": "spec.fragments", "chapter": "fragments-to-specs", "anchor": "start" },
+    { "key": "spec.reconstruction", "chapter": "fragments-to-specs", "anchor": "start" },
+    { "key": "spec.structured.terms", "chapter": "measurements-contracts", "anchor": "start" }
+  ]
+}
