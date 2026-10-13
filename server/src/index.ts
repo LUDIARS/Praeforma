@@ -8,8 +8,8 @@
 // Step 2 で routes/* (projects/domains/objects/layouts/specs CRUD) を追加する。
 
 import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { repoPath } from './lib/runtime-paths.ts';
 import { Hono } from 'hono';
 import { makeSpecFragmentRouter } from './routes/spec-fragments.ts';
 import { makeSpecVersionRouter } from './routes/spec-versions.ts';
@@ -223,7 +223,7 @@ if (config.ccUrl) {
 
 // ローカルモード: ビルド済 web/dist を同一オリジンで配信 (SPA フォールバック付き)。
 if (config.localMode) {
-  const webDist = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'web', 'dist');
+  const webDist = repoPath('web', 'dist');
   const CT: Record<string, string> = {
     '.html': 'text/html; charset=utf-8',
     '.js': 'text/javascript; charset=utf-8',

@@ -1,13 +1,13 @@
 import { spawnOneShot as spawn } from '@ludiars/one-shot';
 import { getClaudeModel } from './llm.ts';
 import { AppError } from './errors.ts';
-import { fileURLToPath } from 'node:url';
+import { REPO_ROOT } from './runtime-paths.ts';
 export function runRestrictedWriter(binary: string, prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const model = getClaudeModel();
     const child = spawn(binary, ['-p', '--tools', '', '--disable-slash-commands', '--no-session-persistence',
       '--setting-sources', '', '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', ...(model ? ['--model', model] : [])], {
-      shell: false, windowsHide: true, cwd: fileURLToPath(new URL('../../../', import.meta.url)), stdio: ['pipe', 'pipe', 'pipe'],
+      shell: false, windowsHide: true, cwd: REPO_ROOT, stdio: ['pipe', 'pipe', 'pipe'],
     });
     let settled = false;
     let out = '';

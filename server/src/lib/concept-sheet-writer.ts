@@ -2,6 +2,7 @@
 // 1 回目の出力が確認 (concept-sheet-design-check.ts) を通らなければ、問題を添えて 1 回だけ直させる。
 // それでも通らなければ保存しない。材料が足りないと Astra が言えば 422 で止める (推測で埋めない)。
 import { readFile } from 'node:fs/promises';
+import { repoPath } from './runtime-paths.ts';
 import { createHash } from 'node:crypto';
 import type { ConceptSheetDesign, SceneImageType } from '../../../shared/concept-sheet.ts';
 import { ASTRA_MODEL, type AstraEffort, type AstraRequest } from './astra-cli.ts';
@@ -36,7 +37,7 @@ const ATTEMPTS: ReadonlyArray<{ effort: AstraEffort; timeoutMs: number }> = [
 const EXT: Record<SceneImageType, 'png' | 'jpg' | 'webp'> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
 
 export async function loadConceptSheetSkill(): Promise<{ text: string; digest: string }> {
-  const text = await readFile(new URL('../../../skills/concept-sheet/SKILL.md', import.meta.url), 'utf8');
+  const text = await readFile(repoPath('skills', 'concept-sheet', 'SKILL.md'), 'utf8');
   return { text, digest: createHash('sha256').update(text).digest('hex') };
 }
 

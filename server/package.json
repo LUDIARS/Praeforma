@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=.env.secrets --env-file-if-exists=.env bootstrap.ts",
     "start": "tsx --env-file-if-exists=.env.secrets --env-file-if-exists=.env bootstrap.ts",
-    "local": "tsx src/local.ts",
+    "build": "node scripts/build-server.mjs",
+    "local": "node dist/local.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --import tsx --test src/lib/__tests__/*.test.ts src/lib/export/__tests__/*.test.ts",
     "test:file": "node --import tsx --test",
@@ -39,6 +40,7 @@
     "@types/node": "^20.14.0",
     "@types/pg": "^8.11.10",
     "@types/ws": "^8.5.13",
+    "esbuild": "^0.28.2",
     "typescript": "^5.6.0"
   },
   "engines": {

@@ -5,7 +5,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { open, readFile, stat, type FileHandle } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { REPO_ROOT } from './runtime-paths.ts';
 
 export interface GitActivityProject { id: string; name: string; anatomiaRepo?: string | null }
 
@@ -83,7 +83,7 @@ export function repoDirOf(project: GitActivityProject, dirs: Map<string, string>
 /** 設定 PRAEFORMA_GIT_REPOS_ROOT、なければ Pf リポジトリの親 (LUDIARS のリポジトリが並ぶ場所)。 */
 export function defaultReposRoot(env: NodeJS.ProcessEnv = process.env): string {
   const configured = env.PRAEFORMA_GIT_REPOS_ROOT?.trim();
-  return configured ? resolve(configured) : resolve(fileURLToPath(new URL('../../../../', import.meta.url)));
+  return configured ? resolve(configured) : resolve(REPO_ROOT, '..');
 }
 
 const CONCURRENCY = 8;

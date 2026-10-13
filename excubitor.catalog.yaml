@@ -11,8 +11,10 @@ services:
     repo: LUDIARS/Praeforma
     runtime: node
     cwd: ${ARS_ROOT}/Praeforma
-    command: node --import tsx server/src/local.ts
-    build_command: npm run build:web
+    # 常駐は事前コンパイルした JS だけで起動する (tsx を挟まない、neco 2026-10-12)。
+    # build_command が web/dist と server/dist/local.js を作り、command は node で直接起動する。
+    command: node server/dist/local.js
+    build_command: npm run build
     port: 8889
     ports:
       - role: service

@@ -1,6 +1,7 @@
 /** Dedicated, bounded CLI invocation; no tool execution is granted to source material. */
 import { runRestrictedWriter } from './llm-restricted-writer.ts';
 import { readFile } from 'node:fs/promises';
+import { repoPath } from './runtime-paths.ts';
 import { createHash } from 'node:crypto';
 import { extractJson } from './llm.ts';
 import { manualDocumentSchema } from './manual-input.ts';
@@ -16,7 +17,7 @@ async function runManualWriter(binary:string,prompt:string):Promise<string> {
   }
 }
 export async function loadManualSkill(): Promise<{ text: string; digest: string }> {
-  const text = await readFile(new URL('../../../skills/feature-manual/SKILL.md', import.meta.url), 'utf8');
+  const text = await readFile(repoPath('skills', 'feature-manual', 'SKILL.md'), 'utf8');
   return { text, digest: digest(text) };
 }
 

@@ -20,8 +20,13 @@ Anatomia接続先は `PRAEFORMA_ANATOMIA_URL` の明示設定、またはExがca
 
 普段の利用は Excubitor の `praeforma` を起動セットへ追加して起動する。
 サービス定義とポートの正本はリポジトリ直下の `excubitor.catalog.yaml`。
-Excubitor は本体フォルダで Web をビルドしてからローカルモードを起動し、
-本体の `.praeforma-local/praeforma.sqlite` を使用する。
+Excubitor は本体フォルダで `build_command` (`npm run build`) により Web (`web/dist`) と
+server (`server/dist/local.js`、esbuild で 1 本へ bundle) を事前コンパイルし、
+`command` でその JS を node から直接起動する。常駐プロセスに tsx / npm を挟まない
+(neco 2026-10-12、AIFormat RULE_TECH_STACK.md「常駐プロセスの起動形」)。tsx はテストと
+一回限りの CLI (migrate など) だけで使う。ソース基準のパス (`skills/`、`web/dist/`) は
+`server/src/lib/runtime-paths.ts` で dist 起動とソース直読みの両方から同じ位置に解決する。
+ローカルモードは本体の `.praeforma-local/praeforma.sqlite` を使用する。
 認証を省略するローカルモードの HTTP リスナーは `127.0.0.1` に限定する。
 loopback 束縛は他ホストからの到達のみを塞ぐ。 browser は任意の web ページから
 `127.0.0.1` へ到達できるため、Originは同一ポートのloopback (`127.0.0.1` / `localhost` /
@@ -33,7 +38,7 @@ CORSは応答の読み取りしか制限しないため、cross-site form POST �
 以下はスクリプトの説明であり、運用時の直接起動には使用しない。
 
 ```sh
-npm run local      # = build:web + server を LOCAL_MODE で起動 (port 8889)
+npm run local      # = build (web + server) → server/dist/local.js を LOCAL_MODE で起動 (port 8889)
 # → http://localhost:8889/ を開く (UI も同一オリジンで配信、 ログイン不要)
 ```
 
