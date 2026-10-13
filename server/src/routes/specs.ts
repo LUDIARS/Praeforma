@@ -17,6 +17,7 @@ import { parsePagination } from '../lib/pagination.ts';
 import { recordAudit } from '../lib/audit.ts';
 import { requireProjectDomains } from '../lib/project-domain-validation.ts';
 import { ignoreMaterialChange, type MaterialChangeListener } from '../lib/concept-sheet-auto-update.ts';
+import { contractsSchema, measurementsSchema, parseSpecTerms, specTermIssues } from '../../../shared/spec-terms.ts';
 
 const ALL_ROLES: readonly ProjectRole[] = [
   'owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer',
@@ -48,6 +49,8 @@ const createSchema = z.object({
   category: z.enum(['behavior', 'appearance', 'data', 'interaction']).optional(),
   preconditions: z.array(z.string()).optional(),
   postconditions: z.array(z.string()).optional(),
+  measurements: measurementsSchema.optional(),
+  contracts: contractsSchema.optional(),
   status: z.enum(['draft', 'review', 'approved', 'obsolete']).optional(),
   targets: z.array(targetSchema).optional(),
   acceptance: z.array(acceptanceItemSchema).optional(),
@@ -61,6 +64,8 @@ const updateSchema = z.object({
   category: z.enum(['behavior', 'appearance', 'data', 'interaction']).optional(),
   preconditions: z.array(z.string()).optional(),
   postconditions: z.array(z.string()).optional(),
+  measurements: measurementsSchema.optional(),
+  contracts: contractsSchema.optional(),
   status: z.enum(['draft', 'review', 'approved', 'obsolete']).optional(),
 });
 
@@ -109,7 +114,9 @@ export function makeSpecRouter(onChange: MaterialChangeListener = ignoreMaterial
       .from(specAcceptance)
       .where(eq(specAcceptance.specId, sid))
       .orderBy(asc(specAcceptance.ordinal));
-    return c.json({ spec: row, targets, acceptance });
+    // 未定義の箇所・単位や期間の食い違いを未解決事項として返す (値は補わない)。
+    const termIssues = specTermIssues(parseSpecTerms(row.measurements, row.contracts));
+    return c.json({ spec: row, targets, acceptance, term_issues: termIssues });
   });
 
   r.post('/', requireAuth, requireRole(EDIT_ROLES), async (c) => {
@@ -143,6 +150,8 @@ export function makeSpecRouter(onChange: MaterialChangeListener = ignoreMaterial
         category: parsed.data.category ?? 'behavior',
         preconditions: parsed.data.preconditions ?? [],
         postconditions: parsed.data.postconditions ?? [],
+        measurements: parsed.data.measurements ?? [],
+        contracts: parsed.data.contracts ?? [],
         status: parsed.data.status ?? 'draft',
         createdBy: id.userId,
       });
@@ -212,6 +221,8 @@ export function makeSpecRouter(onChange: MaterialChangeListener = ignoreMaterial
     if (parsed.data.category !== undefined) patch.category = parsed.data.category;
     if (parsed.data.preconditions !== undefined) patch.preconditions = parsed.data.preconditions;
     if (parsed.data.postconditions !== undefined) patch.postconditions = parsed.data.postconditions;
+    if (parsed.data.measurements !== undefined) patch.measurements = parsed.data.measurements;
+    if (parsed.data.contracts !== undefined) patch.contracts = parsed.data.contracts;
     if (parsed.data.status !== undefined) patch.status = parsed.data.status;
 
     await getDb().update(specs).set(patch).where(scope);

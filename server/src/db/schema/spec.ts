@@ -13,6 +13,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
 import { LOCAL_MODE } from '../mode.ts';
+import type { Contract, Measurement } from '../../../../shared/spec-terms.ts';
 import {
   specs as specsSqlite,
   specTargets as specTargetsSqlite,
@@ -33,6 +34,8 @@ const specsPg = pgTable(
     category: text('category').notNull().default('behavior'),
     preconditions: jsonb('preconditions').$type<string[]>().notNull().default([]),
     postconditions: jsonb('postconditions').$type<string[]>().notNull().default([]),
+    measurements: jsonb('measurements').$type<Measurement[]>().notNull().default([]),
+    contracts: jsonb('contracts').$type<Contract[]>().notNull().default([]),
     status: text('status').notNull().default('draft'),
     version: integer('version').notNull().default(1),
     createdBy: text('created_by').notNull(),

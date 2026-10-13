@@ -16,6 +16,8 @@
 | `category` | `text` | ✓ | `'behavior'` | `behavior` / `appearance` / `data` / `interaction` |
 | `preconditions` | `jsonb` | ✓ | `'[]'` | 前提条件の文字列配列 |
 | `postconditions` | `jsonb` | ✓ | `'[]'` | 事後条件の文字列配列 |
+| `measurements` | `jsonb` | ✓ | `'[]'` | 数値計測の配列 (migration 025)。形は下の「計測と契約」 |
+| `contracts` | `jsonb` | ✓ | `'[]'` | 契約 (条件と報酬) の配列 (migration 025)。形は下の「計測と契約」 |
 | `status` | `text` | ✓ | `'draft'` | `draft` / `review` / `approved` / `obsolete` |
 | `version` | `integer` | ✓ | 1 | 楽観ロック用 |
 | `created_by` | `text` | ✓ | — | Cernere user UUID |
@@ -32,6 +34,20 @@
 ### Index
 - `idx_specs_project` (`project_id`)
 - `idx_specs_status` (`project_id`, `status`)
+
+### 計測と契約 (`measurements` / `contracts`)
+
+正本の型と検証は `shared/spec-terms.ts`。各配列は 50 件まで、`id` は配列内で一意。
+記載するだけで、実際の計測や報酬付与は実行しない (spec/feature/deferred-planning.md)。
+
+- 計測: `id`, `subject` (対象。空なら記載先の仕様), `metric`, `unit`, `method`,
+  `period` (期間・集計方法), `target` (目標・判定条件),
+  `observed` (`{ value, unit, observedAt, ref }` または `null`)。
+  `observed = null` は未計測で、0 とは別。実測値には観測の根拠 `ref` を必須にする。
+- 契約: `id`, `subject`, `condition` (成立条件), `judgement` (判定方法と根拠),
+  `reward` (`{ content, amount, unit }`。金銭に限らない), `grantTiming` (付与時点), `exceptions` (例外・取消)。
+- 未定義の箇所 (空文字・単位の無い報酬量) と、同じ対象・同じ指標名で単位か期間が違うものは
+  `specTermIssues()` が未解決事項として返す。値を補ったり同一視したりしない。
 
 ## `spec_targets`
 

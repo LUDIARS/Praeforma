@@ -185,7 +185,7 @@ export function ProjectShowPage(): React.ReactElement {
           {specsQ.isLoading && <p>読み込み中…</p>}
           {specsQ.isError && <p role="alert">仕様を取得できませんでした。</p>}
           {specsQ.isSuccess && specsQ.data.items.length === 0 && <p>ストラクチャードはありません。</p>}
-          <StructuredSpecList specs={specsQ.data?.items ?? []} focus={focus} />
+          <StructuredSpecList pid={pid!} specs={specsQ.data?.items ?? []} focus={focus} />
         </SpecWorkspace>
       )}
     </>

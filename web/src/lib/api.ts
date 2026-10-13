@@ -1,3 +1,4 @@
+import type { Contract, Measurement, SpecTermIssue } from '../../../shared/spec-terms.ts';
 // Praeforma backend REST client。 全リクエストに Bearer <PASETO> を付ける。
 // vite が /api を backend に proxy するので origin は省略。
 
@@ -159,6 +160,10 @@ export interface Spec {
   category: string;
   preconditions: string[];
   postconditions: string[];
+  /** 数値計測。古いサーバでは欠けることがある。 */
+  measurements?: Measurement[];
+  /** 契約 (条件と報酬)。 */
+  contracts?: Contract[];
   status: 'draft' | 'review' | 'approved' | 'obsolete';
   version: number;
 }
@@ -320,7 +325,10 @@ export const api = {
   // specs
   listSpecs: (pid: string) => req<{ items: Spec[] }>(`/api/projects/${pid}/specs`),
   getSpec: (pid: string, sid: string) =>
-    req<{ spec: Spec; targets: unknown[]; acceptance: unknown[] }>(`/api/projects/${pid}/specs/${sid}`),
+    req<{ spec: Spec; targets: unknown[]; acceptance: unknown[]; term_issues: SpecTermIssue[] }>(`/api/projects/${pid}/specs/${sid}`),
+  /** 楽観ロック付きの部分更新。prev_version が古ければ 409。 */
+  updateSpec: (pid: string, sid: string, body: { prev_version: number; measurements?: Measurement[]; contracts?: Contract[] }) =>
+    req<{ spec: Spec }>(`/api/projects/${pid}/specs/${sid}`, { method: 'PATCH', body: JSON.stringify(body) }),
   createSpec: (
     pid: string,
     body: {

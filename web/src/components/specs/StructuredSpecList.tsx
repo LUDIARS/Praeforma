@@ -1,8 +1,9 @@
 import React from 'react';
 import type { Spec } from '../../lib/api.ts';
+import { SpecTermsPanel } from './SpecTermsPanel.tsx';
 
 /** ストラクチャード仕様をブロック単位で並べる。 概要だけ見せ、 本文と条件は開いたときに出す。 */
-export function StructuredSpecList({ specs, focus }: { specs: Spec[]; focus: string | null }): React.ReactElement {
+export function StructuredSpecList({ pid, specs, focus }: { pid: string; specs: Spec[]; focus: string | null }): React.ReactElement {
   return <div className="spec-block-list">
     {specs.map((spec) => <details key={spec.id} className="fragment-card" data-focus={spec.code} open={spec.code === focus || undefined}>
       <summary className="spec-block-summary">
@@ -13,6 +14,7 @@ export function StructuredSpecList({ specs, focus }: { specs: Spec[]; focus: str
       {spec.description ? <p className="fragment-content">{spec.description}</p> : <p className="meta">説明はありません。</p>}
       <Conditions label="前提条件" items={spec.preconditions} />
       <Conditions label="事後条件" items={spec.postconditions} />
+      <SpecTermsPanel pid={pid} spec={spec} />
     </details>)}
   </div>;
 }

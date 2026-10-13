@@ -24,7 +24,8 @@ export async function confirmReconstruction(pid:string,proposal:ReconstructionPr
   // Early feedback; statements below repeat row guards within the commit transaction.
   if(!isDeepStrictEqual(await reconstructionMaterial(pid),material))throw AppError.conflict('reconstruction_source_changed');
   if(!plan.changes.length)throw AppError.badRequest('reconstruction_no_changes');
-  const changes=plan.changes.filter(change=>{const before=material.specs.find(s=>s.id===change.specId);return !before||before.title!==change.title||before.description!==change.description;});
+  const changes=plan.changes.filter(change=>{const before=material.specs.find(s=>s.id===change.specId);return !before||before.title!==change.title||before.description!==change.description
+    ||(change.measurements!==undefined&&!isDeepStrictEqual(change.measurements,before.measurements))||(change.contracts!==undefined&&!isDeepStrictEqual(change.contracts,before.contracts));});
   const steps=start(pid,material.head);const logs:unknown[]=[];
   const timestamp=getLocalSqlite()?Date.now():new Date().toISOString();
   for(const spec of material.specs){
@@ -35,9 +36,11 @@ export async function confirmReconstruction(pid:string,proposal:ReconstructionPr
   for(const change of changes){
     const before=material.specs.find(s=>s.id===change.specId);const id=before?.id??ulid();
     steps.push({sql:'SELECT id FROM domains WHERE id=? AND project_id=?',args:[change.domainId,pid],lock:true,check:rows=>rows.length===1});
-    if(before)steps.push({sql:'UPDATE specs SET title=?,description=?,version=version+1,updated_at=? WHERE id=? AND project_id=? AND version=? AND deleted_at IS NULL',args:[change.title,change.description,timestamp,id,pid,before.version],affected:1});
+    // 計測・契約は省略なら既存のまま。原文の数値・条件・報酬を再構築で落とさない。
+    const measurements=JSON.stringify(change.measurements??before?.measurements??[]),contracts=JSON.stringify(change.contracts??before?.contracts??[]);
+    if(before)steps.push({sql:'UPDATE specs SET title=?,description=?,measurements=?,contracts=?,version=version+1,updated_at=? WHERE id=? AND project_id=? AND version=? AND deleted_at IS NULL',args:[change.title,change.description,measurements,contracts,timestamp,id,pid,before.version],affected:1});
     else {
-      steps.push({sql:'INSERT INTO specs(id,project_id,code,title,description,created_by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)',args:[id,pid,`REC-${id}`,change.title,change.description,actor,timestamp,timestamp],affected:1});
+      steps.push({sql:'INSERT INTO specs(id,project_id,code,title,description,measurements,contracts,created_by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)',args:[id,pid,`REC-${id}`,change.title,change.description,measurements,contracts,actor,timestamp,timestamp],affected:1});
       steps.push({sql:'INSERT INTO spec_targets(spec_id,kind,ref_id) VALUES(?,?,?)',args:[id,'domain',change.domainId],affected:1});
     }
     logs.push({id,before:before??null,after:{...change,id},fragments:material.fragments.filter(f=>change.fragmentIds.includes(f.id))});

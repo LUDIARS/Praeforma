@@ -10,6 +10,7 @@ import { SPEC_VERSION_DDL } from './spec-version-sqlite.ts';
 
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import type { CatchcopyOrigin } from '../../../shared/catchcopy.ts';
+import type { Contract, Measurement } from '../../../shared/spec-terms.ts';
 import { featureManualsSqlite, MANUAL_DDL } from './manual-sqlite.ts';
 import {
   conceptSheetsSqlite, conceptSheetVersionsSqlite, CONCEPT_SHEET_DDL, CONCEPT_SHEET_ALTERS, CONCEPT_SHEET_BACKFILLS,
@@ -235,6 +236,8 @@ export const specs = sqliteTable('specs', {
   category: text('category').notNull().default('behavior'),
   preconditions: text('preconditions', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
   postconditions: text('postconditions', { mode: 'json' }).$type<string[]>().notNull().$defaultFn(() => []),
+  measurements: text('measurements', { mode: 'json' }).$type<Measurement[]>().notNull().$defaultFn(() => []),
+  contracts: text('contracts', { mode: 'json' }).$type<Contract[]>().notNull().$defaultFn(() => []),
   status: text('status').notNull().default('draft'),
   version: integer('version').notNull().default(1),
   createdBy: text('created_by').notNull(),
@@ -498,6 +501,8 @@ export const SQLITE_ALTERS: string[] = [
   `ALTER TABLE domains ADD COLUMN definition_revision INTEGER NOT NULL DEFAULT 0`,
   `ALTER TABLE domains ADD COLUMN anatomia_domain TEXT`,
   `ALTER TABLE projects ADD COLUMN anatomia_repo TEXT`,
+  `ALTER TABLE specs ADD COLUMN measurements TEXT NOT NULL DEFAULT '[]'`,
+  `ALTER TABLE specs ADD COLUMN contracts TEXT NOT NULL DEFAULT '[]'`,
   ...CONCEPT_SHEET_ALTERS,
 ];
 
@@ -540,7 +545,7 @@ export const SQLITE_DDL: string[] = [
   `CREATE TABLE IF NOT EXISTS spec_messages (id TEXT PRIMARY KEY, conversation_id TEXT NOT NULL, role TEXT NOT NULL, content TEXT NOT NULL, proposals TEXT NOT NULL DEFAULT '[]', applied INTEGER NOT NULL DEFAULT 0, created_at INTEGER)`,
   `CREATE TABLE IF NOT EXISTS cc_links (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, target_kind TEXT NOT NULL, target_id TEXT NOT NULL, cc_kind TEXT NOT NULL, cc_id TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued', last_synced_at INTEGER, created_at INTEGER, updated_at INTEGER)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_cc_links_cc ON cc_links(project_id, cc_kind, cc_id)`,
-  `CREATE TABLE IF NOT EXISTS specs (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, code TEXT NOT NULL, title TEXT NOT NULL, description TEXT, priority TEXT NOT NULL DEFAULT 'should', category TEXT NOT NULL DEFAULT 'behavior', preconditions TEXT NOT NULL DEFAULT '[]', postconditions TEXT NOT NULL DEFAULT '[]', status TEXT NOT NULL DEFAULT 'draft', version INTEGER NOT NULL DEFAULT 1, created_by TEXT NOT NULL, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,
+  `CREATE TABLE IF NOT EXISTS specs (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, code TEXT NOT NULL, title TEXT NOT NULL, description TEXT, priority TEXT NOT NULL DEFAULT 'should', category TEXT NOT NULL DEFAULT 'behavior', preconditions TEXT NOT NULL DEFAULT '[]', postconditions TEXT NOT NULL DEFAULT '[]', measurements TEXT NOT NULL DEFAULT '[]', contracts TEXT NOT NULL DEFAULT '[]', status TEXT NOT NULL DEFAULT 'draft', version INTEGER NOT NULL DEFAULT 1, created_by TEXT NOT NULL, created_at INTEGER, updated_at INTEGER, deleted_at INTEGER)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_specs_project_code ON specs(project_id, code)`,
   `CREATE TABLE IF NOT EXISTS spec_targets (id INTEGER PRIMARY KEY AUTOINCREMENT, spec_id TEXT NOT NULL, kind TEXT NOT NULL, ref_id TEXT NOT NULL)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_spec_targets_spec_kind_ref ON spec_targets(spec_id, kind, ref_id)`,

@@ -8,3 +8,11 @@
 .spec-block-title { flex: 1 1 240px; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
 .fragment-card[open] > summary.spec-block-summary { margin-bottom: 10px; }
 .fragment-card + .fragment-card { margin-top: 8px; }
+.spec-terms-panel { margin-top: 12px; display: grid; gap: 8px; min-width: 0; }
+.spec-terms { display: grid; gap: 6px; min-width: 0; overflow-x: auto; }
+.spec-terms-table { border-collapse: collapse; font-size: 12px; min-width: 560px; }
+.spec-terms-table th, .spec-terms-table td { border: 1px solid var(--border); padding: 4px 6px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.spec-terms-issues { border-left: 3px solid #c47b00; padding: 4px 10px; }
+.spec-terms-form fieldset { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; border: 1px solid var(--border); border-radius: 8px; }
+.spec-terms-form label { display: grid; gap: 4px; font-size: 12px; min-width: 0; }
+.spec-terms-form button { align-self: end; }
