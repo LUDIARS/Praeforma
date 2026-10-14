@@ -11,8 +11,16 @@ export const manualApi = {
 };
 export function manualError(error:unknown): string {
   const e=error as ApiError;
-  const code=(e.body as {error?:string}|undefined)?.error;
-  if(code==='manual_quality_check_failed') return '説明に必要な情報が足りないか、言葉・図の確認を通過できませんでした。資料を見直してください。';
+  const body=e.body as {error?:string;detail?:{reason?:unknown;issues?:unknown}}|undefined;
+  const code=body?.error;
+  if(code==='manual_insufficient_material'){
+    const reason=typeof body?.detail?.reason==='string'?body.detail.reason:'';
+    return `資料だけでは説明書を書けませんでした。資料を補ってからやり直してください。${reason?`\n理由: ${reason}`:''}`;
+  }
+  if(code==='manual_quality_check_failed'){
+    const issues=Array.isArray(body?.detail?.issues)?body.detail.issues.filter((i):i is string=>typeof i==='string'):[];
+    return `言葉・図の確認を通過できませんでした。資料を見直してからやり直してください。${issues.length?`\n${issues.join('\n')}`:''}`;
+  }
   if(code==='invalid_manual_document') return '説明文や図の空欄・長さ・言葉を確認してください。入力は残っています。';
   if(code==='manual_source_changed') return '元の仕様が変わりました。最新の内容から作り直してください。入力は残っています。';
   if(e.status===409) return '別の変更が保存されています。入力を控えてから最新の内容を開いてください。';

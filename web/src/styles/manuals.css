@@ -5,6 +5,7 @@
 .manual-content,.manual-reader,.manual-form{min-width:0;overflow-wrap:anywhere}
 .manual-reader{max-width:760px;line-height:1.8}
 .manual-reader p{white-space:pre-wrap}
+.manual-workspace [role=alert]{white-space:pre-line}
 .manual-form label{display:flex;flex-direction:column;gap:5px;margin:12px 0}
 .manual-form input,.manual-form textarea,.manual-form select{width:100%;min-width:0;box-sizing:border-box}
 .manual-form fieldset,.manual-edit-tools{min-width:0;margin:16px 0;padding:12px;border:1px solid #8886;border-radius:12px}

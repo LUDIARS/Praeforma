@@ -18,6 +18,24 @@ test('manual quality validation covers figure labels and requires a useful diagr
   assert.equal(manualDocumentSchema.safeParse({...document,purpose:'<script>alert(1)</script>'}).success,false);
 });
 
+test('manual writer replies separate declared refusals from quality failures',async()=>{
+  const {interpretManualResponse}=await import('../manual-response.ts');
+  const {AppError}=await import('../errors.ts');
+  const failure=(raw:string):InstanceType<typeof AppError>=>{try{interpretManualResponse(raw);}catch(e){assert.ok(e instanceof AppError);return e;}assert.fail('expected an error');};
+  assert.deepEqual(interpretManualResponse('```json\n'+JSON.stringify(document)+'\n```'),document);
+  const refused=failure(JSON.stringify({error:'選んだ後の結果が資料にありません。'}));
+  assert.equal(refused.message,'manual_insufficient_material');assert.equal(refused.status,422);
+  assert.deepEqual(refused.detail,{reason:'選んだ後の結果が資料にありません。'});
+  assert.equal((failure(JSON.stringify({error:'あ'.repeat(5000)})).detail as {reason:string}).reason.length,1000);
+  const unparsable=failure('説明できません');
+  assert.equal(unparsable.message,'manual_quality_check_failed');assert.equal(unparsable.detail,undefined);
+  const malformed=failure(JSON.stringify({...document,sections:[]}));
+  assert.equal(malformed.message,'manual_quality_check_failed');assert.equal(malformed.detail,undefined);
+  const technical=structuredClone(document);technical.purpose='APIで持ち物を確認できます。';
+  assert.deepEqual(failure(JSON.stringify(technical)).detail,{issues:['「API」を身近な言葉に置き換えてください。']});
+  assert.equal(failure(JSON.stringify({error:'理由',title:'混在'})).message,'manual_quality_check_failed');
+});
+
 test('manual proposals preserve edits, enforce scope and revisions, and detect changed evidence',async()=>{
   const {initLocalDb,getDb,getLocalSqlite}=await import('../../db/connection.ts');
   const {projects,projectMembers}=await import('../../db/schema/project.ts');
