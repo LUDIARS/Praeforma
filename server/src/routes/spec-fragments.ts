@@ -12,6 +12,7 @@ import { createFragmentSchema, fragmentImplementationSchema } from '../lib/spec-
 import { parsePagination } from '../lib/pagination.ts';
 import { AppError } from '../lib/errors.ts';
 import { countPendingFragments } from '../lib/fragment-cleanup-todo.ts';
+import { fragmentDispositions, PENDING_DISPOSITION } from '../lib/fragment-disposition.ts';
 
 const VIEW_ROLES: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer'];
 const EDIT_ROLES: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer'];
@@ -36,7 +37,10 @@ export function makeSpecFragmentRouter(): Hono {
     const items = await getDb().select().from(specFragments)
       .where(eq(specFragments.projectId, context.req.param('pid')!))
       .orderBy(desc(specFragments.createdAt), desc(specFragments.id)).limit(page.limit + 1).offset(page.offset);
-    return context.json({ items: items.slice(0, page.limit), hasMore: items.length > page.limit,
+    const pageItems = items.slice(0, page.limit);
+    const dispositions = await fragmentDispositions(pageItems.map((item) => item.id));
+    return context.json({ items: pageItems.map((item) => ({ ...item, disposition: dispositions.get(item.id) ?? PENDING_DISPOSITION })),
+      hasMore: items.length > page.limit,
       canEdit: EDIT_ROLES.includes(context.get('projectRole')), ...page });
   });
   router.post('/', requireRole(EDIT_ROLES), bodyLimit({ maxSize: 131072 }), async (context) => {

@@ -1,11 +1,13 @@
 import React from 'react';
 import { useMutation } from '@tanstack/react-query';
 import type { SpecFragment, ImplementationState } from '../../../../shared/spec-fragments.ts';
+import type { FragmentDispositionState } from '../../../../shared/spec-versioning.ts';
 import { fragmentApi } from '../../lib/spec-fragments-api.ts';
 import type { ApiError } from '../../lib/api.ts';
 import { summarize } from './spec-block-summary.ts';
 
 const labels: Record<ImplementationState, string> = { unverified: '未確認', unimplemented: '未実装', implemented: '実装済' };
+const dispositionLabels: Record<FragmentDispositionState, string> = { pending: '未整理', integrated: '統合済', rejected: '棄却' };
 
 export function FragmentCard({ fragment, canEdit, onChanged }: {
   fragment: SpecFragment; canEdit: boolean; onChanged: () => Promise<void>;
@@ -26,7 +28,9 @@ export function FragmentCard({ fragment, canEdit, onChanged }: {
       <span className="fragment-meta"><span>{labels[fragment.implementationState]}</span>
         <time dateTime={fragment.createdAt}>{new Date(fragment.createdAt).toLocaleString()}</time></span>
     </summary>
-    <div className="fragment-meta"><span>出所: {fragment.source}</span></div>
+    <div className="fragment-meta"><span>出所: {fragment.source}</span>
+      {fragment.disposition && <span>処理: {dispositionLabels[fragment.disposition.state]}{fragment.disposition.version ? `（${fragment.disposition.version}）` : ''}</span>}</div>
+    {fragment.disposition?.state === 'rejected' && fragment.disposition.reason && <p className="fragment-content">棄却理由: {fragment.disposition.reason}</p>}
     <p className="fragment-content">{fragment.content}</p>
     {fragment.implementationEvidence && <p className="fragment-content">確認根拠: {fragment.implementationEvidence}</p>}
     {canEdit && !editing && <button type="button" className="ghost" onClick={() => {

@@ -6,9 +6,19 @@ export async function readSpecHead(pid:string):Promise<SpecVersionHead> {
   const [row]=await versionRows('SELECT major,minor,patch,revision FROM spec_version_heads WHERE project_id=?',[pid]);
   return row?{major:Number(row.major),minor:Number(row.minor),patch:Number(row.patch),revision:Number(row.revision)}:{major:0,minor:0,patch:0,revision:0};
 }
-export async function reconstructionMaterial(pid:string):Promise<ReconstructionMaterial> {
+const PENDING_FRAGMENTS='SELECT id,content,revision FROM spec_fragments WHERE project_id=? AND NOT EXISTS(SELECT 1 FROM spec_reconstruction_fragments r WHERE r.fragment_id=spec_fragments.id)';
+/** scope 指定時はその未処理断片だけを資料にする。処理済み・別プロジェクトの断片が混ざれば競合。 */
+async function pendingFragments(pid:string,scope?:readonly string[]):Promise<Record<string,unknown>[]> {
+  if(!scope)return versionRows(`${PENDING_FRAGMENTS} ORDER BY id LIMIT 501`,[pid]);
+  const ids=[...new Set(scope)];
+  if(ids.length!==scope.length)throw AppError.badRequest('invalid_reconstruction_fragment');
+  const rows=await versionRows(`${PENDING_FRAGMENTS} AND id IN (${ids.map(()=>'?').join(',')}) ORDER BY id`,[pid,...ids]);
+  if(rows.length!==ids.length)throw AppError.conflict('reconstruction_fragment_unavailable');
+  return rows;
+}
+export async function reconstructionMaterial(pid:string,scope?:readonly string[]):Promise<ReconstructionMaterial> {
   const specs=await versionRows('SELECT id,code,title,description,version,priority,category,status,preconditions,postconditions,measurements,contracts FROM specs WHERE project_id=? AND deleted_at IS NULL ORDER BY id LIMIT 501',[pid]);
-  const fragments=await versionRows('SELECT id,content,revision FROM spec_fragments WHERE project_id=? AND NOT EXISTS(SELECT 1 FROM spec_reconstruction_fragments r WHERE r.fragment_id=spec_fragments.id) ORDER BY id LIMIT 501',[pid]);
+  const fragments=await pendingFragments(pid,scope);
   const domains=await versionRows('SELECT id,name FROM domains WHERE project_id=? ORDER BY id',[pid]);
   const targets=await versionRows("SELECT t.spec_id,t.ref_id FROM spec_targets t JOIN specs s ON s.id=t.spec_id WHERE s.project_id=? AND t.kind='domain' ORDER BY t.ref_id",[pid]);
   if(specs.length>500||fragments.length>500)throw new AppError('reconstruction_material_too_large',413);

@@ -16,6 +16,8 @@ export function ReconstructionPreview({proposal,disabled,onConfirm}:{proposal:Re
       </article>;
     })}
     {proposal.plan.deferred.length?<details open><summary>保留する断片</summary>{proposal.plan.deferred.map(item=><div key={item.fragmentId}><p>{item.reason}</p><pre>{proposal.material.fragments.find(fragment=>fragment.id===item.fragmentId)?.content}</pre></div>)}</details>:null}
-    <button type="button" disabled={disabled||!proposal.plan.changes.length} onClick={onConfirm}>この内容で確定する</button>
+    {proposal.plan.rejected?.length?<details open><summary>棄却する断片（{proposal.plan.rejected.length}件）</summary><p>確定すると処理済みになり、未整理の一覧から外れます。原文と理由は記録に残ります。</p>
+      {proposal.plan.rejected.map(item=><div key={item.fragmentId}><p>{item.reason}</p><pre>{proposal.material.fragments.find(fragment=>fragment.id===item.fragmentId)?.content}</pre></div>)}</details>:null}
+    <button type="button" disabled={disabled||(!proposal.plan.changes.length&&!proposal.plan.rejected?.length)} onClick={onConfirm}>この内容で確定する</button>
   </section>;
 }

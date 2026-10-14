@@ -7,17 +7,19 @@ import { requireRole } from '../middleware/require-role.ts';
 import type { ProjectRole } from '../db/schema/project.ts';
 import { versionRows,versionBatch,parseStored } from '../db/spec-version-store.ts';
 import { reconstructionMaterial,readSpecHead } from '../lib/reconstruction-material.ts';
-import { writeReconstruction } from '../lib/reconstruction-writer.ts';
+import { validateReconstruction,writeReconstruction } from '../lib/reconstruction-writer.ts';
 import { confirmReconstruction,recordSpecRelease } from '../lib/reconstruction-commit.ts';
 import { AppError } from '../lib/errors.ts';
 import type { ReconstructionProposal,ReconstructionMaterial,ReconstructionPlan } from '../../../shared/spec-versioning.ts';
-import { versionLabel } from '../../../shared/spec-versioning.ts';
+import { externalReconstructionSchema,versionLabel } from '../../../shared/spec-versioning.ts';
 const view:readonly ProjectRole[]=['owner','planner','designer','programmer','reviewer','viewer'];
 const edit:readonly ProjectRole[]=['owner','planner'];
 const active=new Set<string>();
 type Writer=(binary:string,material:ReconstructionMaterial)=>Promise<ReconstructionPlan>;
 export function makeSpecVersionRouter(binary:string,writer:Writer=writeReconstruction):Hono {
-  const r=new Hono();r.use('*',requireAuth,requireRole(view),bodyLimit({maxSize:32768}));
+  const small=bodyLimit({maxSize:32768});const large=bodyLimit({maxSize:4*1024*1024});
+  // 外部案は全文入りの統合案を運ぶので、そのルートだけ上限を広げる。
+  const r=new Hono();r.use('*',requireAuth,requireRole(view),(c,next)=>c.req.path.endsWith('/reconstructions/external')?large(c,next):small(c,next));
   r.use('*',async(c,next)=>{const rows=await versionRows('SELECT id FROM projects WHERE id=? AND deleted_at IS NULL',[c.req.param('pid')!]);if(!rows.length)throw AppError.notFound('project_not_found');await next();});
   r.get('/',async c=>{
     const pid=c.req.param('pid')!;const offset=Number(c.req.query('offset')??0);if(!Number.isInteger(offset)||offset<0)throw AppError.badRequest('invalid_page');
@@ -30,6 +32,20 @@ export function makeSpecVersionRouter(binary:string,writer:Writer=writeReconstru
       const material=await reconstructionMaterial(pid);if(!material.fragments.length)throw AppError.badRequest('no_pending_fragments');if(!material.domains.length)throw AppError.badRequest('domain_required');
       const plan=await writer(binary,material);const id=ulid();
       const proposal:ReconstructionProposal={id,material,plan,confirmedVersion:null};
+      await versionBatch([{sql:'INSERT INTO spec_reconstructions(id,project_id,payload) SELECT ?,id,? FROM projects WHERE id=? AND deleted_at IS NULL',args:[id,JSON.stringify(proposal),pid],affected:1}]);
+      return c.json({proposal},201);
+    } finally {active.delete(pid);}
+  });
+  // 外部で作成した案を、指定した未処理断片だけの資料と組にして登録する。確定は画面で人が行う。
+  r.post('/reconstructions/external',requireRole(edit),async c=>{
+    const parsed=externalReconstructionSchema.safeParse(await c.req.json().catch(()=>null));
+    if(!parsed.success)throw AppError.badRequest('invalid_reconstruction',parsed.error.flatten());
+    const pid=c.req.param('pid')!;if(active.has(pid))throw new AppError('reconstruction_busy',429);active.add(pid);
+    try {
+      const {fragmentIds,plan}=parsed.data;
+      const material=await reconstructionMaterial(pid,fragmentIds);if(!material.domains.length&&plan.changes.length)throw AppError.badRequest('domain_required');
+      validateReconstruction(material,plan);const id=ulid();
+      const proposal:ReconstructionProposal={id,material,plan,confirmedVersion:null,fragmentScope:fragmentIds};
       await versionBatch([{sql:'INSERT INTO spec_reconstructions(id,project_id,payload) SELECT ?,id,? FROM projects WHERE id=? AND deleted_at IS NULL',args:[id,JSON.stringify(proposal),pid],affected:1}]);
       return c.json({proposal},201);
     } finally {active.delete(pid);}

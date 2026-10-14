@@ -36,3 +36,16 @@ implementation_stateはunverified/unimplemented/implemented。新規断片は未
 ### 回帰確認
 
 RevisorでSQLite/PGの移行、同一イベント再送、別イベント同文、衝突409、CAS競合、viewer拒否、別プロジェクト/削除済プロジェクト拒否、空白・過大入力拒否、原文の改行と数値/条件/報酬の保存を確認する。UIの再送・エラー時の入力保持と既存仕様focusリンクを確認する。
+
+## 処理結果: spec_reconstruction_fragments（migration 026）
+
+再構築の確定で処理済みになった断片を1行ずつ記録する（断片IDが主キーなので二重処理しない）。
+
+| 列 | 内容 |
+| --- | --- |
+| fragment_id | 処理した断片 |
+| reconstruction_id | 確定した再構築案 |
+| disposition | `integrated`（統合）/ `rejected`（棄却）。既存行は統合で確定したものなので `integrated` |
+| reason | 棄却の理由（統合では null） |
+
+棄却は原文の削除ではない。断片一覧 `GET /spec-fragments` は各断片に `disposition`（`pending` / `integrated` / `rejected`、理由、確定版）を付けて返す。再構築案の `fragmentScope` は外部案で資料にした断片IDで、確定時の再照合もこの範囲で行う。

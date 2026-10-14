@@ -22,8 +22,9 @@ function finish(pid:string,head:SpecVersionHead,kind:'minor'|'major',payload:unk
 export async function confirmReconstruction(pid:string,proposal:ReconstructionProposal,actor:string):Promise<string> {
   const {material,plan}=proposal;
   // Early feedback; statements below repeat row guards within the commit transaction.
-  if(!isDeepStrictEqual(await reconstructionMaterial(pid),material))throw AppError.conflict('reconstruction_source_changed');
-  if(!plan.changes.length)throw AppError.badRequest('reconstruction_no_changes');
+  if(!isDeepStrictEqual(await reconstructionMaterial(pid,proposal.fragmentScope),material))throw AppError.conflict('reconstruction_source_changed');
+  const rejected=plan.rejected??[];
+  if(!plan.changes.length&&!rejected.length)throw AppError.badRequest('reconstruction_no_changes');
   const changes=plan.changes.filter(change=>{const before=material.specs.find(s=>s.id===change.specId);return !before||before.title!==change.title||before.description!==change.description
     ||(change.measurements!==undefined&&!isDeepStrictEqual(change.measurements,before.measurements))||(change.contracts!==undefined&&!isDeepStrictEqual(change.contracts,before.contracts));});
   const steps=start(pid,material.head);const logs:unknown[]=[];
@@ -45,10 +46,13 @@ export async function confirmReconstruction(pid:string,proposal:ReconstructionPr
     }
     logs.push({id,before:before??null,after:{...change,id},fragments:material.fragments.filter(f=>change.fragmentIds.includes(f.id))});
   }
-  for(const change of plan.changes)for(const fragment of change.fragmentIds)steps.push({sql:'INSERT INTO spec_reconstruction_fragments(fragment_id,reconstruction_id) VALUES(?,?)',args:[fragment,proposal.id],affected:1});
+  for(const change of plan.changes)for(const fragment of change.fragmentIds)steps.push({sql:"INSERT INTO spec_reconstruction_fragments(fragment_id,reconstruction_id,disposition) VALUES(?,?,'integrated')",args:[fragment,proposal.id],affected:1});
+  // 棄却も処理済みとして記録する。原文は spec_fragments に残し、理由を版ログからも追えるようにする。
+  for(const item of rejected)steps.push({sql:"INSERT INTO spec_reconstruction_fragments(fragment_id,reconstruction_id,disposition,reason) VALUES(?,?,'rejected',?)",args:[item.fragmentId,proposal.id,item.reason],affected:1});
   const version=versionLabel(nextSpecVersion(material.head,'minor'));
   steps.push({sql:'UPDATE spec_reconstructions SET confirmed_version=? WHERE id=? AND project_id=? AND confirmed_version IS NULL',args:[version,proposal.id,pid],affected:1});
-  steps.push(...finish(pid,material.head,'minor',{actor,changes:logs,integratedFragments:plan.changes.flatMap(change=>change.fragmentIds),deferred:plan.deferred}));
+  steps.push(...finish(pid,material.head,'minor',{actor,changes:logs,integratedFragments:plan.changes.flatMap(change=>change.fragmentIds),deferred:plan.deferred,
+    rejected:rejected.map(item=>({...item,content:material.fragments.find(f=>f.id===item.fragmentId)?.content??null}))}));
   await versionBatch(steps);return version;
 }
 export async function recordSpecRelease(pid:string,head:SpecVersionHead,note:string,actor:string):Promise<string> {

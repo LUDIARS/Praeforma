@@ -1,4 +1,9 @@
 /** PF-RECON-3: insertion and its patch log cannot commit separately. */
+/** 既存 DB へ足す列 (migration 026)。処理結果は統合か棄却か、棄却なら理由を持つ。 */
+export const SPEC_VERSION_ALTERS=[
+  `ALTER TABLE spec_reconstruction_fragments ADD COLUMN disposition TEXT NOT NULL DEFAULT 'integrated'`,
+  `ALTER TABLE spec_reconstruction_fragments ADD COLUMN reason TEXT`,
+];
 export const SPEC_VERSION_DDL=[
   `CREATE TABLE IF NOT EXISTS spec_version_heads(project_id TEXT PRIMARY KEY REFERENCES projects(id), major INTEGER NOT NULL DEFAULT 0, minor INTEGER NOT NULL DEFAULT 0, patch INTEGER NOT NULL DEFAULT 0, revision INTEGER NOT NULL DEFAULT 0, suppress INTEGER NOT NULL DEFAULT 0)`,
   `CREATE TABLE IF NOT EXISTS spec_version_logs(id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), version TEXT NOT NULL, revision INTEGER NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL, created_at TEXT NOT NULL, UNIQUE(project_id,version))`,

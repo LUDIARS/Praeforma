@@ -1,4 +1,4 @@
-import { SPEC_VERSION_DDL } from './spec-version-sqlite.ts';
+import { SPEC_VERSION_ALTERS, SPEC_VERSION_DDL } from './spec-version-sqlite.ts';
 // SQLite 版スキーマ (ローカル「仕様書レビュー」モード用、 Studio 最小サブセット 15 テーブル)。
 //
 // 既存 pg スキーマと同じテーブル名 / カラム名 / JS キーで定義し、 各 pg schema ファイルが
@@ -503,6 +503,7 @@ export const SQLITE_ALTERS: string[] = [
   `ALTER TABLE projects ADD COLUMN anatomia_repo TEXT`,
   `ALTER TABLE specs ADD COLUMN measurements TEXT NOT NULL DEFAULT '[]'`,
   `ALTER TABLE specs ADD COLUMN contracts TEXT NOT NULL DEFAULT '[]'`,
+  ...SPEC_VERSION_ALTERS,
   ...CONCEPT_SHEET_ALTERS,
 ];
 
