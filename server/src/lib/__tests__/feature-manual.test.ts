@@ -30,10 +30,62 @@ test('manual writer replies separate declared refusals from quality failures',as
   const unparsable=failure('説明できません');
   assert.equal(unparsable.message,'manual_quality_check_failed');assert.equal(unparsable.detail,undefined);
   const malformed=failure(JSON.stringify({...document,sections:[]}));
-  assert.equal(malformed.message,'manual_quality_check_failed');assert.equal(malformed.detail,undefined);
+  assert.equal(malformed.message,'manual_quality_check_failed');
+  assert.deepEqual(malformed.detail,{issues:['節が少なすぎます（1 個以上）。']});
   const technical=structuredClone(document);technical.purpose='APIで持ち物を確認できます。';
   assert.deepEqual(failure(JSON.stringify(technical)).detail,{issues:['「API」を身近な言葉に置き換えてください。']});
   assert.equal(failure(JSON.stringify({error:'理由',title:'混在'})).message,'manual_quality_check_failed');
+});
+
+test('manual shape failures name the place and limit without echoing the rejected text',async()=>{
+  const {interpretManualResponse}=await import('../manual-response.ts');
+  const {AppError}=await import('../errors.ts');
+  const issuesOf=(value:unknown):unknown=>{try{interpretManualResponse(JSON.stringify(value));}catch(e){assert.ok(e instanceof AppError);return e.detail;}assert.fail('expected an error');};
+  const fiveWays=structuredClone(document);
+  fiveWays.diagram.steps[1]!.branches=['扉','紙','机','鞄','箱'].map(name=>({condition:`${name}を選ぶ`,result:'次の画面が開きます。'}));
+  assert.deepEqual(issuesOf(fiveWays),{issues:['図の 2 段目の分岐が多すぎます（4 個まで）。']});
+  const longText=structuredClone(document);longText.sections[0]!.text='秘密の文'.repeat(400);
+  const detail=issuesOf(longText) as {issues:string[]};
+  assert.deepEqual(detail,{issues:['1 番目の節の本文が長すぎます（1200 字まで）。']});
+  assert.ok(!JSON.stringify(detail).includes('秘密の文'));
+  assert.deepEqual(issuesOf({...document,extra:'x'}),{issues:['文書に決められていない項目があります。']});
+  assert.deepEqual(issuesOf({...document,title:''}),{issues:['題名が空です。']});
+});
+
+test('a rejected first draft is repaired once with its issues, and refusals are not retried',async()=>{
+  const {writeManual}=await import('../manual-writer.ts');
+  const {AppError}=await import('../errors.ts');
+  const fiveWays=structuredClone(document);
+  fiveWays.diagram.steps[1]!.branches=['扉','紙','机','鞄','箱'].map(name=>({condition:`${name}を選ぶ`,result:'次の画面が開きます。'}));
+  const scripted=(replies:string[])=>{const prompts:string[]=[];return {prompts,run:async(_b:string,prompt:string)=>{prompts.push(prompt);return replies.shift()??'';}};};
+  const fixed=scripted([JSON.stringify(fiveWays),JSON.stringify(document)]);
+  assert.deepEqual((await writeManual('unused',{a:1},fixed.run)).document,document);
+  assert.equal(fixed.prompts.length,2);
+  assert.ok(fixed.prompts[1]!.includes('- 図の 2 段目の分岐が多すぎます（4 個まで）。'));
+  assert.ok(fixed.prompts[1]!.includes('前回の出力:\n'+JSON.stringify(fiveWays)));
+  assert.ok(!fixed.prompts[0]!.includes('前回の出力'));
+  const unreadable=scripted(['説明します',JSON.stringify(document)]);
+  await writeManual('unused',{a:1},unreadable.run);
+  assert.ok(unreadable.prompts[1]!.includes('- 出力が決められた形の JSON として読めませんでした。'));
+  const twice=scripted([JSON.stringify(fiveWays),JSON.stringify(fiveWays),JSON.stringify(document)]);
+  await assert.rejects(writeManual('unused',{a:1},twice.run),(e:unknown)=>e instanceof AppError&&e.message==='manual_quality_check_failed');
+  assert.equal(twice.prompts.length,2);
+  const refused=scripted([JSON.stringify({error:'資料が足りません。'}),JSON.stringify(document)]);
+  await assert.rejects(writeManual('unused',{a:1},refused.run),(e:unknown)=>e instanceof AppError&&e.message==='manual_insufficient_material');
+  assert.equal(refused.prompts.length,1);
+  const crashed={calls:0,run:async()=>{crashed.calls+=1;throw new AppError('manual_generation_timeout',504);}};
+  await assert.rejects(writeManual('unused',{a:1},crashed.run),(e:unknown)=>e instanceof AppError&&e.message==='manual_generation_timeout');
+  assert.equal(crashed.calls,1);
+});
+
+test('the writer prompt states every shape limit the validation enforces',async()=>{
+  const {buildManualPrompt}=await import('../manual-writer.ts');
+  const {MANUAL_LIMITS:L}=await import('../manual-limits.ts');
+  const prompt=buildManualPrompt('規則','{"material":true}');
+  for(const fragment of [`title は ${L.title} 字まで`,`sections は ${L.sections.min}〜${L.sections.max} 個`,`text は ${L.text} 字まで`,
+    `diagram.steps は ${L.steps.min}〜${L.steps.max} 段`,`branches は ${L.branches.max} 個まで`,`result は ${L.result} 字まで`]) assert.ok(prompt.includes(fragment),fragment);
+  assert.ok(prompt.indexOf('形の上限')<prompt.indexOf('以下は参照資料'));
+  assert.ok(prompt.endsWith('{"material":true}'));
 });
 
 test('manual proposals preserve edits, enforce scope and revisions, and detect changed evidence',async()=>{

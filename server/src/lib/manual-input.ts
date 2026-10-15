@@ -1,13 +1,14 @@
 import { z } from 'zod';
 import { manualLanguageIssues } from '../../../shared/feature-manual.ts';
+import { MANUAL_LIMITS as L } from './manual-limits.ts';
 
 const sentence = z.string().trim().min(1).max(1200);
 export const manualDocumentSchema = z.object({
-  title: sentence.max(100), purpose: sentence,
-  sections: z.array(z.object({ heading: sentence.max(100), text: sentence }).strict()).min(1).max(12),
-  diagram: z.object({ caption: sentence.max(300), steps: z.array(z.object({
-    label: sentence.max(200), branches: z.array(z.object({ condition: sentence.max(150), result: sentence.max(250) }).strict()).max(4),
-  }).strict()).min(2).max(12) }).strict(),
+  title: sentence.max(L.title), purpose: sentence.max(L.purpose),
+  sections: z.array(z.object({ heading: sentence.max(L.heading), text: sentence.max(L.text) }).strict()).min(L.sections.min).max(L.sections.max),
+  diagram: z.object({ caption: sentence.max(L.caption), steps: z.array(z.object({
+    label: sentence.max(L.label), branches: z.array(z.object({ condition: sentence.max(L.condition), result: sentence.max(L.result) }).strict()).max(L.branches.max),
+  }).strict()).min(L.steps.min).max(L.steps.max) }).strict(),
 }).strict().superRefine((doc, ctx) => {
   for (const message of manualLanguageIssues(doc)) ctx.addIssue({ code: z.ZodIssueCode.custom, message });
 });
