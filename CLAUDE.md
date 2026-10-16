@@ -7,33 +7,32 @@
 
 ## 触ってよい / よくない
 
-- 触ってよい: `server/`, `web/` (= 未作成), `spec/`, root `package.json`, README
+- 触ってよい: `server/`, `web/`, `spec/`, root `package.json`, README
 - 触らない: 他リポ (Cernere / Memoria 等) — Praeforma は独立
 - DB schema 変更: spec/schema/*.md を **正本** として更新 → Drizzle schema +
   migrations を順番に追加 (= 過去 migration は不可逆、 新 NNN ファイルで進める)
 
 ## アーキ要点
 
-- Hono + Drizzle + Postgres + tsx (Cernere/Actio と同スタック)
-- 起動口 `server/bootstrap.ts`: Infisical 経由で env を確定 → `src/index.ts`
-- 認証: Cernere PASETO V4 (`src/auth/paseto.ts`、 公開鍵 6h refresh)
+- 通常の Excubitor catalog は個人用 SQLite モード。`npm run build` が web と server をビルドし、`node server/dist/local.js` で起動する。
+- `server/src/local.ts` がローカルモードを設定して `index.ts` を読む。このモードでは Cernere 認証は不要。
+- `server/bootstrap.ts` / Postgres / Cernere PASETO の経路は別モード。個人用 catalog の起動経路と混同しない。
 - DB 接続失敗時も `/api/health` は返す (`db: "down"` で表示)
-- env 供給: `.env` / `.env.secrets` / Infisical / Excubitor inject の多段
+- 稼働設定・起動方法は `excubitor.catalog.yaml` を確認する。既存 bootstrap の env 読込みを理由に、通常起動へ新たな secret 供給経路を追加しない。
 - 個人データ非保管: Cernere user UUID + display_name snapshot のみ持つ
 
 ## やらないこと (現フェーズ)
 
-- frontend (`web/`) は Step 3 で着手
+- `web/` は実装済み。画面の現在地は README と対応する feature 仕様を確認する。
 - Unity UPM は Step 8 で着手
 - WebSocket collaboration は Step 5 で着手
 - asset storage (MinIO/S3) は Step 10 で着手
 
 ## mvp-plan に従う
 
-`spec/mvp-plan.md` の 12 step を順次。 現在は Step 1 (server scaffold) 完了。
-Step 2 (REST CRUD) では `server/src/routes/` 配下に 5 領域 (projects /
-domains / objects / layouts / specs) の handler を追加し、 `requireAuth` +
-`requireRole` を組み合わせる。
+`spec/mvp-plan.md` の step は計画の履歴であり、現在の実装状態ではない。
+README、対応する feature 仕様、既存 routes を照合して変更する。
+複数人向け経路の `requireAuth` / `requireRole` を、個人用モードの説明変更で解除しない。
 
 ## migration
 
