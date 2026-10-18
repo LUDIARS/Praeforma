@@ -1,12 +1,13 @@
 import React from 'react';
 import { useSearchParams } from 'react-router';
 import { FragmentList } from './FragmentList.tsx';
+import { SprintWorkspace } from './SprintWorkspace.tsx';
 import { ManualWorkspace } from '../manuals/ManualWorkspace.tsx';
 import { SpecVersionPanel } from './SpecVersionPanel.tsx';
 import { SpecVisualizationView } from './SpecVisualizationView.tsx';
 import '../../styles/spec-workspace.css';
 
-const SPEC_KINDS = [['fragment', '断片'], ['structured', '体系'], ['manual', '説明書'], ['view', '可視化']] as const;
+const SPEC_KINDS = [['fragment', '断片'], ['sprint', 'スプリント'], ['structured', '体系'], ['manual', '説明書'], ['view', '可視化']] as const;
 
 export function SpecWorkspace({ pid, children }: { pid: string; children: React.ReactNode }): React.ReactElement {
   const [search, setSearch] = useSearchParams();
@@ -26,6 +27,7 @@ export function SpecWorkspace({ pid, children }: { pid: string; children: React.
     </div>
     {kind === 'view' ? <SpecVisualizationView key={pid} pid={pid} />
       : kind === 'manual' ? <ManualWorkspace key={pid} pid={pid} />
+      : kind === 'sprint' ? <SprintWorkspace key={pid} pid={pid} />
       : kind === 'structured' ? children : <FragmentList key={pid} pid={pid} />}
   </div>;
 }

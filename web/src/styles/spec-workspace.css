@@ -16,3 +16,5 @@
 .spec-terms-form fieldset { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; border: 1px solid var(--border); border-radius: 8px; }
 .spec-terms-form label { display: grid; gap: 4px; font-size: 12px; min-width: 0; }
 .spec-terms-form button { align-self: end; }
+.sprint-pick { display: flex !important; grid-template-columns: none; align-items: baseline; gap: 8px; overflow-wrap: anywhere; }
+.sprint-detail { margin-top: 12px; min-width: 0; }

@@ -10,6 +10,8 @@ import { reconstructionMaterial,readSpecHead } from '../lib/reconstruction-mater
 import { validateReconstruction,writeReconstruction } from '../lib/reconstruction-writer.ts';
 import { confirmReconstruction,recordSpecRelease } from '../lib/reconstruction-commit.ts';
 import { AppError } from '../lib/errors.ts';
+import { reconstructionScopeSchema,parseOptionalJson } from '../lib/spec-sprint-input.ts';
+import { readSprint } from '../lib/spec-sprint-store.ts';
 import type { ReconstructionProposal,ReconstructionMaterial,ReconstructionPlan } from '../../../shared/spec-versioning.ts';
 import { externalReconstructionSchema,versionLabel } from '../../../shared/spec-versioning.ts';
 const view:readonly ProjectRole[]=['owner','planner','designer','programmer','reviewer','viewer'];
@@ -27,9 +29,13 @@ export function makeSpecVersionRouter(binary:string,writer:Writer=writeReconstru
     return c.json({head,version:versionLabel(head),canEdit:edit.includes(c.get('projectRole')),hasMore:logs.length>20,logs:logs.slice(0,20).map(row=>({...row,payload:parseStored<unknown>(row.payload)}))});
   });
   r.post('/reconstructions',requireRole(edit),async c=>{
-    const pid=c.req.param('pid')!;if(active.has(pid))throw new AppError('reconstruction_busy',429);active.add(pid);
+    const pid=c.req.param('pid')!;
+    const scope=reconstructionScopeSchema.safeParse(parseOptionalJson(await c.req.text()));
+    if(!scope.success)throw AppError.badRequest('invalid_reconstruction_scope');const sprintId=scope.data?.sprintId??null;
+    if(sprintId)await readSprint(pid,sprintId);
+    if(active.has(pid))throw new AppError('reconstruction_busy',429);active.add(pid);
     try {
-      const material=await reconstructionMaterial(pid);if(!material.fragments.length)throw AppError.badRequest('no_pending_fragments');if(!material.domains.length)throw AppError.badRequest('domain_required');
+      const material=await reconstructionMaterial(pid,{sprintId});if(!material.fragments.length)throw AppError.badRequest('no_pending_fragments');if(!material.domains.length)throw AppError.badRequest('domain_required');
       const plan=await writer(binary,material);const id=ulid();
       const proposal:ReconstructionProposal={id,material,plan,confirmedVersion:null};
       await versionBatch([{sql:'INSERT INTO spec_reconstructions(id,project_id,payload) SELECT ?,id,? FROM projects WHERE id=? AND deleted_at IS NULL',args:[id,JSON.stringify(proposal),pid],affected:1}]);
@@ -43,7 +49,7 @@ export function makeSpecVersionRouter(binary:string,writer:Writer=writeReconstru
     const pid=c.req.param('pid')!;if(active.has(pid))throw new AppError('reconstruction_busy',429);active.add(pid);
     try {
       const {fragmentIds,plan}=parsed.data;
-      const material=await reconstructionMaterial(pid,fragmentIds);if(!material.domains.length&&plan.changes.length)throw AppError.badRequest('domain_required');
+      const material=await reconstructionMaterial(pid,{fragmentIds});if(!material.domains.length&&plan.changes.length)throw AppError.badRequest('domain_required');
       validateReconstruction(material,plan);const id=ulid();
       const proposal:ReconstructionProposal={id,material,plan,confirmedVersion:null,fragmentScope:fragmentIds};
       await versionBatch([{sql:'INSERT INTO spec_reconstructions(id,project_id,payload) SELECT ?,id,? FROM projects WHERE id=? AND deleted_at IS NULL',args:[id,JSON.stringify(proposal),pid],affected:1}]);

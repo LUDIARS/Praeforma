@@ -22,7 +22,8 @@ function finish(pid:string,head:SpecVersionHead,kind:'minor'|'major',payload:unk
 export async function confirmReconstruction(pid:string,proposal:ReconstructionProposal,actor:string):Promise<string> {
   const {material,plan}=proposal;
   // Early feedback; statements below repeat row guards within the commit transaction.
-  if(!isDeepStrictEqual(await reconstructionMaterial(pid,proposal.fragmentScope),material))throw AppError.conflict('reconstruction_source_changed');
+  // PF-SPRINT-5: a sprint-scoped proposal is compared against the same sprint's material.
+  if(!isDeepStrictEqual(await reconstructionMaterial(pid,{sprintId:material.sprintId,fragmentIds:proposal.fragmentScope}),material))throw AppError.conflict('reconstruction_source_changed');
   const rejected=plan.rejected??[];
   if(!plan.changes.length&&!rejected.length)throw AppError.badRequest('reconstruction_no_changes');
   const changes=plan.changes.filter(change=>{const before=material.specs.find(s=>s.id===change.specId);return !before||before.title!==change.title||before.description!==change.description

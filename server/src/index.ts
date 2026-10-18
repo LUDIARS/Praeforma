@@ -13,6 +13,7 @@ import { repoPath } from './lib/runtime-paths.ts';
 import { Hono } from 'hono';
 import { makeSpecFragmentRouter } from './routes/spec-fragments.ts';
 import { makeSpecVersionRouter } from './routes/spec-versions.ts';
+import { makeSpecSprintRouter } from './routes/spec-sprints.ts';
 import { makeDomainProposalRouter } from './routes/domain-proposals.ts';
 import { makeLlmChatRouter } from './routes/llm-chat.ts';
 import { noStoreResponses } from './middleware/no-store.ts';
@@ -176,6 +177,7 @@ app.route('/api/projects/:pid/layouts/:lid/scene-editor', makeSceneEditorRouter(
 app.route('/api/projects/:pid/specs', makeSpecRouter(onMaterialChange));
 app.route('/api/projects/:pid/spec-fragments', makeSpecFragmentRouter());
 app.route('/api/projects/:pid/spec-versions', makeSpecVersionRouter(config.claudeBin));
+app.route('/api/projects/:pid/spec-sprints', makeSpecSprintRouter());
 app.route('/api/projects/:pid/manuals', makeManualRouter(config.claudeBin));
 app.route('/api/projects/:pid/concept-sheets', makeConceptSheetRouter(conceptSheetWriter, conceptSheetJobs, conceptSheetAutoUpdater));
 app.route('/api/projects/:pid/constraints', makeProjectConstraintRouter(onMaterialChange));

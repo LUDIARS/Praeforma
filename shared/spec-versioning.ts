@@ -26,6 +26,8 @@ export interface ReconstructionMaterial {
   specs:Array<{id:string;code:string;title:string;description:string|null;version:number;domainIds:string[];priority:string;category:string;status:string;preconditions:string[];postconditions:string[];measurements:Measurement[];contracts:Contract[]}>;
   fragments:Array<{id:string;content:string;revision:number}>;
   domains:Array<{id:string;name:string}>;
+  /** PF-SPRINT-5: present when the fragments were limited to one sprint. */
+  sprintId?:string;
 }
 /** fragmentScope があるときは、その断片だけを資料にした案 (外部登録)。無ければ未処理の全断片。 */
 export interface ReconstructionProposal { id:string;material:ReconstructionMaterial;plan:ReconstructionPlan;confirmedVersion:string|null;fragmentScope?:string[] }
