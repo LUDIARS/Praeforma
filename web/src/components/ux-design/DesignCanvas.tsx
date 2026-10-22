@@ -22,7 +22,17 @@ interface Props {
   renderFrameOverlay?: (frame: CanvasFrame) => React.ReactNode;
   renderFrameBackground?: (frame: CanvasFrame) => React.ReactNode;
   allowTransitions?: boolean;
+  /**
+   * Roles (node mapping, dynamic/follow conditions, transitions) are shown in a separate UI,
+   * so the canvas draws only the visual objects and the inspector groups drawing vs. role fields. PF-SCENE-9.
+   */
+  separateRoles?: boolean;
+  /** Controlled selection, shared with a separate role view. Omit to let the canvas own it. */
+  selection?: CanvasSelection | null;
+  onSelectionChange?: (next: CanvasSelection | null) => void;
 }
+
+export type CanvasSelection = { kind: 'frame' | 'element'; id: string };
 
 type MoveTarget = { kind: 'frame' | 'element'; id: string; startX: number; startY: number; originalX: number; originalY: number };
 type ResizeTarget = { id: string; startX: number; startY: number; width: number; height: number };
@@ -40,7 +50,10 @@ function newFrame(index: number): CanvasFrame {
 export function DesignCanvas(props: Props): React.ReactElement {
   const { canvas, onChange } = props;
   const [zoom, setZoom] = React.useState(0.8);
-  const [selected, setSelected] = React.useState<{ kind: 'frame' | 'element'; id: string } | null>(null);
+  const [ownSelected, setOwnSelected] = React.useState<CanvasSelection | null>(null);
+  const selected = props.selection !== undefined ? props.selection : ownSelected;
+  const setSelected = (next: CanvasSelection | null) => { setOwnSelected(next); props.onSelectionChange?.(next); };
+  const drawTransitions = props.allowTransitions !== false && !props.separateRoles;
   const [move, setMove] = React.useState<MoveTarget | null>(null);
   const [resize, setResize] = React.useState<ResizeTarget | null>(null);
   const [transitionFrom, setTransitionFrom] = React.useState<{ frameId: string; elementId: string | null } | null>(null);
@@ -152,7 +165,7 @@ export function DesignCanvas(props: Props): React.ReactElement {
         onPointerCancel={() => { previewRef.current = null; props.onCancelPreview(); setMove(null); setResize(null); }}
       >
         <div className="ux-canvas-world" style={{ transform: `scale(${zoom})`, width: Math.max(2400,...canvas.frames.map(frame => frame.x + frame.width + 120)), height: Math.max(1400,...canvas.frames.map(frame => frame.y + frame.height + 120)) }}>
-          {props.allowTransitions !== false ? <svg className="ux-transition-layer" aria-hidden="true"><defs><marker id="ux-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" /></marker></defs>
+          {drawTransitions ? <svg className="ux-transition-layer" aria-hidden="true"><defs><marker id="ux-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" /></marker></defs>
             {canvas.transitions.map((transition) => {
               const from = canvas.frames.find((frame) => frame.id === transition.from.frame_id);
               const to = canvas.frames.find((frame) => frame.id === transition.to_frame_id);
@@ -197,8 +210,8 @@ export function DesignCanvas(props: Props): React.ReactElement {
                   }}
                 >
                   <span>{element.sample_text ?? element.label}</span>
-                  {element.dynamic?.enabled ? <em>動的</em> : null}
-                  {element.follow ? <em>追従: {canvas.elements.find((item) => item.id === element.follow?.target_element_id)?.label ?? '対象'}</em> : null}
+                  {!props.separateRoles && element.dynamic?.enabled ? <em>動的</em> : null}
+                  {!props.separateRoles && element.follow ? <em>追従: {canvas.elements.find((item) => item.id === element.follow?.target_element_id)?.label ?? '対象'}</em> : null}
                   <button
                     className="ux-resize"
                     type="button"
@@ -220,9 +233,11 @@ export function DesignCanvas(props: Props): React.ReactElement {
 
       {selectedElement ? (
         <aside className="ux-element-inspector foundation-form">
+          {props.separateRoles ? <h4 className="ux-inspector-group">描画</h4> : null}
           <label className="simple-field"><span>表示名</span><input value={selectedElement.label} onChange={(event) => updateElement(selectedElement.id, { label: event.target.value })} /></label>
           <div className="ux-number-fields"><label>X<input type="number" value={Math.round(selectedElement.x)} onChange={(event) => updateElement(selectedElement.id, { x: Number(event.target.value) })} /></label><label>Y<input type="number" value={Math.round(selectedElement.y)} onChange={(event) => updateElement(selectedElement.id, { y: Number(event.target.value) })} /></label><label>W<input type="number" min={minimumSize} value={Math.round(selectedElement.width)} onChange={(event) => updateElement(selectedElement.id, { width: Number(event.target.value) })} /></label><label>H<input type="number" min={minimumSize} value={Math.round(selectedElement.height)} onChange={(event) => updateElement(selectedElement.id, { height: Number(event.target.value) })} /></label></div>
           <label className="simple-field"><span>動的オブジェクトのサンプル</span><input value={selectedElement.sample_text ?? ''} placeholder="表示するサンプル" onChange={(event) => updateElement(selectedElement.id, { sample_text: event.target.value || null })} /></label>
+          {props.separateRoles ? <h4 className="ux-inspector-group">役割</h4> : null}
           {props.showLayers ? <label className="simple-field"><span>対応するノード・定義</span><input maxLength={500} value={selectedElement.dynamic?.source ?? ''} onChange={event => updateElement(selectedElement.id,{dynamic:{enabled:selectedElement.dynamic?.enabled??false,update_condition:selectedElement.dynamic?.update_condition??null,source:event.target.value||null}})} /></label> : null}
           <label className="check-row"><input type="checkbox" checked={selectedElement.dynamic?.enabled ?? false} onChange={(event) => updateElement(selectedElement.id, { dynamic: event.target.checked ? { enabled: true, source: null, update_condition: null } : null })} />動的に変わる</label>
           {selectedElement.dynamic ? <input aria-label="更新条件" placeholder="更新・消滅条件" value={selectedElement.dynamic.update_condition ?? ''} onChange={(event) => updateElement(selectedElement.id, { dynamic: { ...selectedElement.dynamic!, update_condition: event.target.value || null } })} /> : null}
@@ -244,7 +259,7 @@ export function DesignCanvas(props: Props): React.ReactElement {
           onChange({ ...canvas, frames: canvas.frames.filter((item) => item.id !== selectedFrame.id), elements: canvas.elements.filter((item) => item.frame_id !== selectedFrame.id).map((item) => item.follow && removedIds.has(item.follow.target_element_id) ? { ...item, follow: null } : item), transitions: canvas.transitions.filter((item) => item.from.frame_id !== selectedFrame.id && item.to_frame_id !== selectedFrame.id) }); setSelected(null);
         }}>画面を削除</button>
       </aside> : null}
-      {props.allowTransitions !== false ? <div className="ux-transition-editor"><h3>遷移</h3>{canvas.transitions.map((transition) => <div key={transition.id}><input aria-label="遷移名" value={transition.label} onChange={(event) => onChange({ ...canvas, transitions: canvas.transitions.map((item) => item.id === transition.id ? { ...item, label: event.target.value } : item) })} /><input aria-label="トリガーまたは条件" value={transition.trigger} onChange={(event) => onChange({ ...canvas, transitions: canvas.transitions.map((item) => item.id === transition.id ? { ...item, trigger: event.target.value } : item) })} /><button className="danger" type="button" onClick={() => onChange({ ...canvas, transitions: canvas.transitions.filter((item) => item.id !== transition.id) })}>削除</button></div>)}</div> : null}
+      {drawTransitions ? <div className="ux-transition-editor"><h3>遷移</h3>{canvas.transitions.map((transition) => <div key={transition.id}><input aria-label="遷移名" value={transition.label} onChange={(event) => onChange({ ...canvas, transitions: canvas.transitions.map((item) => item.id === transition.id ? { ...item, label: event.target.value } : item) })} /><input aria-label="トリガーまたは条件" value={transition.trigger} onChange={(event) => onChange({ ...canvas, transitions: canvas.transitions.map((item) => item.id === transition.id ? { ...item, trigger: event.target.value } : item) })} /><button className="danger" type="button" onClick={() => onChange({ ...canvas, transitions: canvas.transitions.filter((item) => item.id !== transition.id) })}>削除</button></div>)}</div> : null}
       </fieldset>
     </section>
   );

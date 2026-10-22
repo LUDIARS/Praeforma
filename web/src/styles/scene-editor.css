@@ -55,3 +55,20 @@
   body.pf-ui-editing { overflow:hidden; }
   body.pf-ui-editing .topbar, body.pf-ui-editing .pf-llm-window { display:none; }
 }
+/* PF-SCENE-9: the canvas draws only visual objects; roles live in their own panel below it. */
+.ux-inspector-group { margin:8px 0 2px; font-size:.85rem; color:var(--muted, #64748b); border-bottom:1px solid var(--border); padding-bottom:2px; }
+.scene-role-panel { display:grid; gap:12px; margin-top:12px; }
+.scene-role-panel h3 { margin:0; }
+.scene-role-frame { display:grid; gap:6px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; }
+.scene-role-frame p { margin:0; }
+.scene-role-frame-name { justify-self:start; font-weight:600; }
+.scene-role-elements { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:8px; }
+.scene-role-elements > li { display:grid; gap:4px; padding:8px; border:1px solid var(--border); border-radius:6px; min-width:0; }
+.scene-role-elements button { text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.scene-role-panel button[aria-pressed=true] { background:var(--accent); color:white; }
+.scene-role-elements dl { display:grid; grid-template-columns:auto minmax(0,1fr); gap:2px 8px; margin:0; font-size:.9rem; }
+.scene-role-elements dt { font-weight:600; }
+.scene-role-elements dd { margin:0; overflow-wrap:anywhere; }
+.scene-role-transitions { list-style:none; margin:0; padding:0; display:grid; gap:4px; }
+.scene-role-transitions li { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.scene-role-transitions input { flex:1 1 120px; min-width:0; }

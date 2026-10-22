@@ -2,7 +2,7 @@ import React from 'react';
 import { useMutation } from '@tanstack/react-query';
 import type { SceneDocument, SceneSource } from '../../../../shared/scene-editor.ts';
 import { layersForFrame, type SceneLayer } from '../../../../shared/scene-layers.ts';
-import { DesignCanvas } from '../ux-design/DesignCanvas.tsx';
+import { DesignCanvas, type CanvasSelection } from '../ux-design/DesignCanvas.tsx';
 import { useCanvasHistory } from '../ux-design/useCanvasHistory.ts';
 import { sceneApi } from '../../lib/scene-editor-api.ts';
 import { SceneImport } from './SceneImport.tsx';
@@ -12,6 +12,7 @@ import { useMobileUiEditing } from './useMobileUiEditing.ts';
 import { SceneFrameLayers } from './SceneFrameLayers.tsx';
 import { SceneLayerPanel } from './SceneLayerPanel.tsx';
 import { useSceneLayerSources } from './useSceneLayerSources.ts';
+import { SceneRolePanel } from './SceneRolePanel.tsx';
 
 /** server 側 bodyLimit (8MiB) と sources 上限 (20件) に余裕を見た取り込み上限。 */
 const MAX_REFERENCE_BYTES=6*1024*1024;
@@ -23,6 +24,8 @@ export function SceneWorkspace({pid,lid,name,initial,canEdit}:{pid:string;lid:st
   // 重ねるシーンの構成は保存対象。 表示・非表示は見る人の切替なので保存・undo に含めない (PF-SCENE-8)。
   const [layers,setLayers]=React.useState<SceneLayer[]>(initial.layers??[]);const [hiddenScenes,setHiddenScenes]=React.useState<ReadonlySet<string>>(new Set());
   const layerSources=useSceneLayerSources(pid,layers);
+  // 描画物 (キャンバス) と役割 (SceneRolePanel) は別 UI。 選択だけを共有して同じ要素を指す (PF-SCENE-9)。
+  const [selection,setSelection]=React.useState<CanvasSelection|null>(null);
   const [saved,setSaved]=React.useState(JSON.stringify({canvas:initial.canvas,sources:initial.sources,web:initial.web??emptyWebScene,layers:initial.layers??[]}));const [showImport,setShowImport]=React.useState(false);
   const [showReferences,setShowReferences]=React.useState(true);const [importError,setImportError]=React.useState('');
   const dirty=JSON.stringify({canvas:history.canvas,sources,web:web.value,layers})!==saved;
@@ -55,8 +58,9 @@ export function SceneWorkspace({pid,lid,name,initial,canEdit}:{pid:string;lid:st
       history.replace({...history.canvas,frames:[...history.canvas.frames,...canvas.frames.map(frame=>({...frame,x:offset,y:70}))],elements:[...history.canvas.elements,...canvas.elements]});
       setSources(current=>[...current,source]);
     }}/>:null}
-    <DesignCanvas showLayers referenceImages={showReferences?Object.fromEntries(sources.filter(source=>source.image).map(source=>[source.frameId,source.image!])):undefined} canvas={history.canvas} onChange={history.replace} onPreview={history.preview} onCancelPreview={history.cancelPreview} onUndo={history.undo} onRedo={history.redo} canUndo={history.canUndo} canRedo={history.canRedo} onSave={()=>save.mutate()} isSaving={save.isPending} isReadOnly={!canEdit||save.isPending}
+    <DesignCanvas showLayers separateRoles selection={selection} onSelectionChange={setSelection} referenceImages={showReferences?Object.fromEntries(sources.filter(source=>source.image).map(source=>[source.frameId,source.image!])):undefined} canvas={history.canvas} onChange={history.replace} onPreview={history.preview} onCancelPreview={history.cancelPreview} onUndo={history.undo} onRedo={history.redo} canUndo={history.canUndo} canRedo={history.canRedo} onSave={()=>save.mutate()} isSaving={save.isPending} isReadOnly={!canEdit||save.isPending}
       hideElements={hiddenScenes.has(lid)} renderFrameOverlay={frame=><SceneFrameLayers base={frame} layers={layersForFrame(layers,frame.id)} sources={layerSources} hidden={hiddenScenes}/>} />
+    <SceneRolePanel canvas={history.canvas} selection={selection} onSelect={setSelection} onChange={history.replace} disabled={!canEdit||save.isPending} />
     {/* 主表示は画面と構成要素 (キャンバス)。 重ね合わせ・取り込み資料・WebUI DOM/CSS は必要な時だけ開く。 全画面のUI編集中は中身を出すため開いておく。 */}
     <details className="panel scene-extras" open={uiEditing.isEditing || undefined}><summary>重ね合わせ・取り込み資料・WebUI DOM/CSS</summary>
     <SceneLayerPanel pid={pid} lid={lid} sceneName={name} canvas={history.canvas} layers={layers} sources={layerSources} hidden={hiddenScenes} disabled={!canEdit||save.isPending} onLayersChange={setLayers} onHiddenChange={setHiddenScenes} />
