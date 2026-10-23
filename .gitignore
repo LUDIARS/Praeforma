@@ -2,6 +2,8 @@ node_modules/
 /data/
 dist/
 *.log
+# 実行時ログ (log-weaver の weaver.jsonl など)。審査・起動のたびに追記される
+server/logs/
 .env
 .env.local
 .env.secrets
