@@ -6,3 +6,5 @@
 .spec-version-log > div { padding:12px; }
 .spec-version-panel textarea { width:100%; min-height:80px; }
 @media(max-width:700px) { .spec-version-diff { grid-template-columns:1fr; } }
+.sprint-proposal-choice { display:flex; gap:16px; border:0; padding:0; margin:8px 0; }
+.spec-reconstruction-change.is-rejected { opacity:.75; border-style:dashed; }

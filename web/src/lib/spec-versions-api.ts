@@ -1,10 +1,12 @@
 import { req,type ApiError } from './api.ts';
-import type { ReconstructionProposal,SpecVersionHead,SpecVersionLog } from '../../../shared/spec-versioning.ts';
+import type { ReconstructionDecision,ReconstructionProposal,SpecVersionHead,SpecVersionLog } from '../../../shared/spec-versioning.ts';
 const root=(pid:string)=>`/api/projects/${pid}/spec-versions`;
 export const specVersionsApi={
   list:(pid:string,offset=0)=>req<{head:SpecVersionHead;version:string;canEdit:boolean;hasMore:boolean;logs:SpecVersionLog[]}>(`${root(pid)}?offset=${offset}`),
   pending:(pid:string)=>req<{proposal:ReconstructionProposal|null}>(`${root(pid)}/reconstructions`),
   generate:(pid:string,sprintId?:string)=>req<{proposal:ReconstructionProposal}>(`${root(pid)}/reconstructions`,{method:'POST',...(sprintId?{body:JSON.stringify({sprintId})}:{})}),
+  sprintPending:(pid:string,sprintId:string)=>req<{proposal:ReconstructionProposal|null}>(`${root(pid)}/reconstructions?sprintId=${encodeURIComponent(sprintId)}`),
+  decide:(pid:string,id:string,decision:ReconstructionDecision)=>req<{version:string}>(`${root(pid)}/reconstructions/${id}/decide`,{method:'POST',body:JSON.stringify(decision)}),
   confirm:(pid:string,id:string)=>req<{version:string}>(`${root(pid)}/reconstructions/${id}/confirm`,{method:'POST'}),
   release:(pid:string,expectedRevision:number,note:string)=>req<{version:string}>(`${root(pid)}/releases`,{method:'POST',body:JSON.stringify({expectedRevision,note})}),
 };

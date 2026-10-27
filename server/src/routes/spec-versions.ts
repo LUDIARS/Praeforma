@@ -12,8 +12,9 @@ import { confirmReconstruction,recordSpecRelease } from '../lib/reconstruction-c
 import { AppError } from '../lib/errors.ts';
 import { reconstructionScopeSchema,parseOptionalJson } from '../lib/spec-sprint-input.ts';
 import { readSprint } from '../lib/spec-sprint-store.ts';
+import { sprintProposal,applyDecision } from '../lib/reconstruction-decision.ts';
 import type { ReconstructionProposal,ReconstructionMaterial,ReconstructionPlan } from '../../../shared/spec-versioning.ts';
-import { externalReconstructionSchema,versionLabel } from '../../../shared/spec-versioning.ts';
+import { externalReconstructionSchema,reconstructionDecisionSchema,versionLabel } from '../../../shared/spec-versioning.ts';
 const view:readonly ProjectRole[]=['owner','planner','designer','programmer','reviewer','viewer'];
 const edit:readonly ProjectRole[]=['owner','planner'];
 const active=new Set<string>();
@@ -57,6 +58,9 @@ export function makeSpecVersionRouter(binary:string,writer:Writer=writeReconstru
     } finally {active.delete(pid);}
   });
   r.get('/reconstructions',requireRole(edit),async c=>{
+    // PF-SPRINT-9: sprintId 指定時はそのスプリントの未確定案だけを返す。
+    const pid=c.req.param('pid')!;const sprintId=c.req.query('sprintId');
+    if(sprintId!==undefined){await readSprint(pid,sprintId);return c.json({proposal:await sprintProposal(pid,sprintId)});}
     const rows=await versionRows('SELECT payload FROM spec_reconstructions WHERE project_id=? AND confirmed_version IS NULL ORDER BY id DESC LIMIT 1',[c.req.param('pid')!]);
     return c.json({proposal:rows[0]?parseStored<ReconstructionProposal>(rows[0].payload):null});
   });
@@ -64,6 +68,15 @@ export function makeSpecVersionRouter(binary:string,writer:Writer=writeReconstru
     const pid=c.req.param('pid')!;const [row]=await versionRows('SELECT payload,confirmed_version FROM spec_reconstructions WHERE id=? AND project_id=?',[c.req.param('rid')!,pid]);
     if(!row)throw AppError.notFound('reconstruction_not_found');if(row.confirmed_version)throw AppError.conflict('reconstruction_already_confirmed');
     return c.json({version:await confirmReconstruction(pid,parseStored<ReconstructionProposal>(row.payload),getIdentity(c).userId)});
+  });
+  // PF-SPRINT-9: 変更ごとに確定/棄却を決めて確定する。棄却した変更の断片は理由付きで棄却として記録する。
+  r.post('/reconstructions/:rid/decide',requireRole(edit),async c=>{
+    const parsed=reconstructionDecisionSchema.safeParse(await c.req.json().catch(()=>null));
+    if(!parsed.success)throw AppError.badRequest('invalid_reconstruction_decision',parsed.error.flatten());
+    const pid=c.req.param('pid')!;const [row]=await versionRows('SELECT payload,confirmed_version FROM spec_reconstructions WHERE id=? AND project_id=?',[c.req.param('rid')!,pid]);
+    if(!row)throw AppError.notFound('reconstruction_not_found');if(row.confirmed_version)throw AppError.conflict('reconstruction_already_confirmed');
+    const proposal=parseStored<ReconstructionProposal>(row.payload);const plan=applyDecision(proposal.plan,parsed.data);validateReconstruction(proposal.material,plan);
+    return c.json({version:await confirmReconstruction(pid,{...proposal,plan},getIdentity(c).userId)});
   });
   r.post('/releases',requireRole(edit),async c=>{
     const parsed=z.object({expectedRevision:z.number().int().min(0),note:z.string().trim().min(1).max(2000)}).strict().safeParse(await c.req.json().catch(()=>null));

@@ -19,6 +19,11 @@ export const externalReconstructionSchema=z.object({
   fragmentIds:z.array(z.string().min(1)).min(1).max(500),
   plan:reconstructionSchema,
 }).strict();
+/** PF-SPRINT-9: 変更ごとの採否。列挙しなかった変更は案のまま確定し、棄却した変更の出典断片は理由付きで棄却になる。 */
+export const reconstructionDecisionSchema=z.object({
+  rejectedChanges:z.array(z.object({index:z.number().int().min(0),reason:z.string().trim().min(1).max(2000)}).strict()).max(100),
+}).strict();
+export type ReconstructionDecision=z.infer<typeof reconstructionDecisionSchema>;
 export type FragmentDispositionState='pending'|'integrated'|'rejected';
 export interface FragmentDisposition { state:FragmentDispositionState;reason:string|null;version:string|null }
 export interface ReconstructionMaterial {

@@ -30,6 +30,7 @@
 | PF-SPRINT-6 | 「まとまった」以外でも体系化は実行できる (デファードプランニングは実装済を体系化の前提にしない)。画面は未実装の件数を示して注意する。 |
 | PF-SPRINT-7 | 閲覧は全ロール、作成・断片の追加/除外は断片を編集できるロール、体系化は従来どおり owner / planner。 |
 | PF-SPRINT-8 | どのスプリントにも属さない未体系化の断片を一覧でき、スプリントへ追加できる。 |
+| PF-SPRINT-9 | スプリント画面で、そのスプリントの未確定の体系化案を変更ごとに確定 / 棄却できる。棄却には理由が必須で、棄却した変更の出典断片は理由付きで棄却 (rejected) として記録し、残りの変更は従来の確定と同じく 1 回の確定 (マイナー更新) で反映する。すべて棄却してもよい。保留 (deferred) の断片は未処理のまま残る。権限は体系化と同じ owner / planner。 |
 
 ## 段階の計算
 
@@ -53,12 +54,15 @@ spec/schema/spec-sprints.md を正本とする。
 - `POST /:sid/fragments` `{ fragmentIds }` 追加。
 - `DELETE /:sid/fragments/:fid` 除外。
 - 体系化は `POST /api/projects/:pid/spec-versions/reconstructions` に `{ sprintId }` を渡す。
+- スプリントの未確定案は `GET /api/projects/:pid/spec-versions/reconstructions?sprintId=` で取る。そのスプリントで生成した案 (`material.sprintId` が一致) か、外部登録で対象断片 (`fragmentScope`) がすべてそのスプリントに属する案のうち最新の 1 件。無ければ `null`。
+- 変更ごとの採否は `POST /api/projects/:pid/spec-versions/reconstructions/:rid/decide` に `{ rejectedChanges: [{ index, reason }] }` を渡す。`index` は案の `changes` の位置。列挙しなかった変更は案のまま確定する。範囲外・重複の `index` は 400。
 
 ## 画面
 
 仕様画面の種類に「スプリント」を追加する。スプリントの作成、件数と段階の表示、断片のチェック
 (既存の断片カードで実装状態を更新)、未所属断片の追加、断片の除外、「このスプリントを体系化」を置く。
-体系化の案は従来の再構築パネルで確認・確定する。
+体系化の案はスプリント画面にそのまま表示し、変更ごとに確定 / 棄却 (理由入力) を選んで「決定を反映する」でまとめて確定する (PF-SPRINT-9)。
+案があるときの体系化ボタンは「体系化案を作り直す」になり、元データが変わって確定できない案を作り直せる。従来の再構築パネルからの一括確定も引き続き使える。
 
 ## やらないこと
 
