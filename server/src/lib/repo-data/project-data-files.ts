@@ -16,6 +16,7 @@ import { DATA_MANIFEST_PATH, type DataFile } from './data-branch-git.ts';
 import { stableJson, stableRowsJson } from './stable-json.ts';
 
 const FORMAT = 'praeforma.repo-data/1';
+export const FRAGMENTS_PATH = 'fragments/fragments.json';
 
 type Project = typeof projects.$inferSelect;
 
@@ -27,7 +28,7 @@ async function fragmentFiles(projectId: string): Promise<DataFile[]> {
   const rows = await getDb().select().from(specFragments).where(eq(specFragments.projectId, projectId));
   const dispositions = await fragmentDispositions(rows.map((row) => row.id));
   const withDisposition = rows.map((row) => ({ ...row, disposition: dispositions.get(row.id) ?? PENDING_DISPOSITION }));
-  return [{ path: 'fragments/fragments.json', content: stableRowsJson(withDisposition) }];
+  return [{ path: FRAGMENTS_PATH, content: stableRowsJson(withDisposition) }];
 }
 
 async function structuredFiles(projectId: string): Promise<DataFile[]> {

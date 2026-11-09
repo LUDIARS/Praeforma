@@ -10,6 +10,7 @@ export const DATA_MANIFEST_PATH = 'pf-data.json';
 const DATA_REF = `refs/heads/${DATA_BRANCH}`;
 const NO_COMMIT = '0000000000000000000000000000000000000000';
 const GIT_TIMEOUT_MS = 30_000;
+const GIT_PUSH_TIMEOUT_MS = 120_000;
 const GIT_MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 const COMMITTER = { GIT_AUTHOR_NAME: 'Praeforma', GIT_AUTHOR_EMAIL: 'praeforma@ludiars.invalid',
   GIT_COMMITTER_NAME: 'Praeforma', GIT_COMMITTER_EMAIL: 'praeforma@ludiars.invalid' };
@@ -17,12 +18,12 @@ const COMMITTER = { GIT_AUTHOR_NAME: 'Praeforma', GIT_AUTHOR_EMAIL: 'praeforma@l
 export interface DataFile { path: string; content: string }
 export interface PublishResult { branch: string; commit: string; changed: boolean; files: number }
 
-interface GitOptions { input?: string; env?: NodeJS.ProcessEnv; allowFailure?: boolean }
+interface GitOptions { input?: string; env?: NodeJS.ProcessEnv; allowFailure?: boolean; timeoutMs?: number }
 
 function git(repoDir: string, args: string[], options: GitOptions = {}): Promise<string | null> {
   return new Promise((resolve, reject) => {
     const child = execFile('git', ['-C', repoDir, ...args], {
-      encoding: 'utf8', windowsHide: true, timeout: GIT_TIMEOUT_MS, maxBuffer: GIT_MAX_OUTPUT_BYTES,
+      encoding: 'utf8', windowsHide: true, timeout: options.timeoutMs ?? GIT_TIMEOUT_MS, maxBuffer: GIT_MAX_OUTPUT_BYTES,
       env: { ...process.env, ...options.env },
     }, (error, stdout) => {
       if (!error) return resolve(stdout.trim());
@@ -78,4 +79,18 @@ export async function publishToDataBranch(repoDir: string, files: readonly DataF
 
 export function readDataBranchHead(repoDir: string): Promise<string | null> {
   return git(repoDir, ['rev-parse', '-q', '--verify', DATA_REF], { allowFailure: true });
+}
+
+/** Null when the branch or the file does not exist. */
+export function readDataBranchFile(repoDir: string, path: string): Promise<string | null> {
+  return git(repoDir, ['show', `${DATA_REF}:${path}`], { allowFailure: true });
+}
+
+/** Sends only the data branch to the repository's configured origin. */
+export async function pushDataBranch(repoDir: string): Promise<string> {
+  const head = await readDataBranchHead(repoDir);
+  if (!head) throw AppError.conflict('data_branch_missing');
+  const pushed = await git(repoDir, ['push', 'origin', `${DATA_REF}:${DATA_REF}`], { allowFailure: true, timeoutMs: GIT_PUSH_TIMEOUT_MS });
+  if (pushed === null) throw AppError.conflict('data_branch_push_failed');
+  return head;
 }

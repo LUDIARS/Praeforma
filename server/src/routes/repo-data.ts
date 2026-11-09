@@ -10,8 +10,9 @@ import { requireRole } from '../middleware/require-role.ts';
 import { recordAudit } from '../lib/audit.ts';
 import { AppError } from '../lib/errors.ts';
 import { defaultReposRoot, listRepoDirs, repoDirOf } from '../lib/project-git-activity.ts';
-import { DATA_BRANCH, publishToDataBranch, readDataBranchHead } from '../lib/repo-data/data-branch-git.ts';
-import { buildProjectDataFiles } from '../lib/repo-data/project-data-files.ts';
+import { DATA_BRANCH, publishToDataBranch, pushDataBranch, readDataBranchFile, readDataBranchHead } from '../lib/repo-data/data-branch-git.ts';
+import { importFragments, parseBranchFragments } from '../lib/repo-data/import-fragments.ts';
+import { buildProjectDataFiles, FRAGMENTS_PATH } from '../lib/repo-data/project-data-files.ts';
 
 const VIEW_ROLES: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer'];
 const PUBLISH_ROLES: readonly ProjectRole[] = ['owner', 'planner'];
@@ -66,6 +67,23 @@ export function makeRepoDataRouter(): Hono {
     const result = await publishToDataBranch(repoDir, files, `chore(pf-data): ${project.name} の設計データを更新`);
     await recordAudit({ projectId, actor: getIdentity(context), action: 'repo_data.publish',
       targetKind: 'project', targetId: projectId, meta: { commit: result.commit, changed: result.changed } });
+    return context.json(result);
+  });
+
+  router.post('/push', requireRole(PUBLISH_ROLES), async (context) => {
+    const projectId = context.req.param('pid')!;
+    const commit = await pushDataBranch(resolveRepoDir(await loadProject(projectId)));
+    await recordAudit({ projectId, actor: getIdentity(context), action: 'repo_data.push', targetKind: 'project', targetId: projectId, meta: { commit } });
+    return context.json({ branch: DATA_BRANCH, commit });
+  });
+
+  router.post('/import', requireRole(PUBLISH_ROLES), async (context) => {
+    const projectId = context.req.param('pid')!;
+    const text = await readDataBranchFile(resolveRepoDir(await loadProject(projectId)), FRAGMENTS_PATH);
+    if (text === null) throw AppError.conflict('data_branch_missing');
+    const identity = getIdentity(context);
+    const result = await importFragments(projectId, identity.userId, parseBranchFragments(text));
+    await recordAudit({ projectId, actor: identity, action: 'repo_data.import', targetKind: 'project', targetId: projectId, meta: { ...result } });
     return context.json(result);
   });
 

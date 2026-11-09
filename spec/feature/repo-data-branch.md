@@ -26,6 +26,11 @@ scenes/          レイアウト、配置、オブジェクト、シーン文書
 - `GET /api/projects/:pid/repo-data`: 保存先とブランチの先頭を返す。
 - `PUT /api/projects/:pid/repo-data/binding` (owner): プロジェクト名とフォルダ名が違うときの保存先を設定する。
 
+- `POST /api/projects/:pid/repo-data/push` (owner / planner): `pf-data` だけを origin へ送る。失敗は `data_branch_push_failed`。
+- `POST /api/projects/:pid/repo-data/import` (owner / planner): ブランチのフラグメントを DB へ追加する。既存の原文は変えず、同じ ID で内容が違うものは件数で返す。
+
+画面はプロジェクトの UX タブにある。
+
 保存先はリポジトリ置き場の一覧にあるフォルダだけで、リクエストから任意のパスは指定できない。
 未設定の場合はプロジェクト名でフォルダを探し、見つからなければ `repo_data_dir_not_found` で失敗する。
 
@@ -33,11 +38,10 @@ scenes/          レイアウト、配置、オブジェクト、シーン文書
 更新は比較付きで行い、途中で他の更新が入ったら `data_branch_moved` で失敗する。
 利用者を特定する項目 (`*By`, `*UserId`, `*DisplayName`) はブランチに書かない。
 
-## 第一段階に含めないもの
+## まだ含めないもの
 
 | 項目 | 状態 |
 |---|---|
-| リモートへの push | 認証の扱いが別途必要。人かリリース手順が push する |
-| ブランチから DB への取り込み | 第二段階。別拠点の Pf が読むために必要 |
+| フラグメント以外の取り込み | 保存形式の契約どおり、安定 ID を照合する変更提案として設計が必要 |
 | `spec/ux/*.md` の移動 | Anatomia と Revisor が main から読むため、読み取り側の変更と AIFormat の規則変更が先 |
-| 編集のたびの自動保存 | 第二段階。現在は明示の publish |
+| 編集のたびの自動保存 | 現在は明示の保存 |

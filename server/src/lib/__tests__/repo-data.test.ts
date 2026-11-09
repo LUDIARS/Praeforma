@@ -4,8 +4,16 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
-import { DATA_BRANCH, DATA_MANIFEST_PATH, publishToDataBranch, readDataBranchHead } from '../repo-data/data-branch-git.ts';
+import { DATA_BRANCH, DATA_MANIFEST_PATH, publishToDataBranch, readDataBranchFile, readDataBranchHead } from '../repo-data/data-branch-git.ts';
+import { parseBranchFragments } from '../repo-data/import-fragments.ts';
 import { stableJson, stableRowsJson } from '../repo-data/stable-json.ts';
+
+test('branch fragments must be well formed', () => {
+  const fragment = { content: '本文', source: 'pf', sourceEventId: '11111111-1111-4111-8111-111111111111' };
+  assert.deepEqual(parseBranchFragments(JSON.stringify([fragment])), [fragment]);
+  assert.throws(() => parseBranchFragments('{"not":"a list"}'));
+  assert.throws(() => parseBranchFragments('not json'));
+});
 
 let repo: string;
 const git = (...args: string[]) => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8' }).trim();
@@ -34,6 +42,13 @@ test('publishing creates the branch and leaves the checkout alone', async () => 
   assert.equal(git('branch', '--show-current'), 'main');
   assert.equal(readFileSync(join(repo, 'code.txt'), 'utf8'), 'working tree');
   assert.equal(await readDataBranchHead(repo), result.commit);
+});
+
+test('reading from the branch returns null for a missing branch or file', async () => {
+  assert.equal(await readDataBranchFile(repo, 'a.json'), null);
+  await publishToDataBranch(repo, [{ path: 'a.json', content: '[1]\n' }, manifest('a.json')], 'first');
+  assert.equal(await readDataBranchFile(repo, 'a.json'), '[1]');
+  assert.equal(await readDataBranchFile(repo, 'missing.json'), null);
 });
 
 test('publishing identical data makes no commit', async () => {
