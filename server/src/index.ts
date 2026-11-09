@@ -46,6 +46,7 @@ import { makeAssetRouter } from './routes/assets.ts';
 import { makeStudioRouter } from './routes/studio.ts';
 import { makeTransitionRouter } from './routes/transitions.ts';
 import { makeExportRouter } from './routes/export.ts';
+import { makeRepoDataRouter } from './routes/repo-data.ts';
 import { makeConversationRouter } from './routes/conversations.ts';
 import { makeAnatomiaRouter } from './routes/anatomia.ts';
 import { makeCcRouter, syncAllCcLinks } from './routes/cc.ts';
@@ -206,6 +207,7 @@ app.route('/api/projects/:pid/domain-definitions', makeDomainDefinitionsRouter(a
 const ccOpts = { ccUrl: config.ccUrl, ccToken: config.ccToken, ccTemplate: config.ccTemplate };
 app.route('/api/projects/:pid/transitions', makeTransitionRouter());
 app.route('/api/projects/:pid/export', makeExportRouter());
+app.route('/api/projects/:pid/repo-data', makeRepoDataRouter());
 app.route('/api/projects/:pid/layouts/:lid/widgets', makeWidgetRouter());
 app.route('/api/projects/:pid/conversations', makeConversationRouter(config.claudeBin, anatomiaOpts));
 app.route('/api/projects/:pid/anatomia', makeAnatomiaRouter(anatomiaOpts));

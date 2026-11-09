@@ -76,6 +76,7 @@ UNIQUE (`project_id`, `cc_kind`, `cc_id`)。
 |---|---|---|
 | domains | `anatomia_domain text NULL` | Anatomia (正本) のドメイン名への射影 |
 | projects | `anatomia_repo text NULL` | Anatomia project id (`^[A-Za-z0-9][A-Za-z0-9._-]*(/[A-Za-z0-9][A-Za-z0-9._-]*)?$`) |
+| projects | `repo_data_dir text NULL` | `pf-data` ブランチの保存先フォルダ名。プロジェクト名と違うときだけ設定する (`spec/feature/repo-data-branch.md`、migration 028) |
 | spec_targets | CHECK `kind` に `'transition'` 追加 | |
 | code_graph_* | CHECK `target_kind` に `'transition'` 追加 | |
 | layouts | `kind` に `'screen'` を使う (列追加なし) | 2D 画面 |

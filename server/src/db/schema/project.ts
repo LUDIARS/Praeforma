@@ -32,6 +32,8 @@ const projectsPg = pgTable(
     defaultLayoutId: text('default_layout_id'),
     /** Anatomia project id (ドメイン正本の参照先)。 */
     anatomiaRepo: text('anatomia_repo'),
+    /** pf-data ブランチの保存先フォルダ名。プロジェクト名と違うときだけ設定する。 */
+    repoDataDir: text('repo_data_dir'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
