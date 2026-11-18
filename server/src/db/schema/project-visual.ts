@@ -2,7 +2,7 @@ import { pgTable, text, integer, timestamp, index, boolean } from 'drizzle-orm/p
 import type { SceneImageType } from '../../../../shared/concept-sheet.ts';
 import type { VisualKind } from '../../../../shared/project-visual.ts';
 import { projects } from './project.ts';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import { projectVisualsSqlite } from '../project-visual-sqlite.ts';
 /**
  * 1 行 = ビジュアル素材 1 枚 (spec/schema/project-visuals.md)。画像は data URL のまま持つ
@@ -20,4 +20,4 @@ const projectVisualsPg = pgTable('project_visuals', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
 }, t => ({ project: index('idx_project_visuals_project').on(t.projectId) }));
-export const projectVisuals = LOCAL_MODE ? projectVisualsSqlite as unknown as typeof projectVisualsPg : projectVisualsPg;
+export const projectVisuals = SQLITE_STORAGE ? projectVisualsSqlite as unknown as typeof projectVisualsPg : projectVisualsPg;

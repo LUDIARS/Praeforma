@@ -21,6 +21,7 @@
     "spec/feature/project-constraints.md",
     "spec/feature/acceptance-summary.md",
     "spec/feature/branch-snapshot.md",
+    "spec/feature/postgres-primary.md",
     "spec/feature/project-dashboard.md",
     "spec/feature/spec-review-home.md",
     "spec/feature/scene-map.md",

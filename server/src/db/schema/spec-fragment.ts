@@ -2,7 +2,7 @@
 import { pgTable, text, integer, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
 import type { ImplementationState } from '../../../../shared/spec-fragments.ts';
 import { projects } from './project.ts';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import { specFragments as sqliteFragments } from '../sqlite-schema.ts';
 
 const specFragmentsPg = pgTable('spec_fragments', {
@@ -23,4 +23,4 @@ const specFragmentsPg = pgTable('spec_fragments', {
   project: index('idx_spec_fragments_project').on(table.projectId, table.createdAt),
 }));
 
-export const specFragments = LOCAL_MODE ? (sqliteFragments as unknown as typeof specFragmentsPg) : specFragmentsPg;
+export const specFragments = SQLITE_STORAGE ? (sqliteFragments as unknown as typeof specFragmentsPg) : specFragmentsPg;

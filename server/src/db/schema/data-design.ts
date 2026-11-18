@@ -2,7 +2,7 @@
 import { pgTable, text, integer, jsonb, timestamp } from 'drizzle-orm/pg-core';
 import type { DataDesign } from '../../../../shared/data-design.ts';
 import { projects } from './project.ts';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import { dataDesigns as sqliteDataDesigns } from '../sqlite-schema.ts';
 
 const dataDesignsPg = pgTable('data_designs', {
@@ -14,6 +14,6 @@ const dataDesignsPg = pgTable('data_designs', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const dataDesigns = LOCAL_MODE
+export const dataDesigns = SQLITE_STORAGE
   ? (sqliteDataDesigns as unknown as typeof dataDesignsPg)
   : dataDesignsPg;

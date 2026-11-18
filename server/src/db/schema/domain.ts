@@ -11,7 +11,7 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import { domains as domainsSqlite } from '../sqlite-schema.ts';
 
 export interface RequiredAttr {
@@ -51,6 +51,6 @@ const domainsPg = pgTable(
   }),
 );
 
-export const domains = LOCAL_MODE
+export const domains = SQLITE_STORAGE
   ? (domainsSqlite as unknown as typeof domainsPg)
   : domainsPg;

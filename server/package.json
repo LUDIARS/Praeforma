@@ -19,7 +19,8 @@
     "env:gen": "npx tsx ../../Cernere/packages/env-cli/src/cli.ts env",
     "env:list": "npx tsx ../../Cernere/packages/env-cli/src/cli.ts list",
     "env:get": "npx tsx ../../Cernere/packages/env-cli/src/cli.ts get",
-    "env:set": "npx tsx ../../Cernere/packages/env-cli/src/cli.ts set"
+    "env:set": "npx tsx ../../Cernere/packages/env-cli/src/cli.ts set",
+    "migrate:sqlite-to-postgres": "tsx scripts/sqlite-to-postgres.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",

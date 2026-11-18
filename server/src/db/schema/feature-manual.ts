@@ -1,7 +1,7 @@
 import { pgTable, text, jsonb, integer, timestamp, index } from 'drizzle-orm/pg-core';
 import type { ManualDocument, ManualSource } from '../../../../shared/feature-manual.ts';
 import { projects } from './project.ts';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import { featureManualsSqlite } from '../manual-sqlite.ts';
 export interface ManualPayload {
   document: ManualDocument | null;
@@ -14,4 +14,4 @@ const featureManualsPg = pgTable('feature_manuals', {
   payload: jsonb('payload').$type<ManualPayload>().notNull(), revision: integer('revision').notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
 }, t => ({ project: index('idx_feature_manuals_project').on(t.projectId) }));
-export const featureManuals = LOCAL_MODE ? featureManualsSqlite as unknown as typeof featureManualsPg : featureManualsPg;
+export const featureManuals = SQLITE_STORAGE ? featureManualsSqlite as unknown as typeof featureManualsPg : featureManualsPg;

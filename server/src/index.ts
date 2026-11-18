@@ -23,7 +23,7 @@ import { serve, type ServerType } from '@hono/node-server';
 import { attachCollab } from './ws/collab.ts';
 
 import { loadConfig } from './config.ts';
-import { initDb, initLocalDb, getDbState } from './db/connection.ts';
+import { initDb, initLocalDb, getDbState, markDbUnavailable } from './db/connection.ts';
 import { startPaseto } from './auth/paseto.ts';
 import { requireAuth, getIdentity, enableLocalAuth } from './middleware/require-auth.ts';
 import { AppError } from './lib/errors.ts';
@@ -69,10 +69,14 @@ import { setClaudeModel } from './lib/llm.ts';
 const config = loadConfig();
 setClaudeModel(config.claudeModel);
 
-// DB 接続 (失敗しても起動継続)。 ローカルモードは SQLite、 通常は Postgres。
-const dbState = config.localMode
+// DB 接続 (失敗しても起動継続)。 個人用モードの既定は SQLite、 PRAEFORMA_LOCAL_STORAGE=postgres と通常モードは Postgres。
+const sqliteStorage = config.localMode && config.localStorage === 'sqlite';
+const dbState = sqliteStorage
   ? await initLocalDb(config.localDbPath)
-  : await initDb(config.databaseUrl);
+  : config.localMode && !process.env.PRAEFORMA_DATABASE_URL
+    // 個人用モードで Postgres を選んだのに接続先が無いときは、既定の接続先へ黙って繋がない。
+    ? markDbUnavailable('PRAEFORMA_DATABASE_URL is required when PRAEFORMA_LOCAL_STORAGE=postgres')
+    : await initDb(config.databaseUrl);
 
 if (config.localMode) {
   // 仕様書レビュー用ローカルモード: Cernere を使わず固定の匿名ローカルユーザを注入。
@@ -82,7 +86,7 @@ if (config.localMode) {
     displayName: 'Local Reviewer',
     projectKey: null,
   });
-  console.log('[praeforma] LOCAL MODE (sqlite + no auth) — 仕様書レビュー用');
+  console.log(`[praeforma] LOCAL MODE (${config.localStorage} + no auth) — 個人用`);
 } else {
   // Cernere PASETO 検証準備
   startPaseto({
@@ -139,7 +143,8 @@ app.get('/api/health', (c) => {
     // 「ビルドしたが再起動していない」 を機械的に検出できない。
     version: resolveServiceVersion(),
     port: config.port,
-    db: s.ok ? (config.localMode ? 'sqlite' : 'connected') : 'down',
+    db: s.ok ? (sqliteStorage ? 'sqlite' : 'connected') : 'down',
+    storage: sqliteStorage ? 'sqlite' : 'postgres',
     db_error: s.error,
     localMode: config.localMode,
   });
@@ -188,8 +193,8 @@ app.route('/api/projects/:pid/visuals', makeProjectVisualRouter(onMaterialChange
 app.route('/api/projects/:pid/assets', makeAssetRouter(config.publicUrl));
 // 受入状態の要約はローカルモードでも載せる (run 0 件として返す、 spec/feature/acceptance-summary.md)
 app.route('/api/projects/:pid/acceptance', makeAcceptanceSummaryRouter());
-// 以下は SQLite サブセット外のテーブルを使うため、 ローカルモードでは載せない
-if (!config.localMode) {
+// 以下は SQLite サブセット外のテーブルを使うため、 SQLite 保存では載せない
+if (!sqliteStorage) {
   app.route('/api/projects/:pid/references', makeReferenceRouter());
   app.route('/api/projects/:pid/references', makeReferenceContentRouter());
   app.route('/api/projects/:pid/feedback', makeFeedbackRouter());
@@ -265,7 +270,7 @@ if (config.localMode) {
 
 const httpServer: ServerType = serve({ fetch: app.fetch, port: config.port, ...(config.localMode ? { hostname: '127.0.0.1' } : {}) }, (info) => {
   console.log(`[praeforma] listening on http://localhost:${info.port}`);
-  console.log(`[praeforma] db: ${dbState.ok ? (config.localMode ? 'sqlite' : 'connected') : 'down'}`);
+  console.log(`[praeforma] db: ${dbState.ok ? (sqliteStorage ? 'sqlite' : 'connected') : 'down'}`);
   if (!config.localMode) console.log(`[praeforma] cernere: ${config.cernereBaseUrl}`);
   if (config.localMode) console.log(`[praeforma] open http://localhost:${info.port}/`);
 });

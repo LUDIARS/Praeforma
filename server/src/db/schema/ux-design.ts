@@ -12,7 +12,7 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import { projects } from './project.ts';
 import {
   uxScenarios as uxScenariosSqlite,
@@ -265,11 +265,11 @@ const uxImageAnalysesPg = pgTable(
   (t) => ({ idxScenario: index('idx_ux_image_analyses_scenario').on(t.scenarioId, t.createdAt) }),
 );
 
-export const uxScenarios = LOCAL_MODE ? (uxScenariosSqlite as unknown as typeof uxScenariosPg) : uxScenariosPg;
-export const uxUseCases = LOCAL_MODE ? (uxUseCasesSqlite as unknown as typeof uxUseCasesPg) : uxUseCasesPg;
-export const uxCanvases = LOCAL_MODE ? (uxCanvasesSqlite as unknown as typeof uxCanvasesPg) : uxCanvasesPg;
-export const uxAnalysisRuns = LOCAL_MODE ? (uxAnalysisRunsSqlite as unknown as typeof uxAnalysisRunsPg) : uxAnalysisRunsPg;
-export const uxBoundaryProposals = LOCAL_MODE ? (uxBoundaryProposalsSqlite as unknown as typeof uxBoundaryProposalsPg) : uxBoundaryProposalsPg;
-export const uxBoundaryDecisions = LOCAL_MODE ? (uxBoundaryDecisionsSqlite as unknown as typeof uxBoundaryDecisionsPg) : uxBoundaryDecisionsPg;
-export const uxEvidence = LOCAL_MODE ? (uxEvidenceSqlite as unknown as typeof uxEvidencePg) : uxEvidencePg;
-export const uxImageAnalyses = LOCAL_MODE ? (uxImageAnalysesSqlite as unknown as typeof uxImageAnalysesPg) : uxImageAnalysesPg;
+export const uxScenarios = SQLITE_STORAGE ? (uxScenariosSqlite as unknown as typeof uxScenariosPg) : uxScenariosPg;
+export const uxUseCases = SQLITE_STORAGE ? (uxUseCasesSqlite as unknown as typeof uxUseCasesPg) : uxUseCasesPg;
+export const uxCanvases = SQLITE_STORAGE ? (uxCanvasesSqlite as unknown as typeof uxCanvasesPg) : uxCanvasesPg;
+export const uxAnalysisRuns = SQLITE_STORAGE ? (uxAnalysisRunsSqlite as unknown as typeof uxAnalysisRunsPg) : uxAnalysisRunsPg;
+export const uxBoundaryProposals = SQLITE_STORAGE ? (uxBoundaryProposalsSqlite as unknown as typeof uxBoundaryProposalsPg) : uxBoundaryProposalsPg;
+export const uxBoundaryDecisions = SQLITE_STORAGE ? (uxBoundaryDecisionsSqlite as unknown as typeof uxBoundaryDecisionsPg) : uxBoundaryDecisionsPg;
+export const uxEvidence = SQLITE_STORAGE ? (uxEvidenceSqlite as unknown as typeof uxEvidencePg) : uxEvidencePg;
+export const uxImageAnalyses = SQLITE_STORAGE ? (uxImageAnalysesSqlite as unknown as typeof uxImageAnalysesPg) : uxImageAnalysesPg;

@@ -13,7 +13,7 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import {
   codeGraphNodes as codeGraphNodesSqlite,
   codeGraphEdges as codeGraphEdgesSqlite,
@@ -123,12 +123,12 @@ const codeGraphRunsPg = pgTable(
   }),
 );
 
-export const codeGraphNodes = LOCAL_MODE
+export const codeGraphNodes = SQLITE_STORAGE
   ? (codeGraphNodesSqlite as unknown as typeof codeGraphNodesPg)
   : codeGraphNodesPg;
-export const codeGraphEdges = LOCAL_MODE
+export const codeGraphEdges = SQLITE_STORAGE
   ? (codeGraphEdgesSqlite as unknown as typeof codeGraphEdgesPg)
   : codeGraphEdgesPg;
-export const codeGraphRuns = LOCAL_MODE
+export const codeGraphRuns = SQLITE_STORAGE
   ? (codeGraphRunsSqlite as unknown as typeof codeGraphRunsPg)
   : codeGraphRunsPg;

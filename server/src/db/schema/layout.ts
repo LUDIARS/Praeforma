@@ -13,7 +13,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
 import { objects } from './object.ts';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import { layouts as layoutsSqlite, layoutObjects as layoutObjectsSqlite } from '../sqlite-schema.ts';
 
 const layoutsPg = pgTable(
@@ -38,7 +38,7 @@ const layoutsPg = pgTable(
   }),
 );
 
-export const layouts = LOCAL_MODE
+export const layouts = SQLITE_STORAGE
   ? (layoutsSqlite as unknown as typeof layoutsPg)
   : layoutsPg;
 
@@ -72,7 +72,7 @@ const layoutObjectsPg = pgTable(
   }),
 );
 
-export const layoutObjects = LOCAL_MODE
+export const layoutObjects = SQLITE_STORAGE
   ? (layoutObjectsSqlite as unknown as typeof layoutObjectsPg)
   : layoutObjectsPg;
 

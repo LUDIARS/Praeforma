@@ -12,7 +12,7 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import type { Contract, Measurement } from '../../../../shared/spec-terms.ts';
 import {
   specs as specsSqlite,
@@ -92,10 +92,10 @@ const specAcceptancePg = pgTable(
   }),
 );
 
-export const specs = LOCAL_MODE ? (specsSqlite as unknown as typeof specsPg) : specsPg;
-export const specTargets = LOCAL_MODE
+export const specs = SQLITE_STORAGE ? (specsSqlite as unknown as typeof specsPg) : specsPg;
+export const specTargets = SQLITE_STORAGE
   ? (specTargetsSqlite as unknown as typeof specTargetsPg)
   : specTargetsPg;
-export const specAcceptance = LOCAL_MODE
+export const specAcceptance = SQLITE_STORAGE
   ? (specAcceptanceSqlite as unknown as typeof specAcceptancePg)
   : specAcceptancePg;

@@ -3,7 +3,7 @@ import type {
   ConceptSheetDesign, ConceptSheetImage, ConceptSheetSource, ConceptSheetVersionKind, ConceptSheetVisualRef,
 } from '../../../../shared/concept-sheet.ts';
 import { projects } from './project.ts';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import { conceptSheetsSqlite, conceptSheetVersionsSqlite } from '../concept-sheet-sqlite.ts';
 /**
  * 1 行 = 企画概要書 1 枚の最新版 (一覧・版一致・自動更新の ON/OFF)。版の履歴は concept_sheet_versions (PF-CS-10)。
@@ -36,6 +36,6 @@ const conceptSheetVersionsPg = pgTable('concept_sheet_versions', {
   kind: text('kind').$type<ConceptSheetVersionKind>().notNull(), createdBy: text('created_by').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, t => ({ pk: primaryKey({ columns: [t.sheetId, t.rv] }), project: index('idx_concept_sheet_versions_project').on(t.projectId) }));
-export const conceptSheets = LOCAL_MODE ? conceptSheetsSqlite as unknown as typeof conceptSheetsPg : conceptSheetsPg;
-export const conceptSheetVersions = LOCAL_MODE
+export const conceptSheets = SQLITE_STORAGE ? conceptSheetsSqlite as unknown as typeof conceptSheetsPg : conceptSheetsPg;
+export const conceptSheetVersions = SQLITE_STORAGE
   ? conceptSheetVersionsSqlite as unknown as typeof conceptSheetVersionsPg : conceptSheetVersionsPg;

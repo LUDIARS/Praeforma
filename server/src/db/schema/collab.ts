@@ -10,7 +10,7 @@ import {
   timestamp,
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import { auditLog as auditLogSqlite } from '../sqlite-schema.ts';
 
 export const editSessions = pgTable(
@@ -81,6 +81,6 @@ const auditLogPg = pgTable(
   }),
 );
 
-export const auditLog = LOCAL_MODE
+export const auditLog = SQLITE_STORAGE
   ? (auditLogSqlite as unknown as typeof auditLogPg)
   : auditLogPg;

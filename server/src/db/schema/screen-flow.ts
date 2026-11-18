@@ -17,7 +17,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
 import { layouts, layoutObjects } from './layout.ts';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import {
   transitions as transitionsSqlite,
   specConversations as specConversationsSqlite,
@@ -162,13 +162,13 @@ const ccLinksPg = pgTable(
   }),
 );
 
-export const transitions = LOCAL_MODE
+export const transitions = SQLITE_STORAGE
   ? (transitionsSqlite as unknown as typeof transitionsPg)
   : transitionsPg;
-export const specConversations = LOCAL_MODE
+export const specConversations = SQLITE_STORAGE
   ? (specConversationsSqlite as unknown as typeof specConversationsPg)
   : specConversationsPg;
-export const specMessages = LOCAL_MODE
+export const specMessages = SQLITE_STORAGE
   ? (specMessagesSqlite as unknown as typeof specMessagesPg)
   : specMessagesPg;
-export const ccLinks = LOCAL_MODE ? (ccLinksSqlite as unknown as typeof ccLinksPg) : ccLinksPg;
+export const ccLinks = SQLITE_STORAGE ? (ccLinksSqlite as unknown as typeof ccLinksPg) : ccLinksPg;

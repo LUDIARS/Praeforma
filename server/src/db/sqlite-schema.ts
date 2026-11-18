@@ -3,7 +3,7 @@ import { SPEC_SPRINT_DDL } from './spec-sprint-sqlite.ts';
 // SQLite 版スキーマ (ローカル「仕様書レビュー」モード用、 Studio 最小サブセット 15 テーブル)。
 //
 // 既存 pg スキーマと同じテーブル名 / カラム名 / JS キーで定義し、 各 pg schema ファイルが
-// LOCAL_MODE 時にこちらを (pg 型へキャストして) 再エクスポートする。 ルートは無改変で sqlite を叩く。
+// SQLITE_STORAGE 時にこちらを (pg 型へキャストして) 再エクスポートする。 ルートは無改変で sqlite を叩く。
 //
 // 型対応: jsonb → text{json} / timestamptz → integer{timestamp_ms} / bigserial →
 //         integer autoincrement / boolean → integer{boolean}。

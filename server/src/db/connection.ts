@@ -84,6 +84,16 @@ export async function initDb(databaseUrl: string): Promise<DbState> {
   }
 }
 
+/** 設定不備で接続を試みないとき。 healthz が理由付きで db:"down" を返すよう state だけ残す。 */
+export function markDbUnavailable(reason: string): DbState {
+  pool = null;
+  db = null;
+  localSqlite = null;
+  connectError = reason;
+  console.warn(`[db] not connected: ${reason}`);
+  return { ok: false, pool: null, db: null, error: reason };
+}
+
 export function getDb(): NodePgDatabase<typeof schema> {
   if (!db) throw new Error('db not initialized (or connection failed)');
   return db;

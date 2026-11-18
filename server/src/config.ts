@@ -1,4 +1,6 @@
 // 起動時 env 解決。 bootstrap が ensureEnv() を呼んだ後に評価される。
+
+import { LOCAL_STORAGE, type LocalStorage } from './db/mode.ts';
 import { parseAdditionalOrigins } from './lib/local-access.ts';
 
 export interface AppConfig {
@@ -26,8 +28,10 @@ export interface AppConfig {
   ccUrl: string | null;
   ccToken: string | null;
   ccTemplate: string | null;
-  /** ローカル「仕様書レビュー」モード: SQLite + Cernere 不要 + 固定ローカルユーザ。 */
+  /** 個人用モード: Cernere 不要 + 固定ローカルユーザ + 127.0.0.1。 保存先は localStorage。 */
   localMode: boolean;
+  /** 個人用モードの保存先。 postgres なら databaseUrl を正本にする (spec/feature/postgres-primary.md)。 */
+  localStorage: LocalStorage;
   /** ローカル SQLite ファイルパス。 */
   localDbPath: string;
 }
@@ -57,6 +61,7 @@ export function loadConfig(): AppConfig {
     ccTemplate: process.env.PRAEFORMA_CC_TEMPLATE ?? null,
     localMode:
       process.env.PRAEFORMA_LOCAL_MODE === '1' || process.env.PRAEFORMA_LOCAL_MODE === 'true',
+    localStorage: LOCAL_STORAGE,
     localDbPath: process.env.PRAEFORMA_LOCAL_DB ?? '.praeforma-local/praeforma.sqlite',
   };
 }

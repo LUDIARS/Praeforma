@@ -11,7 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.ts';
 import { domains } from './domain.ts';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import { objects as objectsSqlite, objectAttrs as objectAttrsSqlite } from '../sqlite-schema.ts';
 
 const objectsPg = pgTable(
@@ -60,9 +60,9 @@ const objectAttrsPg = pgTable(
   }),
 );
 
-export const objects = LOCAL_MODE
+export const objects = SQLITE_STORAGE
   ? (objectsSqlite as unknown as typeof objectsPg)
   : objectsPg;
-export const objectAttrs = LOCAL_MODE
+export const objectAttrs = SQLITE_STORAGE
   ? (objectAttrsSqlite as unknown as typeof objectAttrsPg)
   : objectAttrsPg;

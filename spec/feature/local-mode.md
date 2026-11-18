@@ -26,7 +26,7 @@ server (`server/dist/local.js`、esbuild で 1 本へ bundle) を事前コンパ
 (neco 2026-10-12、AIFormat RULE_TECH_STACK.md「常駐プロセスの起動形」)。tsx はテストと
 一回限りの CLI (migrate など) だけで使う。ソース基準のパス (`skills/`、`web/dist/`) は
 `server/src/lib/runtime-paths.ts` で dist 起動とソース直読みの両方から同じ位置に解決する。
-ローカルモードは本体の `.praeforma-local/praeforma.sqlite` を使用する。
+ローカルモードの保存先は既定で本体の `.praeforma-local/praeforma.sqlite`。`PRAEFORMA_LOCAL_STORAGE=postgres` にすると `PRAEFORMA_DATABASE_URL` の Postgres を正本にする (spec/feature/postgres-primary.md)。
 認証を省略するローカルモードの HTTP リスナーは `127.0.0.1` に限定する。
 loopback 束縛は他ホストからの到達のみを塞ぐ。 browser は任意の web ページから
 `127.0.0.1` へ到達できるため、Originは同一ポートのloopback (`127.0.0.1` / `localhost` /
@@ -60,7 +60,7 @@ npm run local      # = build (web + server) → server/dist/local.js を LOCAL_M
 | 観点 | 通常 (本番) | ローカルモード |
 |---|---|---|
 | 永続化 | Postgres (`pg`) | **SQLite** (`better-sqlite3`)。 起動時に DDL を流す |
-| スキーマ | `pgTable` (全テーブル) | Studio 最小サブセット 15 テーブルを `sqliteTable` で並行定義 (`db/sqlite-schema.ts`)。 各 schema ファイルが `LOCAL_MODE` 時に sqlite 版を pg 型へキャストして再エクスポート → **ルートは無改変** |
+| スキーマ | `pgTable` (全テーブル) | Studio 最小サブセット 15 テーブルを `sqliteTable` で並行定義 (`db/sqlite-schema.ts`)。 各 schema ファイルが `SQLITE_STORAGE` 時に sqlite 版を pg 型へキャストして再エクスポート → **ルートは無改変** |
 | 認証 | Cernere PASETO V4 | **バイパス**: 固定の匿名ローカルユーザ (`local-reviewer` / owner) を注入。 個人データ無し |
 | ルート | 全部 | サブセット (projects/domains/objects/layouts/specs/assets/studio)。 references/feedback/acceptance (runs 系)/WS collab は非搭載。 acceptance/summary は run 0 件として載せる ([acceptance-summary.md](./acceptance-summary.md)) |
 | フロント | Cernere popup login | `/api/health` が `localMode` を返したら token を自動セット → ログイン省略 |

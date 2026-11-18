@@ -4,7 +4,7 @@
 // display_name snapshot のみ保持する。
 
 import { integer, jsonb, pgTable, text, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
-import { LOCAL_MODE } from '../mode.ts';
+import { SQLITE_STORAGE } from '../mode.ts';
 import type { CatchcopyOrigin } from '../../../../shared/catchcopy.ts';
 import { projects as projectsSqlite, projectMembers as projectMembersSqlite } from '../sqlite-schema.ts';
 
@@ -67,10 +67,10 @@ const projectMembersPg = pgTable(
   }),
 );
 
-export const projects = LOCAL_MODE
+export const projects = SQLITE_STORAGE
   ? (projectsSqlite as unknown as typeof projectsPg)
   : projectsPg;
-export const projectMembers = LOCAL_MODE
+export const projectMembers = SQLITE_STORAGE
   ? (projectMembersSqlite as unknown as typeof projectMembersPg)
   : projectMembersPg;
 
