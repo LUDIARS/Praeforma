@@ -7,7 +7,7 @@ import { DomainDefinitionsPanel } from '../components/domain-definitions/DomainD
 import { useFocusEntity } from '../lib/deeplink.ts';
 import { ProjectUxGoal } from '../components/ProjectUxGoal.tsx';
 import { ProjectConstraints } from '../components/ProjectConstraints.tsx';
-import { RepoDataPanel } from '../components/RepoDataPanel.tsx';
+import { BranchSnapshotPanel } from '../components/BranchSnapshotPanel.tsx';
 import { ProjectTabs, parseProjectTab, type ProjectTab } from '../components/ProjectTabs.tsx';
 import { ActorRegistration } from '../components/registration/ActorRegistration.tsx';
 import { SceneRegistration } from '../components/registration/SceneRegistration.tsx';
@@ -123,7 +123,7 @@ export function ProjectShowPage(): React.ReactElement {
       {tab === 'ux-definition' && <UxDefinitionView key={`ux-definition:${pid}`} pid={pid} />}
       {tab === 'spec-review' && <SpecReviewHome key={`spec-review:${pid}`} pid={pid} focus={focus} onOpenSpecs={openSpecs} />}
       {tab === 'ux-goal' && <ProjectUxGoal key={`ux-goal:${pid}`} pid={pid} />}
-      {tab === 'ux-goal' && <RepoDataPanel key={`repo-data:${pid}`} pid={pid} />}
+      {tab === 'ux-goal' && <BranchSnapshotPanel key={`branch-snapshot:${pid}`} pid={pid} />}
       {tab === 'constraints' && <ProjectConstraints key={`constraints:${pid}`} pid={pid} />}
       {tab === 'scenarios' && <section className="panel">
         <h3>シナリオ</h3>

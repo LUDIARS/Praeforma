@@ -48,7 +48,7 @@ import { makeTransitionRouter } from './routes/transitions.ts';
 import { makeSceneMapRouter } from './routes/scene-map.ts';
 import { makeProjectEventsRouter } from './routes/project-events.ts';
 import { makeExportRouter } from './routes/export.ts';
-import { makeRepoDataRouter } from './routes/repo-data.ts';
+import { makeBranchSnapshotRouter } from './routes/branch-snapshot.ts';
 import { makeConversationRouter } from './routes/conversations.ts';
 import { makeAnatomiaRouter } from './routes/anatomia.ts';
 import { makeCcRouter, syncAllCcLinks } from './routes/cc.ts';
@@ -213,7 +213,8 @@ app.route('/api/projects/:pid/scene-map', makeSceneMapRouter());
 // ダッシュボードの最近の出来事 — spec/feature/project-dashboard.md
 app.route('/api/projects/:pid/events', makeProjectEventsRouter());
 app.route('/api/projects/:pid/export', makeExportRouter());
-app.route('/api/projects/:pid/repo-data', makeRepoDataRouter());
+// 各ブランチの .praeforma/ に置く写しの生成と比較 — spec/feature/branch-snapshot.md
+app.route('/api/projects/:pid/branch-snapshot', makeBranchSnapshotRouter());
 app.route('/api/projects/:pid/layouts/:lid/widgets', makeWidgetRouter());
 app.route('/api/projects/:pid/conversations', makeConversationRouter(config.claudeBin, anatomiaOpts));
 app.route('/api/projects/:pid/anatomia', makeAnatomiaRouter(anatomiaOpts));

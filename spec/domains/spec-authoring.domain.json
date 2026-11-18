@@ -20,7 +20,11 @@
     "spec/schema/project-visuals.md",
     "spec/feature/project-constraints.md",
     "spec/feature/acceptance-summary.md",
-    "spec/feature/repo-data-branch.md"
+    "spec/feature/branch-snapshot.md",
+    "spec/feature/project-dashboard.md",
+    "spec/feature/spec-review-home.md",
+    "spec/feature/scene-map.md",
+    "spec/feature/ux-definition.md"
   ],
   "presetRules": [],
   "templateRules": [],
