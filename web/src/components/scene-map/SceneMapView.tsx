@@ -20,7 +20,7 @@ export function SceneMapView({ pid, onOpenSpec }: { pid: string; onOpenSpec: (co
   };
   return <section className="panel scene-map" aria-labelledby="scene-map-title">
     <div className="home-head">
-      <h3 id="scene-map-title">遷移図{query.isSuccess && ` (シーン ${query.data.scenes.length})`}</h3>
+      <div className="pf-scene-title"><span className="pf-scene-mode">読み取り専用</span><h3 id="scene-map-title">遷移図{query.isSuccess && ` (シーン ${query.data.scenes.length})`}</h3></div>
       <div className="simple-actions">
         <button type="button" className="ghost" aria-expanded={importing} onClick={() => setImporting((v) => !v)}>
           {importing ? '取り込みを閉じる' : '既存シーンを取り込む'}</button>

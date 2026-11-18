@@ -1,0 +1,182 @@
+/* Shared surfaces and type hierarchy for the four project home views. */
+.pf-project-home {
+  --pf-ink: color-mix(in srgb, var(--accent) 65%, var(--text));
+  --pf-note: color-mix(in srgb, var(--muted) 75%, var(--text));
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.pf-project-home :focus-visible {
+  outline: 3px solid var(--pf-ink);
+  outline-offset: 2px;
+}
+.pf-project-home .pf-project-heading {
+  padding: clamp(18px, 4vw, 36px);
+  margin-bottom: 6px;
+  border-inline-start: 4px solid var(--pf-ink);
+  background: linear-gradient(105deg, var(--panel) 45%, var(--accent-bg));
+}
+.pf-project-home .pf-project-heading h2 {
+  margin: 0;
+  font-size: clamp(1.55rem, 4vw, 2.25rem);
+  letter-spacing: -.025em;
+  line-height: 1.25;
+}
+.pf-project-home .project-tabs {
+  border: 0;
+  gap: 2px;
+  margin-bottom: 20px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+.pf-project-home .project-tabs .tab {
+  min-height: 40px;
+  white-space: normal;
+  border: 0;
+  border-radius: 7px;
+  color: var(--pf-note);
+}
+.pf-project-home .project-tabs .active {
+  background: var(--panel);
+  color: var(--pf-ink);
+  box-shadow: var(--shadow), inset 0 -3px var(--pf-ink);
+}
+.pf-project-home .home-head, .pf-project-home .spec-review-head {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.pf-project-home :is(.home-head, .spec-review-head) h3,
+.pf-project-home .ux-definition .panel > h3,
+.pf-project-home .pf-ux-section-title {
+  font-size: 1.18rem;
+  line-height: 1.4;
+  margin: 0;
+  color: var(--text);
+}
+.pf-project-home .simple-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.pf-project-home :is(.ghost, .item-row) { background: var(--panel); color: var(--text); }
+.pf-project-home :is(.ghost:hover, .project-tabs .tab:hover) { background: var(--accent-bg); }
+.pf-project-home :is(a:not(.primary, .ghost), .link-button) { color: var(--pf-ink); }
+.pf-project-home .primary { background: var(--pf-ink); border-color: var(--pf-ink); color: var(--panel); }
+.pf-project-home .role-badge { color: var(--pf-ink); }
+
+.pf-event-day + .pf-event-day { margin-top: 24px; }
+.pf-event-day h4 {
+  margin: 0 0 8px;
+  color: var(--pf-note);
+  font-size: .85rem;
+  font-variant-numeric: tabular-nums;
+}
+.pf-event-day .event-list { border-inline-start: 2px solid var(--border); margin-inline-start: 5px; }
+.pf-event-day .event-row {
+  position: relative;
+  padding: 12px 4px 12px 18px;
+  grid-template-columns: 3.5em 5.5em minmax(0, 1fr);
+}
+.pf-event-day .event-row::before {
+  content: '';
+  position: absolute;
+  inset: 18px auto auto -5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--panel);
+  box-shadow: 0 0 0 2px var(--pf-note);
+}
+.pf-event-day .event-kind {
+  color: var(--text);
+  background: color-mix(in srgb, var(--kind) 14%, var(--panel));
+  border-color: color-mix(in srgb, var(--kind) 48%, var(--panel));
+  font-weight: 600;
+}
+.pf-event-day .event-kind-fragment { --kind: #a16e16; }
+.pf-event-day .event-kind-systematize { --kind: var(--success); }
+.pf-event-day .event-kind-scene { --kind: var(--accent); }
+.pf-event-day .event-kind-transition { --kind: #8259a9; }
+.pf-event-day .event-kind-spec { --kind: #007e88; }
+.pf-event-day .event-kind-actor { --kind: var(--danger); }
+.pf-event-day .event-detail { display: block; margin: 3px 0; }
+
+.pf-project-home .spec-review-column { border-top: 3px solid var(--pf-ink); }
+.pf-project-home .spec-review-column + .spec-review-column { border-top-color: var(--muted); }
+.pf-project-home .spec-review-home [data-state] {
+  --state: var(--muted);
+  margin: 0;
+  padding: 2px 8px;
+  background: color-mix(in srgb, var(--state) 12%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--state) 48%, var(--panel));
+  border-radius: 999px;
+  color: var(--text);
+  line-height: 1.5;
+  font-size: .75rem;
+  font-weight: 600;
+}
+.pf-project-home .spec-review-home :is([data-state="approved"], [data-state="implemented"], [data-state="integrated"]) { --state: var(--success); }
+.pf-project-home .spec-review-home :is([data-state="review"], [data-state="unimplemented"]) { --state: var(--accent); }
+.pf-project-home .spec-review-home :is([data-state="obsolete"], [data-state="rejected"]) { --state: var(--danger); }
+.pf-project-home .spec-review-home .simple-actions { margin-top: 12px; }
+
+.pf-scene-title { display: grid; gap: 3px; }
+.pf-scene-mode, .pf-scene-incoming { color: var(--pf-note); font-size: .8rem; }
+.pf-project-home .scene-card {
+  padding: 16px;
+  gap: 10px;
+  border-top: 3px solid var(--pf-ink);
+  background: linear-gradient(var(--accent-bg), var(--panel) 64px);
+  scroll-margin-top: 6rem;
+}
+.pf-project-home .scene-card h4 { margin: 0; font-size: 1.125rem; }
+.pf-project-home .scene-card-section { padding-top: 10px; border-top: 1px solid var(--border); }
+.pf-project-home .scene-card-section p { margin: 0; }
+.pf-project-home .ux-definition { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.pf-project-home .ux-definition > section { min-width: 0; scroll-margin-top: 6rem; }
+.pf-project-home .ux-definition-nav {
+  position: static;
+  align-items: center;
+  gap: 6px 18px;
+  margin: 0;
+  border-inline-start: 3px solid var(--pf-ink);
+}
+.pf-project-home .ux-definition-nav a { padding-block: 6px; text-decoration: underline; text-underline-offset: .22em; }
+.pf-project-home .pf-ux-section-title { margin: 8px 0; }
+.pf-project-home .ux-definition .panel { margin-bottom: 0; }
+
+@media (max-width: 600px) {
+  .pf-event-day .event-row { grid-template-columns: auto 1fr; }
+  .pf-event-day .event-kind { justify-self: start; }
+  .pf-event-day .event-body { grid-column: 1 / -1; }
+  .pf-project-home .project-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pf-project-home .project-tabs-more { grid-column: span 2; }
+  .pf-project-home .ux-definition-nav strong { flex-basis: 100%; }
+  .pf-project-home .ux-definition > section, .pf-project-home .scene-card { scroll-margin-top: 1rem; }
+  body:has(.pf-project-home) .topbar { position: static; flex-wrap: wrap; gap: 6px; overflow-wrap: anywhere; }
+  .pf-project-home :is(input, textarea, select, img, fieldset) { min-width: 0; max-width: 100%; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .pf-project-home {
+    color-scheme: dark;
+    --bg: #191f29;
+    --panel: #232b38;
+    --border: #465363;
+    --text: #edf2fa;
+    --muted: #b4c0cf;
+    --accent: #9ac4ff;
+    --accent-bg: #2c3c52;
+    --success: #81cfa7;
+    --danger: #ffaea1;
+  }
+  body:has(.pf-project-home) { background: #191f29; }
+  body:has(.pf-project-home) .topbar {
+    --panel: #232b38;
+    --text: #edf2fa;
+    --border: #465363;
+    --muted: #b4c0cf;
+    --accent: #9ac4ff;
+    color: var(--text);
+  }
+  body:has(.pf-project-home) .topbar .ghost { background: var(--panel); }
+  body:has(.pf-project-home) .topbar .role-badge { background: var(--panel); }
+  .pf-project-home :is(input, select, textarea) { background-color: var(--bg); color: var(--text); }
+}

@@ -1,3 +1,4 @@
+import '../styles/project-home-theme.css';
 import React from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -91,10 +92,11 @@ export function ProjectShowPage(): React.ReactElement {
   if (projectQ.isError || !projectQ.data) return <p style={{ color: 'var(--danger)' }}>取得失敗</p>;
   const p = projectQ.data.project;
 
+  const isHome = ['dashboard', 'spec-review', 'flow-diagram', 'ux-definition'].includes(tab);
   return (
-    <>
+    <div className={isHome ? 'pf-project-home' : undefined}>
       {/* 見出しは名前と説明だけにする。シナリオはタブ、ScreenFlow は「その他」から開く。 */}
-      <div className="panel">
+      <div className="panel pf-project-heading">
         <h2 style={{ margin: 0 }}>{p.name}</h2>
         {p.description && <p style={{ color: 'var(--muted)', marginBottom: 0 }}>{p.description}</p>}
       </div>
@@ -208,6 +210,6 @@ export function ProjectShowPage(): React.ReactElement {
           <StructuredSpecList pid={pid!} specs={specsQ.data?.items ?? []} focus={focus} />
         </SpecWorkspace>
       )}
-    </>
+    </div>
   );
 }

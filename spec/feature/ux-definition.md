@@ -18,3 +18,9 @@
 ## 実装
 
 - `web/src/components/ux-definition/UxDefinitionView.tsx`
+
+## 表示仕様
+
+目次から選択した節へフォーカスを移す。狭い幅では目次を折り返す。
+
+関連タスク `actio:f2751125-8483-4cc1-82c7-cbb02e2ed9b4`

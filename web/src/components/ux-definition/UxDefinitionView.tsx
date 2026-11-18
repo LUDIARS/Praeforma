@@ -18,14 +18,18 @@ const SECTIONS = [
 export function UxDefinitionView({ pid }: { pid: string }): React.ReactElement {
   return <div className="ux-definition">
     <nav className="panel ux-definition-nav" aria-label="UX定義の目次">
+      <strong>このページの目次</strong>
       {SECTIONS.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(event) => {
-        event.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        event.preventDefault();
+        const section = document.getElementById(id);
+        section?.focus({ preventScroll: true });
+        section?.scrollIntoView({ block: 'start' });
       }}>{label}</a>)}
     </nav>
-    <section id="ux-vision" aria-label="ヴィジョン・ストーリー"><ProjectUxGoal pid={pid} /></section>
-    <section id="ux-scenarios" className="panel" aria-labelledby="ux-scenarios-title"><ScenarioOverview pid={pid} /></section>
-    <section id="ux-domains" aria-label="ドメイン"><DomainDefinitionsPanel pid={pid} /></section>
-    <section id="ux-visuals" aria-label="コンセプトアート"><ProjectVisuals pid={pid} /></section>
+    <section tabIndex={-1} id="ux-vision" aria-label="ヴィジョン・ストーリー"><h3 className="pf-ux-section-title">ヴィジョン・ストーリー</h3><ProjectUxGoal pid={pid} /></section>
+    <section tabIndex={-1} id="ux-scenarios" className="panel" aria-labelledby="ux-scenarios-title"><ScenarioOverview pid={pid} /></section>
+    <section tabIndex={-1} id="ux-domains" aria-label="ドメイン"><DomainDefinitionsPanel pid={pid} /></section>
+    <section tabIndex={-1} id="ux-visuals" aria-label="コンセプトアート"><h3 className="pf-ux-section-title">コンセプトアート</h3><ProjectVisuals pid={pid} /></section>
   </div>;
 }
 

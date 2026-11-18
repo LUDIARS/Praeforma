@@ -6,6 +6,7 @@ const PROJECT_TABS = [
   // 基本の 4 画面 (spec/feature/project-dashboard.md)。ダッシュボードがファーストビュー。
   { id: 'dashboard', label: 'ダッシュボード' },
   { id: 'spec-review', label: '仕様確認' },
+  { id: 'flow-diagram', label: '遷移図' },
   { id: 'ux-definition', label: 'UX定義' },
   // ここから下は「その他」に入る個別の編集画面。
   { id: 'specs', label: '仕様の編集' },
@@ -18,7 +19,6 @@ const PROJECT_TABS = [
   { id: 'objects', label: 'アクター' },
   { id: 'layouts', label: 'シーン' },
   { id: 'data-design', label: 'データ設計' },
-  { id: 'flow-diagram', label: '遷移図' },
   // コンセプトアート / キービジュアル / スクリーンショット (spec/feature/project-visuals.md)。企画概要書の候補になる。
   { id: 'visuals', label: 'ビジュアル' },
   { id: 'concept-sheets', label: '企画概要書' },

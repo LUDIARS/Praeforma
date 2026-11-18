@@ -10,7 +10,20 @@ const KIND_LABELS: Record<ProjectEventKind, string> = {
   fragment: '断片', systematize: '体系化', scene: 'シーン', transition: '遷移', spec: '仕様', actor: 'アクター',
 };
 
-const timeFormat = new Intl.DateTimeFormat('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+const timeFormat = new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+const dayFormat = new Intl.DateTimeFormat('ja-JP', { dateStyle: 'long' });
+
+function groupByDay(events: ProjectEvent[]): Map<string, ProjectEvent[]> {
+  const days = new Map<string, ProjectEvent[]>();
+  for (const event of events) {
+    const day = dayFormat.format(new Date(event.at));
+    const group = days.get(day);
+    if (group) group.push(event);
+    else days.set(day, [event]);
+  }
+  return days;
+}
 
 /**
  * プロジェクトのファーストビュー (spec/feature/project-dashboard.md)。
@@ -32,9 +45,12 @@ export function ProjectDashboard({ pid, onOpenTab }: { pid: string; onOpenTab: (
     {query.isPending && <p role="status">読み込み中…</p>}
     {query.isError && <p role="alert">出来事を取得できませんでした。<button type="button" onClick={() => { void query.refetch(); }}>再取得</button></p>}
     {query.isSuccess && query.data.items.length === 0 && <p>まだ出来事はありません。断片が追加されるとここに出ます。</p>}
-    {query.isSuccess && query.data.items.length > 0 && <ol className="event-list">
-      {query.data.items.map((event) => <EventRow key={event.id} pid={pid} event={event} onOpenTab={onOpenTab} />)}
-    </ol>}
+    {query.isSuccess && Array.from(groupByDay(query.data.items), ([day, events]) => <section key={day} className="pf-event-day">
+      <h4>{day}</h4>
+      <ol className="event-list">
+        {events.map((event) => <EventRow key={event.id} pid={pid} event={event} onOpenTab={onOpenTab} />)}
+      </ol>
+    </section>)}
   </section>;
 }
 

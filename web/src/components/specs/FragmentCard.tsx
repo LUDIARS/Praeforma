@@ -25,11 +25,11 @@ export function FragmentCard({ fragment, canEdit, onChanged }: {
   return <details className="fragment-card">
     <summary className="spec-block-summary">
       <span className="spec-block-title">{summarize(fragment.content)}</span>
-      <span className="fragment-meta"><span>{labels[fragment.implementationState]}</span>
+      <span className="fragment-meta"><span data-state={fragment.implementationState}>{labels[fragment.implementationState]}</span>
         <time dateTime={fragment.createdAt}>{new Date(fragment.createdAt).toLocaleString()}</time></span>
     </summary>
     <div className="fragment-meta"><span>出所: {fragment.source}</span>
-      {fragment.disposition && <span>処理: {dispositionLabels[fragment.disposition.state]}{fragment.disposition.version ? `（${fragment.disposition.version}）` : ''}</span>}</div>
+      {fragment.disposition && <span data-state={fragment.disposition.state}>処理: {dispositionLabels[fragment.disposition.state]}{fragment.disposition.version ? `（${fragment.disposition.version}）` : ''}</span>}</div>
     {fragment.disposition?.state === 'rejected' && fragment.disposition.reason && <p className="fragment-content">棄却理由: {fragment.disposition.reason}</p>}
     <p className="fragment-content">{fragment.content}</p>
     {fragment.implementationEvidence && <p className="fragment-content">確認根拠: {fragment.implementationEvidence}</p>}

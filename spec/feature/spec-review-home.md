@@ -34,3 +34,9 @@
 - `web/src/components/specs/FragmentList.tsx` — `readOnly` 指定で登録フォームと編集操作を隠す。
 - `web/src/components/ProjectTabs.tsx` — 基本 4 画面の 2 番目に「仕様確認」。従来の「仕様」は「仕様の編集」として「その他」へ。ScreenFlow も「その他」へ。
 - `web/src/pages/ProjectShowPage.tsx` — 見出しの簡素化、仕様確認タブの描画と focus 対応。
+
+## 表示仕様
+
+状態バッジには状態名を残し、狭い幅では体系仕様の後に断片仕様を並べる。
+
+関連タスク `actio:f2751125-8483-4cc1-82c7-cbb02e2ed9b4`

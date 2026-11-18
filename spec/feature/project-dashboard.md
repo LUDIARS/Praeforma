@@ -54,3 +54,9 @@
 ## 検証
 
 `server/src/lib/__tests__/project-events.test.ts` (時刻の正規化・併合順・対象外の除外・limit)。
+
+## 表示仕様
+
+出来事は閲覧者のローカル日付で区切り、各行に時刻と種類を表示する。
+
+関連タスク `actio:f2751125-8483-4cc1-82c7-cbb02e2ed9b4`

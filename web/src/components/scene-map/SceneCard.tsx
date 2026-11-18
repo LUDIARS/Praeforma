@@ -9,14 +9,14 @@ export function SceneCard({ scene, onOpenSpec, onJump }: {
 }): React.ReactElement {
   return <article className="scene-card" id={`scene-${scene.id}`} data-focus={scene.name}>
     <header className="scene-card-head">
-      <strong>{scene.name}</strong>
+      <h4>{scene.name}</h4>
       <span className="fragment-meta">
         <span>{KIND_LABELS[scene.kind] ?? scene.kind}</span>
         {scene.isDefault && <span className="role-badge">最初のシーン</span>}
         {scene.imported && <span className="role-badge">取り込み</span>}
-        <span>入ってくる遷移 {scene.incomingCount}</span>
       </span>
     </header>
+    <span className="pf-scene-incoming">入ってくる遷移 {scene.incomingCount}</span>
     {scene.description && <p className="fragment-content scene-card-desc">{scene.description}</p>}
     <div className="scene-card-section">
       <span className="scene-card-label">仕様 ({scene.specs.length})</span>

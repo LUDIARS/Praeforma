@@ -8,7 +8,7 @@ export function StructuredSpecList({ pid, specs, focus }: { pid: string; specs: 
     {specs.map((spec) => <details key={spec.id} className="fragment-card" data-focus={spec.code} open={spec.code === focus || undefined}>
       <summary className="spec-block-summary">
         <span className="spec-block-title">{spec.code} — {spec.title}</span>
-        <span className="fragment-meta"><span className="role-badge">{spec.status}</span><span>{spec.priority}</span></span>
+        <span className="fragment-meta"><span className="role-badge" data-state={spec.status}>{spec.status}</span><span>{spec.priority}</span></span>
       </summary>
       <div className="fragment-meta"><span>カテゴリ: {spec.category}</span><span>v{spec.version}</span></div>
       {spec.description ? <p className="fragment-content">{spec.description}</p> : <p className="meta">説明はありません。</p>}
