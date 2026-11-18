@@ -7,15 +7,18 @@ import { useFocusEntity } from '../lib/deeplink.ts';
 import { ProjectUxGoal } from '../components/ProjectUxGoal.tsx';
 import { ProjectConstraints } from '../components/ProjectConstraints.tsx';
 import { RepoDataPanel } from '../components/RepoDataPanel.tsx';
-import { ProjectTabs, parseProjectTab } from '../components/ProjectTabs.tsx';
+import { ProjectTabs, parseProjectTab, type ProjectTab } from '../components/ProjectTabs.tsx';
 import { ActorRegistration } from '../components/registration/ActorRegistration.tsx';
 import { SceneRegistration } from '../components/registration/SceneRegistration.tsx';
 import { SceneProposals } from '../components/registration/SceneProposals.tsx';
 import { SpecRegistration } from '../components/registration/SpecRegistration.tsx';
 import { ActorCards } from '../components/ActorCards.tsx';
 import { DataDesignPanel } from '../components/data-design/DataDesignPanel.tsx';
-import { FlowDiagram } from '../components/flow/FlowDiagram.tsx';
 import { ProjectTodos } from '../components/ProjectTodos.tsx';
+import { SpecReviewHome } from '../components/specs/SpecReviewHome.tsx';
+import { ProjectDashboard } from '../components/dashboard/ProjectDashboard.tsx';
+import { SceneMapView } from '../components/scene-map/SceneMapView.tsx';
+import { UxDefinitionView } from '../components/ux-definition/UxDefinitionView.tsx';
 import { SpecWorkspace } from '../components/specs/SpecWorkspace.tsx';
 import { StructuredSpecList } from '../components/specs/StructuredSpecList.tsx';
 import { ConceptSheetWorkspace } from '../components/concept-sheets/ConceptSheetWorkspace.tsx';
@@ -53,12 +56,33 @@ export function ProjectShowPage(): React.ReactElement {
   const specsQ = useQuery({
     queryKey: ['specs', pid],
     queryFn: () => api.listSpecs(pid!),
-    enabled: !!pid && tab === 'specs',
+    enabled: !!pid && (tab === 'specs' || tab === 'spec-review'),
   });
+
+  function openTab(next: ProjectTab, focusCode: string | null = null): void {
+    setSearchParams((current) => {
+      const params = new URLSearchParams(current);
+      params.set('tab', next);
+      params.delete('spec_kind');
+      if (focusCode) params.set('focus', focusCode); else params.delete('focus');
+      return params;
+    });
+  }
+
+  function openSpecs(kind: 'structured' | 'fragment'): void {
+    setSearchParams((current) => {
+      const params = new URLSearchParams(current);
+      params.set('tab', 'specs');
+      params.set('spec_kind', kind);
+      params.delete('focus');
+      return params;
+    });
+  }
 
   // 該当タブのデータ取得が完了したら `?focus` のエンティティへスクロール/ハイライトする。
   const focusReady =
     (tab === 'specs' && specsQ.isSuccess) ||
+    (tab === 'spec-review' && specsQ.isSuccess) ||
     (tab === 'layouts' && layoutsQ.isSuccess);
   const { notFound: focusNotFound } = useFocusEntity(focus, focusReady);
 
@@ -69,19 +93,10 @@ export function ProjectShowPage(): React.ReactElement {
 
   return (
     <>
+      {/* 見出しは名前と説明だけにする。シナリオはタブ、ScreenFlow は「その他」から開く。 */}
       <div className="panel">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <h2 style={{ margin: 0 }}>{p.name}</h2>
-          <div style={{ flex: 1 }} />
-          <Link to={`/projects/${pid}/ux-design`} className="primary" style={{ textDecoration: 'none' }}>
-            シナリオ
-          </Link>
-          <Link to={`/projects/${pid}/flow`} className="ghost">ScreenFlow →</Link>
-        </div>
-        <p style={{ color: 'var(--muted)' }}>{p.description}</p>
-        <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-          {p.id} / platforms: {p.platforms.join(', ')}
-        </div>
+        <h2 style={{ margin: 0 }}>{p.name}</h2>
+        {p.description && <p style={{ color: 'var(--muted)', marginBottom: 0 }}>{p.description}</p>}
       </div>
 
       {focusNotFound && (
@@ -101,6 +116,10 @@ export function ProjectShowPage(): React.ReactElement {
         });
       }} />
 
+      {tab === 'dashboard' && <ProjectDashboard key={`dashboard:${pid}`} pid={pid} onOpenTab={(next) => openTab(next)} />}
+      {tab === 'flow-diagram' && <SceneMapView key={`scene-map:${pid}`} pid={pid} onOpenSpec={(code) => openTab('spec-review', code)} />}
+      {tab === 'ux-definition' && <UxDefinitionView key={`ux-definition:${pid}`} pid={pid} />}
+      {tab === 'spec-review' && <SpecReviewHome key={`spec-review:${pid}`} pid={pid} focus={focus} onOpenSpecs={openSpecs} />}
       {tab === 'ux-goal' && <ProjectUxGoal key={`ux-goal:${pid}`} pid={pid} />}
       {tab === 'ux-goal' && <RepoDataPanel key={`repo-data:${pid}`} pid={pid} />}
       {tab === 'constraints' && <ProjectConstraints key={`constraints:${pid}`} pid={pid} />}
@@ -114,13 +133,12 @@ export function ProjectShowPage(): React.ReactElement {
       {tab === 'concept-sheets' && <section key={`concept-sheets:${pid}`} className="panel">
         <ConceptSheetWorkspace pid={pid} initialSheetId={searchParams.get('sheet')} />
       </section>}
-      {tab === 'flow-diagram' && <section key={`flow-diagram:${pid}`} className="panel">
-        <h3>遷移図</h3>
-        <FlowDiagram pid={pid} revision={0} />
-      </section>}
 
       {tab === 'overview' && (
         <>
+          <div className="panel" style={{ fontSize: 12, color: 'var(--muted)' }}>
+            {p.id} / platforms: {p.platforms.join(', ')}
+          </div>
           <ProjectTodos key={`todos:${pid}`} pid={pid} />
           <div className="panel">
             <h3>メンバー ({membersQ.data?.items.length ?? 0})</h3>

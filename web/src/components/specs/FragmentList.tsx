@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fragmentApi, FRAGMENT_PAGE_SIZE } from '../../lib/spec-fragments-api.ts';
 import { FragmentCard } from './FragmentCard.tsx';
 
-export function FragmentList({ pid }: { pid: string }): React.ReactElement {
+/** readOnly: 基本画面の確認用。登録フォームと各断片の編集操作を出さない。 */
+export function FragmentList({ pid, readOnly = false }: { pid: string; readOnly?: boolean }): React.ReactElement {
   const client = useQueryClient();
   const [offset, setOffset] = React.useState(0);
   const [content, setContent] = React.useState('');
@@ -17,9 +18,10 @@ export function FragmentList({ pid }: { pid: string }): React.ReactElement {
     },
     onSuccess: async () => { setContent(''); eventId.current = null; setOffset(0); await refresh(); },
   });
+  const canEdit = !readOnly && !!query.data?.canEdit;
   return <>
-    <p>指示や思いつきを、そのまま残せます。数値目標・計測方法・条件・報酬も自由に記入できます。</p>
-    {query.data?.canEdit && <form onSubmit={(event) => {
+    {!readOnly && <p>指示や思いつきを、そのまま残せます。数値目標・計測方法・条件・報酬も自由に記入できます。</p>}
+    {canEdit && <form onSubmit={(event) => {
       event.preventDefault(); if (content.trim() && !create.isPending) create.mutate();
     }}>
       <label className="simple-field"><span>断片</span>
@@ -35,7 +37,7 @@ export function FragmentList({ pid }: { pid: string }): React.ReactElement {
     {query.isError && <p role="alert">取得できませんでした。<button type="button" onClick={() => { void query.refetch(); }}>再取得</button></p>}
     {query.isSuccess && <>
       {query.data.items.length === 0 && <p>断片はありません。</p>}
-      {query.data.items.map((fragment) => <FragmentCard key={fragment.id} fragment={fragment} canEdit={query.data.canEdit} onChanged={refresh} />)}
+      {query.data.items.map((fragment) => <FragmentCard key={fragment.id} fragment={fragment} canEdit={canEdit} onChanged={refresh} />)}
       <div className="simple-actions"><button type="button" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - FRAGMENT_PAGE_SIZE))}>前へ</button>
         <span>{Math.floor(offset / FRAGMENT_PAGE_SIZE) + 1}ページ</span><button type="button" disabled={!query.data.hasMore} onClick={() => setOffset(offset + FRAGMENT_PAGE_SIZE)}>次へ</button></div>
     </>}

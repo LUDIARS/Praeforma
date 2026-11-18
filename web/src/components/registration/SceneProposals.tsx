@@ -21,7 +21,7 @@ export function proposalErrorMessage(error: unknown): string {
   }
 }
 
-function ProposalRow({ pid, proposal }: { pid: string; proposal: SceneProposal }): React.ReactElement {
+function ProposalRow({ pid, proposal, onRegistered }: { pid: string; proposal: SceneProposal; onRegistered?: () => void }): React.ReactElement {
   const client = useQueryClient();
   const [name, setName] = React.useState(proposal.label);
   const [kind, setKind] = React.useState<Layout['kind']>(proposal.suggested_kind);
@@ -33,6 +33,7 @@ function ProposalRow({ pid, proposal }: { pid: string; proposal: SceneProposal }
       kind,
       anatomia_scene_id: proposal.scene_id,
     }),
+    onSuccess: () => onRegistered?.(),
     onSettled: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: ['scene-proposals', pid] }),
@@ -80,7 +81,7 @@ function ProposalRow({ pid, proposal }: { pid: string; proposal: SceneProposal }
 }
 
 /** Anatomia の解析シーンからシーン登録の候補を出し、利用者が確認・調整して登録する。 */
-export function SceneProposals({ pid }: { pid: string }): React.ReactElement {
+export function SceneProposals({ pid, onRegistered }: { pid: string; onRegistered?: () => void }): React.ReactElement {
   const query = useQuery({
     queryKey: ['scene-proposals', pid],
     queryFn: () => api.listSceneProposals(pid),
@@ -104,7 +105,7 @@ export function SceneProposals({ pid }: { pid: string }): React.ReactElement {
     {query.isSuccess && query.data.proposals.length === 0 && <p>Anatomia の解析にシーンが見つかりませんでした。</p>}
     {query.isSuccess && query.data.proposals.length > 0 && pending.length === 0 && <p>候補はすべて登録済みです。</p>}
     {pending.length > 0 && <ul className="item-list">
-      {pending.map((proposal) => <ProposalRow key={proposal.scene_id} pid={pid} proposal={proposal} />)}
+      {pending.map((proposal) => <ProposalRow key={proposal.scene_id} pid={pid} proposal={proposal} onRegistered={onRegistered} />)}
     </ul>}
     {registered.length > 0 && <p className="muted">登録済み: {registered.map((p) => p.label).join('、')}</p>}
   </section>;

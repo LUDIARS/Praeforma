@@ -3,6 +3,12 @@ import { Link } from 'react-router';
 import '../styles/project-tabs.css';
 
 const PROJECT_TABS = [
+  // 基本の 4 画面 (spec/feature/project-dashboard.md)。ダッシュボードがファーストビュー。
+  { id: 'dashboard', label: 'ダッシュボード' },
+  { id: 'spec-review', label: '仕様確認' },
+  { id: 'ux-definition', label: 'UX定義' },
+  // ここから下は「その他」に入る個別の編集画面。
+  { id: 'specs', label: '仕様の編集' },
   { id: 'overview', label: '概要' },
   { id: 'ux-goal', label: 'UX' },
   // シナリオ (インゲームの詳しい流れ) は別ページ (/projects/:pid/ux-design)。選ぶとそのページへ移る。
@@ -11,7 +17,6 @@ const PROJECT_TABS = [
   { id: 'domains', label: 'ドメイン' },
   { id: 'objects', label: 'アクター' },
   { id: 'layouts', label: 'シーン' },
-  { id: 'specs', label: '仕様' },
   { id: 'data-design', label: 'データ設計' },
   { id: 'flow-diagram', label: '遷移図' },
   // コンセプトアート / キービジュアル / スクリーンショット (spec/feature/project-visuals.md)。企画概要書の候補になる。
@@ -22,7 +27,7 @@ export type ProjectTab = typeof PROJECT_TABS[number]['id'];
 const VISIBLE_TAB_COUNT = 4;
 
 export function parseProjectTab(value: string | null): ProjectTab {
-  return PROJECT_TABS.find((item) => item.id === value)?.id ?? 'overview';
+  return PROJECT_TABS.find((item) => item.id === value)?.id ?? 'dashboard';
 }
 
 export function ProjectTabs({ pid, tab, onChange }: {
@@ -67,6 +72,10 @@ export function ProjectTabs({ pid, tab, onChange }: {
         <Link to={`/projects/${pid}/studio`} role="menuitem" className="tab"
           style={{ textDecoration: 'none' }} onClick={() => setIsMoreOpen(false)}>
           要件定義モード
+        </Link>
+        <Link to={`/projects/${pid}/flow`} role="menuitem" className="tab"
+          style={{ textDecoration: 'none' }} onClick={() => setIsMoreOpen(false)}>
+          ScreenFlow
         </Link>
       </div>}
     </div>

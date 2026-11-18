@@ -45,6 +45,8 @@ import { makeAcceptanceRouter, makeAcceptanceSummaryRouter } from './routes/acce
 import { makeAssetRouter } from './routes/assets.ts';
 import { makeStudioRouter } from './routes/studio.ts';
 import { makeTransitionRouter } from './routes/transitions.ts';
+import { makeSceneMapRouter } from './routes/scene-map.ts';
+import { makeProjectEventsRouter } from './routes/project-events.ts';
 import { makeExportRouter } from './routes/export.ts';
 import { makeRepoDataRouter } from './routes/repo-data.ts';
 import { makeConversationRouter } from './routes/conversations.ts';
@@ -206,6 +208,10 @@ app.route('/api/projects/:pid/domain-proposals', makeDomainProposalRouter(config
 app.route('/api/projects/:pid/domain-definitions', makeDomainDefinitionsRouter(anatomiaOpts));
 const ccOpts = { ccUrl: config.ccUrl, ccToken: config.ccToken, ccTemplate: config.ccTemplate };
 app.route('/api/projects/:pid/transitions', makeTransitionRouter());
+// 遷移図 (シーン中心・読み取り専用) — spec/feature/scene-map.md
+app.route('/api/projects/:pid/scene-map', makeSceneMapRouter());
+// ダッシュボードの最近の出来事 — spec/feature/project-dashboard.md
+app.route('/api/projects/:pid/events', makeProjectEventsRouter());
 app.route('/api/projects/:pid/export', makeExportRouter());
 app.route('/api/projects/:pid/repo-data', makeRepoDataRouter());
 app.route('/api/projects/:pid/layouts/:lid/widgets', makeWidgetRouter());
