@@ -2,15 +2,21 @@ import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fragmentApi, FRAGMENT_PAGE_SIZE } from '../../lib/spec-fragments-api.ts';
 import { FragmentCard } from './FragmentCard.tsx';
+import type { FragmentDispositionState } from '../../../../shared/spec-versioning.ts';
 
-/** readOnly: 基本画面の確認用。登録フォームと各断片の編集操作を出さない。 */
-export function FragmentList({ pid, readOnly = false }: { pid: string; readOnly?: boolean }): React.ReactElement {
+/**
+ * readOnly: 基本画面の確認用。登録フォームと各断片の編集操作を出さない。
+ * disposition: 体系化の処理結果で絞る (PF-HOME-12)。openCards: 各断片を開いた状態で出す (PF-HOME-11)。
+ */
+export function FragmentList({ pid, readOnly = false, disposition, openCards = false, emptyText = '断片はありません。' }: {
+  pid: string; readOnly?: boolean; disposition?: FragmentDispositionState; openCards?: boolean; emptyText?: string;
+}): React.ReactElement {
   const client = useQueryClient();
   const [offset, setOffset] = React.useState(0);
   const [content, setContent] = React.useState('');
   const eventId = React.useRef<string | null>(null);
-  const query = useQuery({ queryKey: ['spec-fragments', pid, offset], queryFn: () => fragmentApi.list(pid, offset) });
-  const refresh = async (): Promise<void> => { await Promise.all([client.invalidateQueries({ queryKey: ['fragment-cleanup-todo', pid] }),client.invalidateQueries({ queryKey: ['spec-fragments', pid] }),client.invalidateQueries({queryKey:['spec-versions',pid]})]); };
+  const query = useQuery({ queryKey: ['spec-fragments', pid, disposition ?? 'all', offset], queryFn: () => fragmentApi.list(pid, offset, disposition) });
+  const refresh = async (): Promise<void> => { await Promise.all([client.invalidateQueries({ queryKey: ['fragment-cleanup-todo', pid] }),client.invalidateQueries({ queryKey: ['spec-fragments', pid] }),client.invalidateQueries({ queryKey: ['spec-fragment-counts', pid] }),client.invalidateQueries({queryKey:['spec-versions',pid]})]); };
   const create = useMutation({
     mutationFn: () => {
       eventId.current ??= crypto.randomUUID();
@@ -36,8 +42,8 @@ export function FragmentList({ pid, readOnly = false }: { pid: string; readOnly?
     {query.isPending && <p role="status">読み込み中…</p>}
     {query.isError && <p role="alert">取得できませんでした。<button type="button" onClick={() => { void query.refetch(); }}>再取得</button></p>}
     {query.isSuccess && <>
-      {query.data.items.length === 0 && <p>断片はありません。</p>}
-      {query.data.items.map((fragment) => <FragmentCard key={fragment.id} fragment={fragment} canEdit={canEdit} onChanged={refresh} />)}
+      {query.data.items.length === 0 && <p>{emptyText}</p>}
+      {query.data.items.map((fragment) => <FragmentCard key={fragment.id} fragment={fragment} canEdit={canEdit} open={openCards} onChanged={refresh} />)}
       <div className="simple-actions"><button type="button" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - FRAGMENT_PAGE_SIZE))}>前へ</button>
         <span>{Math.floor(offset / FRAGMENT_PAGE_SIZE) + 1}ページ</span><button type="button" disabled={!query.data.hasMore} onClick={() => setOffset(offset + FRAGMENT_PAGE_SIZE)}>次へ</button></div>
     </>}

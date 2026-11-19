@@ -2,7 +2,7 @@
 // シーンごとに、直接付いた仕様と、そのシーンに置いたアクター経由で付いた仕様を束ね、出入りする遷移を添える。
 // DB を読まない純関数。route 側で行を集めて渡す。
 
-import type { SceneMap, SceneMapScene, SceneMapSpec, SceneMapSpecSummary, SceneSpecVia } from '../../../shared/project-home.ts';
+import type { SceneMap, SceneMapScene, SceneMapSpecSummary, ScenePosition, SceneSpecVia } from '../../../shared/project-home.ts';
 
 export interface SceneMapLayoutRow { id: string; name: string; description: string | null; kind: string; isDefault: boolean; anatomiaSceneId: string | null }
 export interface SceneMapTransitionRow { id: string; fromLayoutId: string; toLayoutId: string; trigger: string; condition: string; label: string | null; ordinal: number }
@@ -14,6 +14,9 @@ export interface SceneMapPlacementRow { layoutId: string; objectId: string }
 export function buildSceneMap(input: {
   layouts: SceneMapLayoutRow[]; transitions: SceneMapTransitionRow[]; specs: SceneMapSpecRow[];
   targets: SceneMapTargetRow[]; placements: SceneMapPlacementRow[];
+  /** 保存済みの位置 (PF-MAP-10)。 */ positions?: ReadonlyMap<string, ScenePosition>;
+  /** キャプチャがあるシーン (PF-MAP-7)。 */ captures?: ReadonlySet<string>;
+  canEdit?: boolean;
 }): SceneMap {
   const layoutById = new Map(input.layouts.map((l) => [l.id, l]));
   const specById = new Map(input.specs.map((s) => [s.id, s]));
@@ -49,8 +52,9 @@ export function buildSceneMap(input: {
         .filter((t) => t.fromLayoutId === l.id && layoutById.has(t.toLayoutId))
         .map((t) => ({ id: t.id, toLayoutId: t.toLayoutId, toName: layoutById.get(t.toLayoutId)!.name, trigger: t.trigger, condition: t.condition, label: t.label }));
       const incomingCount = sortedTransitions.filter((t) => t.toLayoutId === l.id && layoutById.has(t.fromLayoutId)).length;
-      return { id: l.id, name: l.name, description: l.description, kind: l.kind, isDefault: l.isDefault, imported: !!l.anatomiaSceneId, specs, outgoing, incomingCount };
+      return { id: l.id, name: l.name, description: l.description, kind: l.kind, isDefault: l.isDefault, imported: !!l.anatomiaSceneId, specs, outgoing, incomingCount,
+        position: input.positions?.get(l.id) ?? null, hasCapture: input.captures?.has(l.id) ?? false };
     });
   const unplacedSpecs = input.specs.filter((s) => !placed.has(s.id)).sort((a, b) => a.code.localeCompare(b.code, 'ja'));
-  return { scenes, unplacedSpecs };
+  return { scenes, unplacedSpecs, canEdit: input.canEdit ?? false };
 }

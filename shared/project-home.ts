@@ -19,5 +19,12 @@ export interface SceneMapScene {
   specs: SceneMapSpec[];
   outgoing: SceneMapTransition[];
   incomingCount: number;
+  /** 遷移図キャンバスに保存した位置。未保存なら null (画面側で自動配置する、PF-MAP-11)。 */
+  position: ScenePosition | null;
+  /** シーンエディタに取り込んだキャプチャがあるか (PF-MAP-7)。 */
+  hasCapture: boolean;
 }
-export interface SceneMap { scenes: SceneMapScene[]; unplacedSpecs: SceneMapSpecSummary[] }
+export interface ScenePosition { x: number; y: number }
+export interface SceneMap { scenes: SceneMapScene[]; unplacedSpecs: SceneMapSpecSummary[]; canEdit: boolean }
+
+export type FragmentCounts = { pending: number; integrated: number; rejected: number };

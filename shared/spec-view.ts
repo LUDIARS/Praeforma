@@ -41,6 +41,9 @@ const AXIS_GROUPS: Record<SpecViewAxis, readonly (readonly [string, string])[]> 
 };
 const OTHER_GROUP = ['other', 'その他'] as const;
 
+/** 体系仕様のカテゴリの並びと表示名。最後は「その他」 (PF-HOME-9)。 */
+export const SPEC_CATEGORY_GROUPS: readonly (readonly [string, string])[] = [...AXIS_GROUPS.category, OTHER_GROUP];
+
 export const specViewWidth = (): number => PADDING * 2 + SPEC_VIEW_COLUMNS * CARD_WIDTH + (SPEC_VIEW_COLUMNS - 1) * GAP;
 
 function axisValue(spec: SpecViewSpec, axis: SpecViewAxis): string {

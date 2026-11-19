@@ -9,8 +9,8 @@ import { summarize } from './spec-block-summary.ts';
 const labels: Record<ImplementationState, string> = { unverified: '未確認', unimplemented: '未実装', implemented: '実装済' };
 const dispositionLabels: Record<FragmentDispositionState, string> = { pending: '未整理', integrated: '統合済', rejected: '棄却' };
 
-export function FragmentCard({ fragment, canEdit, onChanged }: {
-  fragment: SpecFragment; canEdit: boolean; onChanged: () => Promise<void>;
+export function FragmentCard({ fragment, canEdit, open = false, onChanged }: {
+  fragment: SpecFragment; canEdit: boolean; open?: boolean; onChanged: () => Promise<void>;
 }): React.ReactElement {
   const [editing, setEditing] = React.useState(false);
   const [state, setState] = React.useState(fragment.implementationState);
@@ -22,7 +22,7 @@ export function FragmentCard({ fragment, canEdit, onChanged }: {
     }),
     onSuccess: async () => { setEditing(false); await onChanged(); },
   });
-  return <details className="fragment-card">
+  return <details className="fragment-card" open={open || undefined}>
     <summary className="spec-block-summary">
       <span className="spec-block-title">{summarize(fragment.content)}</span>
       <span className="fragment-meta"><span data-state={fragment.implementationState}>{labels[fragment.implementationState]}</span>

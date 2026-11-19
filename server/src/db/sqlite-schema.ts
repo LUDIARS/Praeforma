@@ -1,5 +1,6 @@
 import { SPEC_VERSION_ALTERS, SPEC_VERSION_DDL } from './spec-version-sqlite.ts';
 import { SPEC_SPRINT_DDL } from './spec-sprint-sqlite.ts';
+import { SCENE_MAP_DDL } from './scene-map-sqlite.ts';
 // SQLite 版スキーマ (ローカル「仕様書レビュー」モード用、 Studio 最小サブセット 15 テーブル)。
 //
 // 既存 pg スキーマと同じテーブル名 / カラム名 / JS キーで定義し、 各 pg schema ファイルが
@@ -573,5 +574,6 @@ export const SQLITE_DDL: string[] = [
   `CREATE TABLE IF NOT EXISTS audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL, actor_user_id TEXT NOT NULL, actor_display_name TEXT, action TEXT NOT NULL, target_kind TEXT, target_id TEXT, meta TEXT NOT NULL DEFAULT '{}', ip TEXT, user_agent TEXT, created_at INTEGER)`,
   ...SPEC_VERSION_DDL,
   ...SPEC_SPRINT_DDL,
+  ...SCENE_MAP_DDL,
   `CREATE TABLE IF NOT EXISTS domain_memberships (project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE, core_id TEXT NOT NULL REFERENCES domains(id) ON DELETE CASCADE, business_id TEXT NOT NULL REFERENCES domains(id) ON DELETE CASCADE, PRIMARY KEY(project_id,core_id,business_id), CHECK(core_id <> business_id))`,
 ];

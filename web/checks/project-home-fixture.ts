@@ -21,15 +21,17 @@ export function renderHomeFixture(view: 'tabs' | 'dashboard' | 'review' | 'scene
     { id: 'c', kind: 'spec', title: '作成', at: '2026-11-17T12:00:00Z' },
   ] });
   client.setQueryData(['specs', pid], { items: [
-    { id: 's', code: 'S1', title: '入力', status: 'review', preconditions: [], postconditions: [] },
+    { id: 's', code: 'S1', title: '入力', status: 'review', category: 'interaction', preconditions: [], postconditions: [] },
+    { id: 'o', code: 'S0', title: '旧入力', status: 'obsolete', category: 'interaction', preconditions: [], postconditions: [] },
   ] });
-  client.setQueryData(['spec-fragments', pid, 0], { items: [
+  client.setQueryData(['spec-fragment-counts', pid], { pending: 2, integrated: 1, rejected: 0 });
+  client.setQueryData(['spec-fragments', pid, 'all', 0], { items: [
     { id: 'f', content: '入力案', implementationState: 'implemented', disposition: { state: 'integrated' }, createdAt: '2026-11-19' },
   ] });
   client.setQueryData(['scene-map', pid], { scenes: [
-    { id: 'start', name: '開始地点', kind: 'screen', specs: [], incomingCount: 2,
+    { id: 'start', name: '開始地点', kind: 'screen', isDefault: true, specs: [], incomingCount: 2, position: null, hasCapture: false,
       outgoing: [{ id: 'exit', toLayoutId: 'start', toName: '開始地点', trigger: 'tap' }] },
-  ], unplacedSpecs: [] });
+  ], unplacedSpecs: [], canEdit: true });
   const views = {
     tabs: h(ProjectTabs, { pid, tab: 'dashboard', onChange: noop }),
     dashboard: h(ProjectDashboard, { pid, onOpenTab: noop }),

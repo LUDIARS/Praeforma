@@ -18,7 +18,19 @@
 .spec-terms-form button { align-self: end; }
 .sprint-pick { display: flex !important; grid-template-columns: none; align-items: baseline; gap: 8px; overflow-wrap: anywhere; }
 .sprint-detail { margin-top: 12px; min-width: 0; }
-.spec-review-home { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; align-items: start; }
+.spec-review-home { display: grid; gap: 12px; min-width: 0; }
+.spec-review-tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+.spec-review-tabs [role="tab"] { border: 1px solid transparent; border-bottom: none; border-radius: 6px 6px 0 0; background: none; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: inherit; }
+.spec-review-tabs [role="tab"].active { border-color: var(--border); background: var(--panel, var(--bg)); font-weight: 600; margin-bottom: -1px; }
+.spec-review-tabs [role="tab"][data-attention="true"] { color: var(--accent); font-weight: 600; }
+.spec-review-badge { min-width: 1.6em; padding: 0 6px; border-radius: 999px; background: var(--accent); color: var(--bg, #fff); font-size: 0.8em; line-height: 1.6; text-align: center; }
+.spec-review-panel { display: grid; gap: 10px; min-width: 0; }
+.spec-review-notice { margin: 0; padding: 8px 12px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.spec-review-toggles, .spec-category-list { display: grid; gap: 12px; }
+.spec-category h4 { margin: 0 0 6px; }
+.fragment-toggle { border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; }
+.fragment-toggle > summary { cursor: pointer; font-weight: 600; }
+.fragment-toggle[open] > summary { margin-bottom: 8px; }
 .spec-review-column { min-width: 0; margin: 0; }
 .spec-review-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .spec-review-head h3 { margin: 0; }

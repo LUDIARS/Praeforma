@@ -25,7 +25,8 @@
     "spec/feature/project-dashboard.md",
     "spec/feature/spec-review-home.md",
     "spec/feature/scene-map.md",
-    "spec/feature/ux-definition.md"
+    "spec/feature/ux-definition.md",
+    "spec/schema/scene-map-positions.md"
   ],
   "presetRules": [],
   "templateRules": [],

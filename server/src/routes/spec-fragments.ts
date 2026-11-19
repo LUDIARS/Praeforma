@@ -1,7 +1,7 @@
 /** Project-scoped immutable input and revision-checked implementation state. */
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { ulid } from 'ulid';
 import { getDb } from '../db/connection.ts';
 import { projects, type ProjectRole } from '../db/schema/project.ts';
@@ -13,9 +13,18 @@ import { parsePagination } from '../lib/pagination.ts';
 import { AppError } from '../lib/errors.ts';
 import { countPendingFragments } from '../lib/fragment-cleanup-todo.ts';
 import { fragmentDispositions, PENDING_DISPOSITION } from '../lib/fragment-disposition.ts';
+import { countFragmentsByDisposition, filteredFragmentIds, parseDisposition } from '../lib/fragment-filter.ts';
 
 const VIEW_ROLES: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer'];
 const EDIT_ROLES: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer'];
+
+/** 絞り込みで得た id の並びを保ったまま行を読む。 */
+async function selectByIds(ids: string[]) {
+  if (!ids.length) return [];
+  const rows = await getDb().select().from(specFragments).where(inArray(specFragments.id, ids));
+  const order = new Map(ids.map((id, index) => [id, index]));
+  return rows.sort((a, b) => order.get(a.id)! - order.get(b.id)!);
+}
 
 export function makeSpecFragmentRouter(): Hono {
   const router = new Hono();
@@ -31,12 +40,16 @@ export function makeSpecFragmentRouter(): Hono {
     const role: ProjectRole = context.get('projectRole');
     return context.json({ pendingCount, canReconstruct: role === 'owner' || role === 'planner' });
   });
+  router.get('/counts', async (context) => context.json(await countFragmentsByDisposition(context.req.param('pid')!)));
   router.get('/', async (context) => {
     const page = parsePagination(context.req.query());
     if (!Number.isInteger(page.limit) || !Number.isInteger(page.offset)) throw AppError.badRequest('invalid_page');
-    const items = await getDb().select().from(specFragments)
-      .where(eq(specFragments.projectId, context.req.param('pid')!))
-      .orderBy(desc(specFragments.createdAt), desc(specFragments.id)).limit(page.limit + 1).offset(page.offset);
+    const projectId = context.req.param('pid')!;
+    const disposition = parseDisposition(context.req.query('disposition'));
+    const items = disposition ? await selectByIds(await filteredFragmentIds(projectId, disposition, page.limit, page.offset))
+      : await getDb().select().from(specFragments)
+        .where(eq(specFragments.projectId, projectId))
+        .orderBy(desc(specFragments.createdAt), desc(specFragments.id)).limit(page.limit + 1).offset(page.offset);
     const pageItems = items.slice(0, page.limit);
     const dispositions = await fragmentDispositions(pageItems.map((item) => item.id));
     return context.json({ items: pageItems.map((item) => ({ ...item, disposition: dispositions.get(item.id) ?? PENDING_DISPOSITION })),

@@ -22,3 +22,29 @@
 .ux-definition { display: grid; gap: 0; }
 .ux-definition > section { scroll-margin-top: 16px; }
 .ux-definition-nav { display: flex; flex-wrap: wrap; gap: 16px; position: sticky; top: 0; z-index: 1; }
+
+/* 遷移図キャンバス (spec/feature/scene-map.md PF-MAP-7〜10) */
+.scene-map-stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.scene-map-stage[data-has-detail="true"] { grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); }
+@media (max-width: 860px) { .scene-map-stage[data-has-detail="true"] { grid-template-columns: minmax(0, 1fr); } }
+.scene-canvas-wrap { display: grid; gap: 6px; min-width: 0; }
+.scene-canvas-tools { display: flex; align-items: center; gap: 6px; }
+.scene-canvas-tools span { min-width: 3.5em; text-align: center; font-variant-numeric: tabular-nums; }
+.scene-canvas { position: relative; height: min(70vh, 640px); overflow: hidden; border: 1px solid var(--border); border-radius: 10px; cursor: grab; touch-action: none; user-select: none;
+  background-color: var(--bg); background-image: radial-gradient(color-mix(in srgb, var(--muted) 35%, transparent) 1px, transparent 1px); background-size: 20px 20px; }
+.scene-canvas:active { cursor: grabbing; }
+.scene-canvas-layer { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.scene-edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; color: var(--muted); }
+.scene-edges line { stroke: currentColor; stroke-width: 2; }
+.scene-edges text { fill: var(--text, currentColor); font-size: 12px; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; }
+.scene-node { position: absolute; display: grid; grid-template-rows: 1fr auto; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--panel); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); cursor: pointer; }
+.scene-node[data-editing] { cursor: move; }
+.scene-node[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 1px; }
+.scene-node:focus-visible { outline: 3px solid var(--accent); }
+.scene-node-capture { display: flex; align-items: center; justify-content: center; min-height: 0; background: color-mix(in srgb, var(--muted) 12%, var(--bg)); }
+.scene-node-capture img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.scene-node-body { display: grid; gap: 2px; padding: 6px 8px; border-top: 1px solid var(--border); }
+.scene-node-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scene-node-meta { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.scene-map-detail { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.scene-map-detail-close { justify-self: end; }
