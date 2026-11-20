@@ -91,11 +91,14 @@ test('the writer asks Astra once more with the issues, then gives up', async () 
   const images = decodeSceneImages([{ label: LABEL, dataUrl: PNG }]);
   const candidates = [{ kind: 'screenshot' as const, note: '光が集まる瞬間', featured: true }];
   const calls: AstraRequest[] = [];
-  const replies = [output({ catchcopy: '別の文言' }), output()];
-  const writer = makeConceptSheetWriter(async (request) => { calls.push(request); return replies.shift() ?? ''; });
+  const replies = [
+    { text: output({ catchcopy: '別の文言' }), model: 'gpt-test-astra-before' },
+    { text: output(), model: 'gpt-test-astra-after' },
+  ];
+  const writer = makeConceptSheetWriter(async (request) => { calls.push(request); return replies.shift()!; });
   const result = await writer({ material, images, candidates, instructions: '', previous: null, mode: 'manual' });
   assert.equal(result.design.catchcopy, COPY);
-  assert.equal(result.model, 'gpt-6-astra');
+  assert.equal(result.model, 'gpt-test-astra-after');
   assert.deepEqual(calls.map((c) => c.effort), ['xhigh', 'high']);
   assert.match(calls[1]!.prompt, /直すこと/);
   assert.equal(calls[0]!.images[0]!.ext, 'png');
@@ -105,11 +108,11 @@ test('the writer asks Astra once more with the issues, then gives up', async () 
   assert.doesNotMatch(calls[0]!.prompt, /## 自動更新/);
 
   const auto: AstraRequest[] = [];
-  await makeConceptSheetWriter(async (request) => { auto.push(request); return output(); })(
+  await makeConceptSheetWriter(async (request) => { auto.push(request); return { text: output(), model: 'gpt-test-astra' }; })(
     { material, images, candidates, instructions: '', previous: null, mode: 'auto' });
   assert.match(auto[0]!.prompt, /## 自動更新/);
 
-  const failing = makeConceptSheetWriter(async () => output({ catchcopy: '別の文言' }));
+  const failing = makeConceptSheetWriter(async () => ({ text: output({ catchcopy: '別の文言' }), model: 'gpt-test-astra' }));
   await assert.rejects(failing({ material, images, candidates, instructions: '', previous: null, mode: 'manual' }),
     /concept_sheet_quality_check_failed/);
   await assert.rejects(writer({ material, images, candidates: [], instructions: '', previous: null, mode: 'manual' }),
@@ -148,7 +151,7 @@ test('concept sheets adopt the UX goal catchcopy, fill it when empty, keep versi
       const checked = checkConceptSheetOutput(output({ catchcopy, html: sheetHtml(catchcopy) }),
         { imageLabels: images.map((i) => i.image.label), catchcopy: material.catchcopy.text });
       if (checked.kind !== 'ok') throw new Error('fixture must pass');
-      return { design: checked.design, skillDigest: 'skill', model: 'gpt-6-astra' };
+      return { design: checked.design, skillDigest: 'skill', model: 'gpt-test-astra' };
     }, jobs));
     app.route('/projects/:pid/ux-goal', makeProjectUxGoalRouter());
     app.route('/projects/:pid/visuals', makeProjectVisualRouter());

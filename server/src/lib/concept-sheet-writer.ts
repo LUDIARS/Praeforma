@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { repoPath } from './runtime-paths.ts';
 import { createHash } from 'node:crypto';
 import type { ConceptSheetDesign, SceneImageType } from '../../../shared/concept-sheet.ts';
-import { ASTRA_MODEL, type AstraEffort, type AstraRequest } from './astra-cli.ts';
+import type { AstraEffort, AstraRequest, AstraResponse } from './astra-cli.ts';
 import { buildConceptSheetPrompt, CONCEPT_SHEET_OUTPUT_SCHEMA } from './concept-sheet-prompt.ts';
 import { checkConceptSheetOutput } from './concept-sheet-design-check.ts';
 import { AppError } from './errors.ts';
@@ -27,7 +27,7 @@ export interface ConceptSheetWriterInput {
 }
 export interface ConceptSheetWriterResult { design: ConceptSheetDesign; skillDigest: string; model: string }
 export type ConceptSheetWriter = (input: ConceptSheetWriterInput) => Promise<ConceptSheetWriterResult>;
-export type AstraRunner = (request: AstraRequest) => Promise<string>;
+export type AstraRunner = (request: AstraRequest) => Promise<AstraResponse>;
 
 /** 設計は深く考えさせる (数分〜十数分)。直しは指摘の範囲なので一段軽くする。 */
 const ATTEMPTS: ReadonlyArray<{ effort: AstraEffort; timeoutMs: number }> = [
@@ -52,9 +52,9 @@ export function makeConceptSheetWriter(run: AstraRunner): ConceptSheetWriter {
     let repair: { issues: string[]; html: string } | null = null;
     for (const attempt of ATTEMPTS) {
       const prompt = buildConceptSheetPrompt({ skill: skill.text, material, scenes, instructions, previous, mode, repair });
-      const raw = await run({ prompt, images: files, outputSchema: CONCEPT_SHEET_OUTPUT_SCHEMA, ...attempt });
-      const checked = checkConceptSheetOutput(raw, { imageLabels, catchcopy: material.catchcopy.text });
-      if (checked.kind === 'ok') return { design: checked.design, skillDigest: skill.digest, model: ASTRA_MODEL };
+      const { text, model } = await run({ prompt, images: files, outputSchema: CONCEPT_SHEET_OUTPUT_SCHEMA, ...attempt });
+      const checked = checkConceptSheetOutput(text, { imageLabels, catchcopy: material.catchcopy.text });
+      if (checked.kind === 'ok') return { design: checked.design, skillDigest: skill.digest, model };
       if (checked.kind === 'insufficient') throw new AppError('concept_sheet_insufficient_ux', 422);
       repair = { issues: checked.issues, html: checked.html };
     }

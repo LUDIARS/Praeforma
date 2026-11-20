@@ -1,5 +1,5 @@
 // 企画概要書 (ペライチのコンセプトシート) の契約 (spec/feature/concept-sheet.md)。
-// 2026-09-26 neco 指示で、文面とレイアウトは Astra (gpt-6-astra) が設計する HTML にした。
+// 2026-09-26 neco 指示で、文面とレイアウトは Astra 役割で設計する HTML にした。
 // Pf は材料 (UX/ゴール・画面の候補) を渡し、Astra の出力を検証して保存・表示する。PF-CS-3。
 // 2026-09-26 の追加指示で、企画概要書は版 (rv) で残し (PF-CS-10)、候補はビジュアル素材から選ぶ (PF-CS-12)。
 import type { VisualKind } from './project-visual.ts';

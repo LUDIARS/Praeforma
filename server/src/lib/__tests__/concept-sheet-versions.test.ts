@@ -15,7 +15,7 @@ function fakeWriter(seen: string[][]): ConceptSheetWriter {
   return async ({ material, images }) => {
     const label = images[0]!.image.label;
     seen.push(images.map((i) => i.image.label));
-    return { skillDigest: 'skill', model: 'gpt-6-astra', design: { title: 'ひかりの庭', catchcopy: material.catchcopy.text,
+    return { skillDigest: 'skill', model: 'gpt-test-astra', design: { title: 'ひかりの庭', catchcopy: material.catchcopy.text,
       concept: '光を集めて花を咲かせる。', scene: { index: 0, label, reason: '光が集まる' }, sections: ['ポイント'],
       html: sheetHtml(material.catchcopy.text, label) } };
   };
@@ -64,7 +64,7 @@ test('existing sheets become rv1 once, and regenerating one moves its images int
     const legacyImage = { label: '前の画面', dataUrl: tinyPng(7), mimeType: 'image/png', digest: 'legacy' };
     const sqlite = getLocalSqlite()!;
     sqlite.prepare('INSERT INTO concept_sheets (id, project_id, payload, revision, updated_at) VALUES (?, ?, ?, 3, ?)').run(id, 'p',
-      JSON.stringify({ design, images: [legacyImage], source: { uxGoalRevision: 1, uxDigest: 'old', imagesDigest: 'i', skillDigest: 's', model: 'gpt-6-astra', instructions: '' } }),
+      JSON.stringify({ design, images: [legacyImage], source: { uxGoalRevision: 1, uxDigest: 'old', imagesDigest: 'i', skillDigest: 's', model: 'gpt-test-legacy-astra', instructions: '' } }),
       Date.parse('2026-09-26T00:00:00Z'));
     for (const backfill of SQLITE_BACKFILLS) sqlite.prepare(backfill).run();
     for (const backfill of SQLITE_BACKFILLS) sqlite.prepare(backfill).run();

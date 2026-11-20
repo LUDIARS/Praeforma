@@ -1,4 +1,4 @@
-// Astra (GPT-6 Astra、gpt-6-astra) を Codex CLI で 1 回呼ぶ (spec/feature/concept-sheet.md PF-CS-3)。
+// Astra 役割で Codex CLI を 1 回呼ぶ (spec/feature/concept-sheet.md PF-CS-3)。
 // - 読み取り専用 sandbox・一時フォルダを作業場所にし、Pf のリポやファイルに触れさせない。
 // - 画像は一時フォルダへ書いて --image で渡し、最終応答は --output-schema の形で -o のファイルに受ける。
 // - 一時フォルダは成功・失敗・時間切れのどの経路でも消す。
@@ -9,9 +9,17 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { AppError } from './errors.ts';
+import { contract } from '@ludiars/log-weaver'; /* augur-inject:import:3d1f134b */
+import augurContract_7487e6f9 from '../../contracts/astra-model.contract.ts'; /* augur-inject:contract-predicate:40a30361 */
 
-export const ASTRA_MODEL = resolveModel('astra', 'codex');
 export type AstraEffort = 'medium' | 'high' | 'xhigh';
+export interface AstraResponse { text: string; model: string }
+
+export function resolveAstraModel(env: NodeJS.ProcessEnv = process.env): string {
+  return resolveModel('astra', 'codex', env);
+}
+// @ts-expect-error augur-inject
+resolveAstraModel = contract(resolveAstraModel, { ...augurContract_7487e6f9, contractId: 'C-11', mode: 'observe', sample: 1, where: 'server/src/lib/astra-cli.ts:16', rule: 'contract-wrap', id: '7487e6f9' }); /* augur-inject:contract-wrap:7487e6f9 */
 
 export interface AstraRequest {
   prompt: string;
@@ -28,7 +36,7 @@ export function resolveCodexBin(env: NodeJS.ProcessEnv = process.env): string {
   return installed && existsSync(installed) ? installed : 'codex';
 }
 
-export async function runAstra(bin: string, request: AstraRequest): Promise<string> {
+export async function runAstra(bin: string, request: AstraRequest): Promise<AstraResponse> {
   const dir = await mkdtemp(path.join(tmpdir(), 'pf-astra-'));
   try {
     const imagePaths: string[] = [];
@@ -40,14 +48,15 @@ export async function runAstra(bin: string, request: AstraRequest): Promise<stri
     const schemaPath = path.join(dir, 'schema.json');
     await writeFile(schemaPath, JSON.stringify(request.outputSchema), 'utf8');
     const outPath = path.join(dir, 'last-message.txt');
-    const args = ['exec', '-m', ASTRA_MODEL, '-s', 'read-only', '--skip-git-repo-check', '--ephemeral', '--ignore-rules',
+    const model = resolveAstraModel();
+    const args = ['exec', '-m', model, '-s', 'read-only', '--skip-git-repo-check', '--ephemeral', '--ignore-rules',
       '-C', dir, '-c', `model_reasoning_effort="${request.effort}"`, '--output-schema', schemaPath, '-o', outPath,
       // --image は値を続けて取るので、1 枚ずつ = で渡し、最後の - (標準入力から指示を読む) を画像と取り違えさせない。
       ...imagePaths.map((p) => `--image=${p}`), '-'];
     await runProcess(bin, args, dir, request.prompt, request.timeoutMs);
     const text = await readFile(outPath, 'utf8').catch(() => '');
     if (!text.trim()) throw new AppError('astra_no_output', 502);
-    return text;
+    return { text, model };
   } finally {
     // 時間切れで止めた直後は、子がファイルを掴んだままのことがある。片付けの失敗で本来の結果・失敗を上書きしない。
     await rm(dir, { recursive: true, force: true, maxRetries: 3, retryDelay: 500 })

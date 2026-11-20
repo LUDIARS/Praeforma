@@ -18,8 +18,8 @@ export function setClaudeModel(model: string | null): void {
   pinnedModel = model;
 }
 
-export function getClaudeModel(): string {
-  return resolveModel(pinnedModel ?? undefined, 'claude');
+export function getClaudeModel(env: NodeJS.ProcessEnv = process.env): string {
+  return resolveModel(pinnedModel || 'sonnet', 'claude', env);
 }
 
 /** claude CLI を non-interactive (`-p`) で叩き、 stdout を返す。 プロンプトは stdin 経由。 */
