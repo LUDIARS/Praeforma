@@ -47,6 +47,7 @@ import { makeStudioRouter } from './routes/studio.ts';
 import { makeTransitionRouter } from './routes/transitions.ts';
 import { makeSceneMapRouter } from './routes/scene-map.ts';
 import { makeProjectEventsRouter } from './routes/project-events.ts';
+import { startManagementEvents } from './lib/management-events.ts';
 import { makeExportRouter } from './routes/export.ts';
 import { makeBranchSnapshotRouter } from './routes/branch-snapshot.ts';
 import { makeConversationRouter } from './routes/conversations.ts';
@@ -268,6 +269,7 @@ if (config.localMode) {
   });
 }
 
+const stopManagementEvents = startManagementEvents();
 const httpServer: ServerType = serve({ fetch: app.fetch, port: config.port, ...(config.localMode ? { hostname: '127.0.0.1' } : {}) }, (info) => {
   console.log(`[praeforma] listening on http://localhost:${info.port}`);
   console.log(`[praeforma] db: ${dbState.ok ? (sqliteStorage ? 'sqlite' : 'connected') : 'down'}`);
@@ -277,6 +279,7 @@ const httpServer: ServerType = serve({ fetch: app.fetch, port: config.port, ...(
 // 自動更新の予約はメモリだけに持つ。起動時に、自動更新 ON で古くなったシートを持つプロジェクトを予約し直す。
 // サーバを閉じたら予約を解除する (タイマーは unref 済みで、終了を引き留めない)。
 httpServer.on('close', () => conceptSheetAutoUpdater.stop());
+httpServer.on('close', stopManagementEvents);
 if (dbState.ok) {
   conceptSheetAutoUpdater.rescheduleOutdated()
     .catch((e) => console.warn(`[concept-sheet] auto-update reschedule failed: ${String(e)}`));

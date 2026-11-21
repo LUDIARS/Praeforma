@@ -7,6 +7,8 @@
 import { getDb, getDbState } from '../db/connection.ts';
 import { auditLog } from '../db/schema/collab.ts';
 import type { AuthIdentity } from '../auth/paseto.ts';
+import { managementAuditAction } from './management-audit-actions.ts';
+import { isManagementEventsEnabled, publishManagementChange } from './management-events.ts';
 
 export interface AuditEntry {
   projectId: string;
@@ -22,7 +24,7 @@ export interface AuditEntry {
 export async function recordAudit(entry: AuditEntry): Promise<void> {
   if (!getDbState().ok) return;
   try {
-    await getDb()
+    const insert = getDb()
       .insert(auditLog)
       .values({
         projectId: entry.projectId,
@@ -35,6 +37,18 @@ export async function recordAudit(entry: AuditEntry): Promise<void> {
         ip: entry.ip ?? null,
         userAgent: entry.userAgent ?? null,
       });
+    const eventType = isManagementEventsEnabled() && managementAuditAction(entry.action);
+    if (!eventType || !entry.targetId) {
+      await insert;
+      return;
+    }
+    const [row] = await insert.returning({ id: auditLog.id, createdAt: auditLog.createdAt });
+    if (row) {
+      publishManagementChange({
+        ...eventType, projectId: entry.projectId, targetId: entry.targetId,
+        changeId: `audit:${row.id}`, observedAt: row.createdAt.toISOString(),
+      });
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.warn(`[audit] failed to record ${entry.action}: ${msg}`);

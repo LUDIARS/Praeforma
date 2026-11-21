@@ -12,7 +12,7 @@ test('断片一覧は保留中 / 採用 / 却下で絞り込め、ページ送�
   const { projects, projectMembers } = await import('../../db/schema/project.ts');
   const { enableLocalAuth } = await import('../../middleware/require-auth.ts');
   const { makeSpecFragmentRouter } = await import('../../routes/spec-fragments.ts');
-  const { versionRows } = await import('../../db/spec-version-store.ts');
+  const { versionBatch } = await import('../../db/spec-version-store.ts');
   const { AppError } = await import('../errors.ts');
   const state = await initLocalDb(':memory:');
   assert.equal(state.ok, true, state.error ?? undefined);
@@ -34,8 +34,13 @@ test('断片一覧は保留中 / 採用 / 却下で絞り込め、ページ送�
       ids.push(((await response.json()) as { fragment: SpecFragment }).fragment.id);
       await new Promise((resolve) => setTimeout(resolve, 5));
     }
-    await versionRows(`INSERT INTO spec_reconstructions(id,project_id,payload,confirmed_version) VALUES('r1','p1','{}','1.0.0')`);
-    await versionRows(`INSERT INTO spec_reconstruction_fragments(fragment_id,reconstruction_id,disposition) VALUES(?,'r1','integrated'),(?,'r1','rejected')`, [ids[0]!, ids[1]!]);
+    await versionBatch([
+      { sql: "INSERT INTO spec_reconstructions(id,project_id,payload,confirmed_version) VALUES('r1','p1','{}','1.0.0')", args: [] },
+      {
+        sql: "INSERT INTO spec_reconstruction_fragments(fragment_id,reconstruction_id,disposition) VALUES(?,'r1','integrated'),(?,'r1','rejected')",
+        args: [ids[0]!, ids[1]!],
+      },
+    ]);
     const list = async (query: string) => {
       const response = await app.request(`/projects/p1/fragments?${query}`);
       return { status: response.status, body: await response.json() as { items: SpecFragment[]; hasMore: boolean } };

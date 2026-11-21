@@ -14,6 +14,7 @@ import { AppError } from '../lib/errors.ts';
 import { countPendingFragments } from '../lib/fragment-cleanup-todo.ts';
 import { fragmentDispositions, PENDING_DISPOSITION } from '../lib/fragment-disposition.ts';
 import { countFragmentsByDisposition, filteredFragmentIds, parseDisposition } from '../lib/fragment-filter.ts';
+import { publishManagementChange } from '../lib/management-events.ts';
 
 const VIEW_ROLES: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer', 'viewer'];
 const EDIT_ROLES: readonly ProjectRole[] = ['owner', 'planner', 'designer', 'programmer', 'reviewer'];
@@ -68,7 +69,14 @@ export function makeSpecFragmentRouter(): Hono {
       source, sourceEventId, createdBy: actorId }).onConflictDoNothing({
       target: [specFragments.projectId, specFragments.source, specFragments.sourceEventId],
     }).returning();
-    if (inserted[0]) return context.json({ fragment: inserted[0], replayed: false }, 201);
+    const [fragment] = inserted;
+    if (fragment) {
+      publishManagementChange({
+        entity: 'spec', operation: 'created', projectId, targetId: fragment.id,
+        changeId: 'fragment:created', observedAt: fragment.createdAt.toISOString(),
+      });
+      return context.json({ fragment, replayed: false }, 201);
+    }
     const [existing] = await getDb().select().from(specFragments).where(and(
       eq(specFragments.projectId, projectId), eq(specFragments.source, source), eq(specFragments.sourceEventId, sourceEventId),
     )).limit(1);

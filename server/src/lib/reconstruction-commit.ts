@@ -6,6 +6,7 @@ import { versionBatch,type VersionStatement } from '../db/spec-version-store.ts'
 import { getLocalSqlite } from '../db/connection.ts';
 import { AppError } from './errors.ts';
 import { reconstructionMaterial } from './reconstruction-material.ts';
+import { publishManagementChange } from './management-events.ts';
 
 function start(pid:string,head:SpecVersionHead):VersionStatement[] {
   return [
@@ -54,7 +55,12 @@ export async function confirmReconstruction(pid:string,proposal:ReconstructionPr
   steps.push({sql:'UPDATE spec_reconstructions SET confirmed_version=? WHERE id=? AND project_id=? AND confirmed_version IS NULL',args:[version,proposal.id,pid],affected:1});
   steps.push(...finish(pid,material.head,'minor',{actor,changes:logs,integratedFragments:plan.changes.flatMap(change=>change.fragmentIds),deferred:plan.deferred,
     rejected:rejected.map(item=>({...item,content:material.fragments.find(f=>f.id===item.fragmentId)?.content??null}))}));
-  await versionBatch(steps);return version;
+  await versionBatch(steps);
+  publishManagementChange({
+    entity: 'spec', operation: 'updated', projectId: pid, targetId: proposal.id,
+    changeId: 'reconstruction:confirmed', origin: 'ai',
+  });
+  return version;
 }
 export async function recordSpecRelease(pid:string,head:SpecVersionHead,note:string,actor:string):Promise<string> {
   await versionBatch([...start(pid,head),...finish(pid,head,'major',{note,actor})]);return versionLabel(nextSpecVersion(head,'major'));

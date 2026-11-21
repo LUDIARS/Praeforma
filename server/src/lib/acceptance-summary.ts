@@ -1,3 +1,8 @@
+import { contract } from '@ludiars/log-weaver'; /* augur-inject:import:25b159ce */
+import augurContract_83363161 from '../../contracts/pick-latest-run.contract.ts'; /* augur-inject:contract-predicate:315d5089 */
+import augurContract_46a66820 from '../../contracts/tally-acceptance-results.contract.ts'; /* augur-inject:contract-predicate:c07f07ef */
+import augurContract_cb667f08 from '../../contracts/summarize-acceptance.contract.ts'; /* augur-inject:contract-predicate:a9d912ef */
+import augurContract_4ccb024d from '../../contracts/format-spec-version.contract.ts'; /* augur-inject:contract-predicate:f3ad6472 */
 // @spec PF-ACC-SUM-2 応答
 // 受入状態の要約 (spec/feature/acceptance-summary.md)。DB から読んだ行を受け取り応答を返す純関数。
 // 個人情報 (triggered_by) と自由記述 (observed / error_message / log_excerpt) は入力にも出力にも持たない。
@@ -60,6 +65,8 @@ export function pickLatestRun(runs: readonly AcceptanceRunRow[]): AcceptanceRunR
   }
   return latest;
 }
+// @ts-expect-error augur-inject
+pickLatestRun = contract(pickLatestRun, { ...augurContract_83363161, contractId: 'C-1', mode: 'observe', sample: 1, where: 'server/src/lib/acceptance-summary.ts:54', rule: 'contract-wrap', id: '83363161' }); /* augur-inject:contract-wrap:83363161 */
 
 /** pass→passed、fail→failed、error→blocked (評価できなかった)、skip とそれ以外→pending。 */
 export function tallyAcceptanceResults(results: readonly AcceptanceResultRow[]): AcceptanceResultTally {
@@ -72,12 +79,16 @@ export function tallyAcceptanceResults(results: readonly AcceptanceResultRow[]):
   }
   return tally;
 }
+// @ts-expect-error augur-inject
+tallyAcceptanceResults = contract(tallyAcceptanceResults, { ...augurContract_46a66820, contractId: 'C-2', mode: 'observe', sample: 1, where: 'server/src/lib/acceptance-summary.ts:65', rule: 'contract-wrap', id: '46a66820' }); /* augur-inject:contract-wrap:46a66820 */
 
 /** 仕様版の表示。版がまだ無いプロジェクトは 0.0.0 (spec/schema/spec-versioning.md の初期値)。 */
 export function formatSpecVersion(head: SpecVersionHead | null): string {
   if (!head) return '0.0.0';
   return `${head.major}.${head.minor}.${head.patch}`;
 }
+// @ts-expect-error augur-inject
+formatSpecVersion = contract(formatSpecVersion, { ...augurContract_4ccb024d, contractId: 'C-4', mode: 'observe', sample: 1, where: 'server/src/lib/acceptance-summary.ts:77', rule: 'contract-wrap', id: '4ccb024d' }); /* augur-inject:contract-wrap:4ccb024d */
 
 export function summarizeAcceptance(input: AcceptanceSummaryInput): AcceptanceSummary {
   const byStatus: Record<string, number> = {};
@@ -97,3 +108,5 @@ export function summarizeAcceptance(input: AcceptanceSummaryInput): AcceptanceSu
     specVersion: formatSpecVersion(input.specVersionHead),
   };
 }
+// @ts-expect-error augur-inject
+summarizeAcceptance = contract(summarizeAcceptance, { ...augurContract_cb667f08, contractId: 'C-3', mode: 'observe', sample: 1, where: 'server/src/lib/acceptance-summary.ts:82', rule: 'contract-wrap', id: 'cb667f08' }); /* augur-inject:contract-wrap:cb667f08 */

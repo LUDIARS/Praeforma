@@ -28,6 +28,7 @@ import { requireAuth, getIdentity } from '../middleware/require-auth.ts';
 import { requireRole } from '../middleware/require-role.ts';
 import { AppError } from '../lib/errors.ts';
 import { recordAudit } from '../lib/audit.ts';
+import { publishManagementChange } from '../lib/management-events.ts';
 import { chatOnce } from '../lib/llm.ts';
 import { loadExportModel } from '../lib/export/load-model.ts';
 import type { ExportModel } from '../lib/export/model.ts';
@@ -278,6 +279,13 @@ export function makeConversationRouter(claudeBin: string, anatomiaOpts: Anatomia
     const skipped = requested.filter((i) => stored[i]?.applied === true);
     const pending = requested.filter((i) => stored[i]?.applied !== true);
     const result = await applyProposals(pid, identity.userId, stored, pending);
+    for (const change of result.applied) {
+      if (change.kind !== 'spec') continue;
+      publishManagementChange({
+        entity: 'spec', operation: 'updated', projectId: pid, targetId: change.id,
+        changeId: `proposal:${mid}:${change.index}`, origin: 'ai',
+      });
+    }
     if (result.applied.length > 0) {
       const appliedIdx = new Set(result.applied.map((a) => a.index));
       const next: Proposal[] = stored.map((p, i) => (appliedIdx.has(i) ? { ...p, applied: true } : p));
